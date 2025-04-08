@@ -1,0 +1,35 @@
+--header "\nCopyright (c) {year} Daniel Bauke\n"
+
+--closingparen same-line
+
+--indent 4
+--semicolons never
+
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--wrapreturntype if-multiline
+--maxwidth 120
+
+--importgrouping testable-first
+
+--stripunusedargs closure-only
+
+--extensionacl on-declarations
+
+--markcategories false
+
+--enable blankLineAfterSwitchCase
+--enable blankLinesBetweenImports
+--enable blockComments
+--enable docComments
+--enable duplicateImports
+--enable elseOnSameLine
+--enable isEmpty
+--enable marktypes
+--enable organizeDeclarations
+--enable redundantProperty
+--enable wrapConditionalBodies
+--enable wrapEnumCases
+--enable wrapMultilineConditionalAssignment
+--enable wrapSwitchCases
