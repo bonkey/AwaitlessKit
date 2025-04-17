@@ -18,7 +18,7 @@ let package = Package(
             name: "AwaitlessKit",
             dependencies: ["AwaitlessKitMacros"],
             swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency")
+                .enableUpcomingFeature("StrictConcurrency"),
             ]),
         .macro(
             name: "AwaitlessKitMacros",
@@ -27,13 +27,13 @@ let package = Package(
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
             ],
             swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency")
+                .enableUpcomingFeature("StrictConcurrency"),
             ]),
         .executableTarget(
             name: "AwaitlessApp",
             dependencies: ["AwaitlessKit"],
             swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency")
+                .enableUpcomingFeature("StrictConcurrency"),
             ]),
         .testTarget(
             name: "AwaitlessKitTests",
@@ -44,6 +44,6 @@ let package = Package(
                 .product(name: "MacroTesting", package: "swift-macro-testing"),
             ],
             swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency")
+                .enableUpcomingFeature("StrictConcurrency"),
             ]),
     ])

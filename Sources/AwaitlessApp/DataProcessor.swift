@@ -6,29 +6,28 @@ import AwaitlessKit
 import Foundation
 
 final class DataProcessor: Sendable {
-    
-    @IsolatedSafe
-    private nonisolated(unsafe) var _unsafeStrings: [String] = ["Hello", "World"]
-    
     func run() throws {
         forceSync_processSomething()
-        
-        strings.forEach {
-            print($0)
+
+        for string in strings {
+            print(string)
         }
-        
+
         let processedRiskyData = try forceSync_processRiskyData()
         let processedSafeData = forceSync_processSafeData()
 
         print(processedRiskyData)
         print(processedSafeData)
     }
-    
+
+    @IsolatedSafe
+    private nonisolated(unsafe) var _unsafeStrings: [String] = ["Hello", "World"]
+
     @ForceSync
     private func processSomething() async {
         _ = try? await processData()
     }
-    
+
     @ForceSync
     private func processRiskyData() async throws -> String {
         try await processData()
@@ -36,9 +35,9 @@ final class DataProcessor: Sendable {
 
     @ForceSync
     private func processSafeData() async -> String {
-        (try? await processData()) ?? "NO DATA"
+        await (try? processData()) ?? "NO DATA"
     }
-    
+
     @discardableResult
     private func processData() async throws -> String {
         print("🚥 Starting async operation...")
