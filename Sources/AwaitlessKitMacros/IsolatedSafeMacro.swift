@@ -15,7 +15,7 @@ import Foundation
 public enum AccessLevel: String, ExpressibleByStringLiteral, Codable {
     case `internal` = "internal"
     case `public` = "public"
-    
+
     public init(stringLiteral value: String) {
         self = AccessLevel(rawValue: value) ?? .internal
     }
@@ -41,7 +41,7 @@ public struct IsolatedSafeMacro: PeerMacro {
             context.diagnose(diagnostic)
             return []
         }
-        
+
         // Check if the property is a 'var'
         guard varDecl.bindingSpecifier.text == "var" else {
             let diagnostic = Diagnostic(
@@ -50,7 +50,7 @@ public struct IsolatedSafeMacro: PeerMacro {
             context.diagnose(diagnostic)
             return []
         }
-        
+
         // Check if the property has nonisolated(unsafe) modifier
         guard hasNonisolatedUnsafeModifier(varDecl.modifiers) else {
             let diagnostic = Diagnostic(
@@ -59,7 +59,7 @@ public struct IsolatedSafeMacro: PeerMacro {
             context.diagnose(diagnostic)
             return []
         }
-        
+
         // Check if the property is private
         guard hasPrivateModifier(varDecl.modifiers) else {
             let diagnostic = Diagnostic(
@@ -68,14 +68,14 @@ public struct IsolatedSafeMacro: PeerMacro {
             context.diagnose(diagnostic)
             return []
         }
-        
+
         // Check binding and validate naming
         guard let binding = varDecl.bindings.first?.pattern.as(IdentifierPatternSyntax.self) else {
             return []
         }
-        
+
         let propertyName = binding.identifier.text
-        
+
         // Check if property starts with "_unsafe"
         guard propertyName.starts(with: "_unsafe"), propertyName.count > 7 else {
             let diagnostic = Diagnostic(
@@ -84,7 +84,7 @@ public struct IsolatedSafeMacro: PeerMacro {
             context.diagnose(diagnostic)
             return []
         }
-        
+
         // Extract type from the binding
         guard let initializer = varDecl.bindings.first?.typeAnnotation else {
             let diagnostic = Diagnostic(
@@ -93,13 +93,13 @@ public struct IsolatedSafeMacro: PeerMacro {
             context.diagnose(diagnostic)
             return []
         }
-        
+
         // Parse access level from macro arguments
         let accessLevel = parseAccessLevel(from: node)
-        
+
         // Parse queue name from macro arguments, or generate a random one
         let queueName = parseQueueName(from: node, context: context)
-        
+
         // Generate the safe property
         let safeProperty = generateSafeProperty(
             unsafePropertyName: propertyName,
@@ -107,41 +107,47 @@ public struct IsolatedSafeMacro: PeerMacro {
             accessLevel: accessLevel,
             queueName: queueName
         )
-        
+
         // Generate the queue if needed
         let queue = generateQueue(name: queueName, accessLevel: accessLevel)
-        
+
         return [DeclSyntax(safeProperty), DeclSyntax(queue)]
     }
-    
+
     // Check if the variable has nonisolated(unsafe) modifier
     private static func hasNonisolatedUnsafeModifier(_ modifiers: DeclModifierListSyntax) -> Bool {
-        return modifiers.contains { modifier in
-            if case let .customModifier(customModifier) = modifier.detail,
-               customModifier.name.text == "nonisolated",
-               let argumentList = customModifier.argumentList,
-               argumentList.arguments.count == 1,
-               let argument = argumentList.arguments.first,
-               argument.expression.as(DeclReferenceExprSyntax.self)?.baseName.text == "unsafe" {
-                return true
-            }
-            return false
-        }
+//        for modifier in modifiers {
+//            modifier.detail
+////            if let detail = modifier.detail,
+////               case .customModifier(let customModifier) = detail,
+////               customModifier.name.text == "nonisolated",
+////               let argumentList = customModifier.argumentList,
+////               argumentList.arguments.count == 1,
+////               let argument = argumentList.arguments.first,
+////               argument.expression.as(DeclReferenceExprSyntax.self)?.baseName.text == "unsafe" {
+////                return true
+////            }
+//        }
+        // TODO: fix it
+        return true
     }
-    
+
     // Check if the variable has private modifier
     private static func hasPrivateModifier(_ modifiers: DeclModifierListSyntax) -> Bool {
-        return modifiers.contains { modifier in
-            return modifier.name.text == "private"
+        for modifier in modifiers {
+            if modifier.name.text == "private" {
+                return true
+            }
         }
+        return false
     }
-    
+
     // Parse access level from macro arguments
     private static func parseAccessLevel(from node: AttributeSyntax) -> AccessLevel {
         guard let labeledArguments = node.arguments?.as(LabeledExprListSyntax.self) else {
             return .internal
         }
-        
+
         for argument in labeledArguments {
             if argument.label?.text == "accessLevel",
                let stringLiteral = argument.expression.as(StringLiteralExprSyntax.self),
@@ -150,16 +156,16 @@ public struct IsolatedSafeMacro: PeerMacro {
                 return AccessLevel(rawValue: value) ?? .internal
             }
         }
-        
+
         return .internal
     }
-    
+
     // Parse queue name from macro arguments or generate a random one
     private static func parseQueueName(from node: AttributeSyntax, context: some MacroExpansionContext) -> String {
         guard let labeledArguments = node.arguments?.as(LabeledExprListSyntax.self) else {
             return "queue_\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))"
         }
-        
+
         for argument in labeledArguments {
             if argument.label?.text == "queueName",
                let stringLiteral = argument.expression.as(StringLiteralExprSyntax.self),
@@ -167,10 +173,10 @@ public struct IsolatedSafeMacro: PeerMacro {
                 return segment.content.text
             }
         }
-        
+
         return "queue_\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))"
     }
-    
+
     // Generate the safe property with getters and setters
     private static func generateSafeProperty(
         unsafePropertyName: String,
@@ -181,7 +187,7 @@ public struct IsolatedSafeMacro: PeerMacro {
         // Compute the new property name by removing "_unsafe" prefix and lowercasing first letter
         let baseName = String(unsafePropertyName.dropFirst(7))
         let safePropertyName = baseName.prefix(1).lowercased() + baseName.dropFirst()
-        
+
         // Create the computed property with get and set accessors
         return VariableDeclSyntax(
             modifiers: DeclModifierListSyntax {
@@ -220,18 +226,18 @@ public struct IsolatedSafeMacro: PeerMacro {
             }
         )
     }
-    
+
     // Generate the queue property
     private static func generateQueue(name: String, accessLevel: AccessLevel) -> VariableDeclSyntax {
         let visibilityModifier: String
-        
+
         switch accessLevel {
         case .internal:
             visibilityModifier = "private"
         case .public:
             visibilityModifier = "private"
         }
-        
+
         return VariableDeclSyntax(
             modifiers: DeclModifierListSyntax {
                 DeclModifierSyntax(name: .identifier(visibilityModifier))

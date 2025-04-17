@@ -8,3 +8,8 @@
 public macro ForceSync() = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "ForceSyncMacro")
+
+@attached(peer, names: arbitrary)
+public macro IsolatedSafe() = #externalMacro(
+    module: "AwaitlessKitMacros",
+    type: "IsolatedSafeMacro")

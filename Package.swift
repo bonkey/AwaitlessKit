@@ -16,21 +16,33 @@ let package = Package(
     targets: [
         .target(
             name: "AwaitlessKit",
-            dependencies: ["AwaitlessKitMacros"]),
+            dependencies: ["AwaitlessKitMacros"],
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency")
+            ]),
         .macro(
             name: "AwaitlessKitMacros",
             dependencies: [
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
+            ],
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency")
             ]),
         .executableTarget(
             name: "AwaitlessApp",
-            dependencies: ["AwaitlessKit"]),
+            dependencies: ["AwaitlessKit"],
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency")
+            ]),
         .testTarget(
             name: "AwaitlessKitTests",
             dependencies: [
                 "AwaitlessKit",
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
                 .product(name: "MacroTesting", package: "swift-macro-testing"),
+            ],
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency")
             ]),
     ])
