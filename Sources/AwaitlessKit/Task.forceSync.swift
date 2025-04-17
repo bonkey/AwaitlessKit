@@ -2,6 +2,9 @@
 // Copyright (c) 2025 Daniel Bauke
 //
 
+// Copyright Wade Tregaskis
+// Source: https://wadetregaskis.com/calling-swift-concurrency-async-code-synchronously-in-swift/
+
 import Dispatch
 
 extension Task {
@@ -11,7 +14,7 @@ extension Task {
     /// like MainActor) if the closure - or anything it calls transitively via `await` - might be bound to that same
     /// isolation context.  Doing so may result in deadlock.
     @available(*, noasync)
-    package static func noasync(_ code: sending () async throws(Failure) -> Success) throws(Failure) -> Success { // 1
+    public static func forceSync(_ code: sending () async throws(Failure) -> Success) throws(Failure) -> Success { // 1
         let semaphore = DispatchSemaphore(value: 0)
 
         nonisolated(unsafe) var result: Result<Success, Failure>? = nil // 2

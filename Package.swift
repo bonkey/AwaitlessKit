@@ -4,28 +4,34 @@ import CompilerPluginSupport
 import PackageDescription
 
 let package = Package(
-    name: "Noasync",
-    platforms: [.macOS(.v10_15), .iOS(.v15), .tvOS(.v13), .watchOS(.v10), .macCatalyst(.v13)],
+    name: "AwaitlessKit",
+    platforms: [.macOS(.v14), .iOS(.v15), .tvOS(.v13), .watchOS(.v10), .macCatalyst(.v13)],
     products: [
-        .library(name: "TaskNoasync", targets: ["TaskNoasync"]),
+        .library(name: "AwaitlessKit", targets: ["AwaitlessKit"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-syntax.git", .upToNextMajor(from: "510.0.0")),
+        // .package(url: "https://github.com/apple/swift-syntax.git", .upToNextMajor(from: "510.0.0")),
+        .package(url: "git@github.com:swiftlang/swift-syntax.git", from: "600.0.0-latest"),
+        .package(url: "https://github.com/pointfreeco/swift-macro-testing.git", from: "0.6.2"),
     ],
     targets: [
+        .target(
+            name: "AwaitlessKit",
+            dependencies: ["AwaitlessKitMacros"]),
         .macro(
-            name: "NoasyncMacro",
+            name: "AwaitlessKitMacros",
             dependencies: [
-                "TaskNoasync",
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
             ]),
-        .target(name: "TaskNoasync"),
-        .executableTarget(name: "NoasyncApp", dependencies: ["NoasyncMacro", "TaskNoasync"]),
+        .executableTarget(
+            name: "AwaitlessApp",
+            dependencies: ["AwaitlessKit"]),
         .testTarget(
-            name: "NoasyncMacroTests",
+            name: "AwaitlessKitTests",
             dependencies: [
-                "NoasyncMacro",
+                "AwaitlessKit",
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+                .product(name: "MacroTesting", package: "swift-macro-testing"),
             ]),
     ])
