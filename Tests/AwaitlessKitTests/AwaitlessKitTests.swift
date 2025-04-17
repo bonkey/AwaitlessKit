@@ -18,7 +18,7 @@ import AwaitlessKitMacros
 )
 struct StringifyMacroSwiftTestingTests {
   @Test
-  func testStringify() {
+  func testIsolatedSafe() {
     assertMacro {
       """
           @IsolatedSafe(queueName: "blah")

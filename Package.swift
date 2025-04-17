@@ -39,6 +39,7 @@ let package = Package(
             name: "AwaitlessKitTests",
             dependencies: [
                 "AwaitlessKit",
+                "AwaitlessKitMacros",
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
                 .product(name: "MacroTesting", package: "swift-macro-testing"),
             ],

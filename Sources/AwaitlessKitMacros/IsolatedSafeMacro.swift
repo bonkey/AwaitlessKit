@@ -13,6 +13,7 @@ import Foundation
 
 /// Defines the access level for the generated property
 public enum AccessLevel: String, ExpressibleByStringLiteral, Codable {
+    case `private` = "private"
     case `internal` = "internal"
     case `public` = "public"
 
@@ -220,18 +221,9 @@ public struct IsolatedSafeMacro: PeerMacro {
 
     // Generate the queue property
     private static func generateQueue(name: String, accessLevel: AccessLevel) -> VariableDeclSyntax {
-        let visibilityModifier: String
-
-        switch accessLevel {
-        case .internal:
-            visibilityModifier = "private"
-        case .public:
-            visibilityModifier = "private"
-        }
-
         return VariableDeclSyntax(
             modifiers: DeclModifierListSyntax {
-                DeclModifierSyntax(name: .identifier(visibilityModifier))
+                DeclModifierSyntax(name: .identifier("private"))
             },
             bindingSpecifier: .keyword(.let),
             bindings: PatternBindingListSyntax {
