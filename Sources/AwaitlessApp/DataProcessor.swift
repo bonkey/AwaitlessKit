@@ -26,30 +26,25 @@ final class DataProcessor: Sendable {
     
     @ForceSync
     private func processSomething() async {
-        print("Starting async operation...")
-        try? await Task.sleep(for: .seconds(0.3))
-        print("👍 Processed data in processSomething")
-        try? await Task.sleep(for: .seconds(0.5))
-        print("Async operation completed")
+        _ = try? await processData()
     }
     
     @ForceSync
     private func processRiskyData() async throws -> String {
-        print("Starting async operation...")
-        try await Task.sleep(for: .seconds(0.3))
-        let result = "👍 Processed data from processRiskyData"
-        try await Task.sleep(for: .seconds(0.5))
-        print("Async operation completed")
-        return result
+        try await processData()
     }
 
     @ForceSync
     private func processSafeData() async -> String {
-        print("Starting async operation...")
-        try? await Task.sleep(for: .seconds(0.3))
+        (try? await processData()) ?? "NO DATA"
+    }
+    
+    @discardableResult
+    private func processData() async throws -> String {
+        print("🚥 Starting async operation...")
+        try await Task.sleep(for: .seconds(0.3))
         let result = "👍 Processed data from processSafeData"
-        try? await Task.sleep(for: .seconds(0.5))
-        print("Async operation completed")
+        print("🏁 Async operation completed")
         return result
     }
 }

@@ -10,6 +10,6 @@ public macro ForceSync() = #externalMacro(
     type: "ForceSyncMacro")
 
 @attached(peer, names: arbitrary)
-public macro IsolatedSafe() = #externalMacro(
+public macro IsolatedSafe(queueName: String? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "IsolatedSafeMacro")

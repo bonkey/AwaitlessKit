@@ -210,16 +210,7 @@ public struct IsolatedSafeMacro: PeerMacro {
                                         """)
                                     }
                                 )
-                                // Setter
-                                AccessorDeclSyntax(
-                                    accessorSpecifier: .keyword(.set),
-                                    body: CodeBlockSyntax {
-                                        ExprSyntax("""
-                                        \(raw: queueName).async(flags: .barrier) { self.\(raw: unsafePropertyName) = newValue }
-                                        """)
-                                    }
-                                )
-                            }
+                           }
                         )
                     )
                 )
@@ -241,9 +232,8 @@ public struct IsolatedSafeMacro: PeerMacro {
         return VariableDeclSyntax(
             modifiers: DeclModifierListSyntax {
                 DeclModifierSyntax(name: .identifier(visibilityModifier))
-                DeclModifierSyntax(name: .identifier("lazy"))
             },
-            bindingSpecifier: .keyword(.var),
+            bindingSpecifier: .keyword(.let),
             bindings: PatternBindingListSyntax {
                 PatternBindingSyntax(
                     pattern: IdentifierPatternSyntax(identifier: .identifier(name)),
