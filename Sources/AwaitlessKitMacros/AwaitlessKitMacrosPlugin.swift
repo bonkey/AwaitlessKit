@@ -9,5 +9,6 @@ import SwiftSyntaxMacros
 struct AwaitlessKitMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         ForceSyncMacro.self,
+        IsolatedSafeMacro.self
     ]
 }

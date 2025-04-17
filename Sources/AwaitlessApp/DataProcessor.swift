@@ -1,7 +1,19 @@
+//
+// Copyright (c) 2025 Daniel Bauke
+//
+
 import AwaitlessKit
 import Foundation
 
 final class DataProcessor {
+    func run() throws {
+        let processedRiskyData = try forceSync_processRiskyData()
+        let processedSafeData = forceSync_processSafeData()
+
+        print(processedRiskyData)
+        print(processedSafeData)
+    }
+
     @ForceSync
     private func processRiskyData() async throws -> String {
         print("Starting async operation...")
@@ -20,13 +32,5 @@ final class DataProcessor {
         try? await Task.sleep(for: .seconds(0.5))
         print("Async operation completed")
         return result
-    }
-
-    func run() throws {
-        let processedRiskyData = try forceSync_processRiskyData()
-        let processedSafeData = forceSync_processSafeData()
-
-        print(processedRiskyData)
-        print(processedSafeData)
     }
 }
