@@ -24,7 +24,7 @@ public struct ForceSyncMacro: PeerMacro {
         guard let funcDecl = declaration.as(FunctionDeclSyntax.self) else {
             let diagnostic = Diagnostic(
                 node: Syntax(declaration),
-                message: NoAsyncMacroDiagnostic.requiresFunction)
+                message: ForceSyncMacroDiagnostic.requiresFunction)
             context.diagnose(diagnostic)
             return []
         }
@@ -34,7 +34,7 @@ public struct ForceSyncMacro: PeerMacro {
             let diagnosticNode = Syntax(funcDecl.name)
             let diagnostic = Diagnostic(
                 node: diagnosticNode,
-                message: NoAsyncMacroDiagnostic.requiresAsync)
+                message: ForceSyncMacroDiagnostic.requiresAsync)
             context.diagnose(diagnostic)
             return []
         }
@@ -217,16 +217,16 @@ public struct ForceSyncMacro: PeerMacro {
     }
 }
 
-// MARK: - NoAsyncMacroDiagnostic
+// MARK: - ForceSyncMacroDiagnostic
 
 /// Diagnostics for errors related to the ForceSync macro
-enum NoAsyncMacroDiagnostic: String, DiagnosticMessage {
+enum ForceSyncMacroDiagnostic: String, DiagnosticMessage {
     case requiresFunction = "@ForceSync can only be applied to functions"
     case requiresAsync = "@ForceSync requires the function to be 'async'"
 
     var severity: DiagnosticSeverity { .error }
     var message: String { rawValue }
     var diagnosticID: MessageID {
-        MessageID(domain: "NoAsyncMacros", id: rawValue)
+        MessageID(domain: "ForceSyncMacros", id: rawValue)
     }
 }
