@@ -2,14 +2,18 @@
 // Copyright (c) 2025 Daniel Bauke
 //
 
-// MARK: - AwaitlessKitMacros
-
 @attached(peer, names: arbitrary)
 public macro Awaitless() = #externalMacro(
     module: "AwaitlessKitMacros",
-    type: "AwaitlessMacro")
+    type: "AwaitlessAttachedMacro")
+
+@freestanding(expression)
+public macro awaitless<T>(_ expression: T) -> T = #externalMacro(
+    module: "AwaitlessKitMacros",
+    type: "AwaitlessFreestandingMacro")
+
 
 @attached(peer, names: arbitrary)
-public macro IsolatedSafe(queueName: String? = nil) = #externalMacro(
+public macro IsolatedSafe(writable: Bool = false, queueName: String? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "IsolatedSafeMacro")

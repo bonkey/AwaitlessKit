@@ -101,12 +101,16 @@ public struct IsolatedSafeMacro: PeerMacro {
         // Parse queue name from macro arguments, or generate a name based on property
         let queueName = parseQueueName(from: node, propertyName: propertyName, context: context)
 
+        // Parse writable flag from macro arguments
+        let isWritable = parseWritable(from: node)
+
         // Generate the safe property
         let safeProperty = generateSafeProperty(
             unsafePropertyName: propertyName,
             typeAnnotation: initializer,
             accessLevel: accessLevel,
-            queueName: queueName)
+            queueName: queueName,
+            writable: isWritable)
 
         // Generate the queue if needed
         let queue = generateQueue(name: queueName, accessLevel: accessLevel)
@@ -159,6 +163,23 @@ public struct IsolatedSafeMacro: PeerMacro {
         return .internal
     }
 
+    /// Parse writable flag from macro arguments
+    private static func parseWritable(from node: AttributeSyntax) -> Bool {
+        guard let labeledArguments = node.arguments?.as(LabeledExprListSyntax.self) else {
+            return false
+        }
+
+        for argument in labeledArguments {
+            if argument.label?.text == "writable",
+               let boolLiteral = argument.expression.as(BooleanLiteralExprSyntax.self)
+            {
+                return boolLiteral.literal.text == "true"
+            }
+        }
+
+        return false
+    }
+
     /// Parse queue name from macro arguments or generate one based on property name
     private static func parseQueueName(
         from node: AttributeSyntax,
@@ -193,12 +214,38 @@ public struct IsolatedSafeMacro: PeerMacro {
         unsafePropertyName: String,
         typeAnnotation: TypeAnnotationSyntax,
         accessLevel: AccessLevel,
-        queueName: String)
+        queueName: String,
+        writable: Bool = false)
         -> VariableDeclSyntax
     {
         // Compute the new property name by removing "_unsafe" prefix and lowercasing first letter
         let baseName = String(unsafePropertyName.dropFirst(7))
         let safePropertyName = baseName.prefix(1).lowercased() + baseName.dropFirst()
+
+        // Create accessors
+        var accessors = AccessorDeclListSyntax {
+            // Getter
+            AccessorDeclSyntax(
+                accessorSpecifier: .keyword(.get),
+                body: CodeBlockSyntax {
+                    ExprSyntax("""
+                    \(raw: queueName).sync { self.\(raw: unsafePropertyName) }
+                    """)
+                })
+        }
+
+        // Add setter if writable
+        if writable {
+            accessors.append(
+                AccessorDeclSyntax(
+                    accessorSpecifier: .keyword(.set),
+                    body: CodeBlockSyntax {
+                        ExprSyntax("""
+                        \(raw: queueName).async(flags: .barrier) { self.\(raw: unsafePropertyName) = newValue }
+                        """)
+                    })
+            )
+        }
 
         // Create the computed property with get and set accessors
         return VariableDeclSyntax(
@@ -211,17 +258,7 @@ public struct IsolatedSafeMacro: PeerMacro {
                     pattern: IdentifierPatternSyntax(identifier: .identifier(safePropertyName)),
                     typeAnnotation: typeAnnotation,
                     accessorBlock: AccessorBlockSyntax(
-                        accessors: .accessors(
-                            AccessorDeclListSyntax {
-                                // Getter
-                                AccessorDeclSyntax(
-                                    accessorSpecifier: .keyword(.get),
-                                    body: CodeBlockSyntax {
-                                        ExprSyntax("""
-                                        \(raw: queueName).sync { self.\(raw: unsafePropertyName) }
-                                        """)
-                                    })
-                            })))
+                        accessors: .accessors(accessors)))
             })
     }
 

@@ -8,12 +8,12 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
-// MARK: - AwaitlessMacro
+// MARK: - AwaitlessAttachedMacro
 
 /// A macro that generates a synchronous version of an async function.
 /// This macro creates a twin function with prefix "awaitless_" that wraps the original
 /// async function in a Task.noasync call, making it callable from synchronous contexts.
-public struct AwaitlessMacro: PeerMacro {
+public struct AwaitlessAttachedMacro: PeerMacro {
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -24,7 +24,7 @@ public struct AwaitlessMacro: PeerMacro {
         guard let funcDecl = declaration.as(FunctionDeclSyntax.self) else {
             let diagnostic = Diagnostic(
                 node: Syntax(declaration),
-                message: AwaitlessMacroDiagnostic.requiresFunction)
+                message: AwaitlessAttachedMacroDiagnostic.requiresFunction)
             context.diagnose(diagnostic)
             return []
         }
@@ -34,7 +34,7 @@ public struct AwaitlessMacro: PeerMacro {
             let diagnosticNode = Syntax(funcDecl.name)
             let diagnostic = Diagnostic(
                 node: diagnosticNode,
-                message: AwaitlessMacroDiagnostic.requiresAsync)
+                message: AwaitlessAttachedMacroDiagnostic.requiresAsync)
             context.diagnose(diagnostic)
             return []
         }
@@ -217,10 +217,10 @@ public struct AwaitlessMacro: PeerMacro {
     }
 }
 
-// MARK: - AwaitlessMacroDiagnostic
+// MARK: - AwaitlessAttachedMacroDiagnostic
 
 /// Diagnostics for errors related to the Awaitless macro
-enum AwaitlessMacroDiagnostic: String, DiagnosticMessage {
+enum AwaitlessAttachedMacroDiagnostic: String, DiagnosticMessage {
     case requiresFunction = "@Awaitless can only be applied to functions"
     case requiresAsync = "@Awaitless requires the function to be 'async'"
 
