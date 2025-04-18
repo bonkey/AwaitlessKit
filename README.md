@@ -2,6 +2,8 @@
 
 - [Overview](#overview)
 - [Usage](#usage)
+  - [Awaitless](#awaitless)
+  - [IsolatedSafe](#isolatedsafe)
 - [Installation](#installation)
 - [Credits](#credits)
 
@@ -9,7 +11,7 @@
 
 `AwaitlessKit` is a collection of Swift macros and utilities that let you commit unspeakable asynchronous sins - like calling `async` functions from synchronous contexts without awaiting them properly.
 
-> **Warning!** This package is the equivalent of using a chainsaw to butter your toast. It might work, but think twice if you want to use it in production code. Use responsibly.
+> **Warning!** This package is the equivalent of using a chainsaw to butter your toast. It might work, but think twice if you want to use it in production code.
 
 - `#awaitless()`: Free-standing macro to execute `async` expressions synchronously
 - `@Awaitless`: Macro that generates a synchronous version of your `async` functions
@@ -17,38 +19,49 @@
 
 ## Usage
 
+### Awaitless
+
 ```swift
 import AwaitlessKit
 
-final class FooBar: Sendable {
-    // (1) Mark async functions to generate sync versions
+final class AwaitlessExample: Sendable {
+    // (1) Mark async functions to generate synchronous versions
     @Awaitless
     private func fetchData() async throws -> Data {
         // ...
     }
 
-    public func run() {}
+    public func run() {
         // (2a) Now you can call the generated sync version
         let data = try awaitless_fetchData()
 
         // (2b) Or use the freestanding macro
         let result = try #awaitless(try fetchData())
+    }
+}
+```
 
-        // Safe access to _unsafeStrings
+### IsolatedSafe
+
+```swift
+final class IsolatedSafeExample: Sendable {
+    // (1a) Thread-safe wrapper for unsafe property access
+    @IsolatedSafe
+    private nonisolated(unsafe) var _unsafeStrings: [String] = ["Hello", "World"]
+
+    // (2a) Thread-safe wrapper with write access
+    @IsolatedSafe(writable: true)
+    private nonisolated(unsafe) var _unsafeProcessCount: Int = 0
+
+    public func run() {
+        // (1b) Safe access to _unsafeStrings through generated accessors
         strings.append("and")
         strings.append("universe")
 
-        // Safe access to _unsafeProcessCount
+        // (2b) Safe access to _unsafeProcessCount through generated accessors
         processCount += 1
     }
-
-    @IsolatedSafe
-    private nonisolated(unsafe) var _unsafeStrings: [String] = ["Hello", "World"]
-    
-    @IsolatedSafe(writable: true)
-    private nonisolated(unsafe) var _unsafeProcessCount: Int = 0
 }
-
 ```
 
 ## Installation
