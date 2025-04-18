@@ -49,11 +49,12 @@ final class DataProcessor: Sendable {
     @discardableResult
     private func processData() async throws -> String {
         processCount += 1
+        let waitTime = round(Double.random(in: 0...0.7) * 10) / 10
         
-        print("🚥 Starting async operation...")
-        try await Task.sleep(for: .seconds(0.3))
+        print("🚥 Starting async operation #\(processCount)... (\(waitTime)s)")
+        try await Task.sleep(for: .seconds(waitTime))
         let result = "👍 Processed data from processData (count: \(processCount))"
-        print("🏁 Async operation completed")
+        print("🏁 Async operation #\(processCount) completed")
         return result
     }
 }
