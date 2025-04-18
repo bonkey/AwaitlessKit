@@ -5,9 +5,9 @@
 // MARK: - AwaitlessKitMacros
 
 @attached(peer, names: arbitrary)
-public macro ForceSync() = #externalMacro(
+public macro Awaitless() = #externalMacro(
     module: "AwaitlessKitMacros",
-    type: "ForceSyncMacro")
+    type: "AwaitlessMacro")
 
 @attached(peer, names: arbitrary)
 public macro IsolatedSafe(queueName: String? = nil) = #externalMacro(

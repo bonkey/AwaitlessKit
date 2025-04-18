@@ -116,18 +116,19 @@ public struct IsolatedSafeMacro: PeerMacro {
 
     /// Check if the variable has nonisolated(unsafe) modifier
     private static func hasNonisolatedUnsafeModifier(_ modifiers: DeclModifierListSyntax) -> Bool {
-            for modifier in modifiers {
-                if modifier.name.text == "nonisolated",
-                   let detail = modifier.detail {
-                    // Check if the detail contains "unsafe"
-                    let detailText = detail.description
-                    if detailText.contains("unsafe") {
-                        return true
-                    }
+        for modifier in modifiers {
+            if modifier.name.text == "nonisolated",
+               let detail = modifier.detail
+            {
+                // Check if the detail contains "unsafe"
+                let detailText = detail.description
+                if detailText.contains("unsafe") {
+                    return true
                 }
             }
-            return false
         }
+        return false
+    }
 
     /// Check if the variable has private modifier
     private static func hasPrivateModifier(_ modifiers: DeclModifierListSyntax) -> Bool {
@@ -159,7 +160,12 @@ public struct IsolatedSafeMacro: PeerMacro {
     }
 
     /// Parse queue name from macro arguments or generate one based on property name
-    private static func parseQueueName(from node: AttributeSyntax, propertyName: String, context: some MacroExpansionContext) -> String {
+    private static func parseQueueName(
+        from node: AttributeSyntax,
+        propertyName: String,
+        context: some MacroExpansionContext)
+        -> String
+    {
         guard let labeledArguments = node.arguments?.as(LabeledExprListSyntax.self) else {
             // Compute the property name without "_unsafe" prefix
             let baseName = String(propertyName.dropFirst(7))

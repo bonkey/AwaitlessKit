@@ -8,7 +8,7 @@ import SwiftSyntaxMacros
 @main
 struct AwaitlessKitMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
-        ForceSyncMacro.self,
+        AwaitlessMacro.self,
         IsolatedSafeMacro.self,
     ]
 }

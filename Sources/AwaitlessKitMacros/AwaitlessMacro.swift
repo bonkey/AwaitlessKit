@@ -8,12 +8,12 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
-// MARK: - ForceSyncMacro
+// MARK: - AwaitlessMacro
 
 /// A macro that generates a synchronous version of an async function.
-/// This macro creates a twin function with prefix "forceSync_" that wraps the original
-/// async function in a Task.forceSync call, making it callable from synchronous contexts.
-public struct ForceSyncMacro: PeerMacro {
+/// This macro creates a twin function with prefix "awaitless_" that wraps the original
+/// async function in a Task.noasync call, making it callable from synchronous contexts.
+public struct AwaitlessMacro: PeerMacro {
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -24,7 +24,7 @@ public struct ForceSyncMacro: PeerMacro {
         guard let funcDecl = declaration.as(FunctionDeclSyntax.self) else {
             let diagnostic = Diagnostic(
                 node: Syntax(declaration),
-                message: ForceSyncMacroDiagnostic.requiresFunction)
+                message: AwaitlessMacroDiagnostic.requiresFunction)
             context.diagnose(diagnostic)
             return []
         }
@@ -34,7 +34,7 @@ public struct ForceSyncMacro: PeerMacro {
             let diagnosticNode = Syntax(funcDecl.name)
             let diagnostic = Diagnostic(
                 node: diagnosticNode,
-                message: ForceSyncMacroDiagnostic.requiresAsync)
+                message: AwaitlessMacroDiagnostic.requiresAsync)
             context.diagnose(diagnostic)
             return []
         }
@@ -47,7 +47,7 @@ public struct ForceSyncMacro: PeerMacro {
     /// Creates a synchronous version of the provided async function
     private static func createSyncFunction(from funcDecl: FunctionDeclSyntax) -> FunctionDeclSyntax {
         let originalFuncName = funcDecl.name.text
-        let newFuncName = "forceSync_" + originalFuncName
+        let newFuncName = "awaitless_" + originalFuncName
 
         // Extract return type and determine if the function throws
         let (returnTypeSyntax, _) = extractReturnType(funcDecl: funcDecl)
@@ -77,7 +77,7 @@ public struct ForceSyncMacro: PeerMacro {
             body: newBody)
     }
 
-    /// Creates the function body that wraps the async call in Task.forceSync
+    /// Creates the function body that wraps the async call in Task.noasync
     private static func createSyncFunctionBody(
         originalFuncName: String,
         parameters: FunctionParameterListSyntax,
@@ -103,30 +103,30 @@ public struct ForceSyncMacro: PeerMacro {
             ? ExprSyntax(TryExprSyntax(expression: awaitExpression))
             : awaitExpression
 
-        // Create the closure to pass to Task.forceSync
+        // Create the closure to pass to Task.noasync
         let innerClosure = ExprSyntax(
             ClosureExprSyntax(
                 statements: CodeBlockItemListSyntax {
                     CodeBlockItemSyntax(item: .expr(innerCallExpr))
                 }))
 
-        // Create the Task.forceSync call
-        let taskForceSyncCall = createTaskForceSyncCall(with: innerClosure, isThrowing: isThrowing)
+        // Create the Task.noasync call
+        let taskNoasyncCall = createTaskNoasyncCall(with: innerClosure, isThrowing: isThrowing)
 
-        // Create the function body with the Task.forceSync call
+        // Create the function body with the Task.noasync call
         return CodeBlockSyntax(
             statements: CodeBlockItemListSyntax {
-                CodeBlockItemSyntax(item: .expr(ExprSyntax(taskForceSyncCall)))
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(taskNoasyncCall)))
             })
     }
 
-    /// Creates a Task.forceSync function call with the provided closure
-    private static func createTaskForceSyncCall(with closure: ExprSyntax, isThrowing: Bool) -> ExprSyntax {
-        let taskForceSyncCall = FunctionCallExprSyntax(
+    /// Creates a Task.noasync function call with the provided closure
+    private static func createTaskNoasyncCall(with closure: ExprSyntax, isThrowing: Bool) -> ExprSyntax {
+        let taskNoasyncCall = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
                 base: DeclReferenceExprSyntax(baseName: .identifier("Task")),
                 period: .periodToken(),
-                name: .identifier("forceSync")),
+                name: .identifier("noasync")),
             leftParen: .leftParenToken(),
             arguments: LabeledExprListSyntax {
                 LabeledExprSyntax(expression: closure)
@@ -135,9 +135,9 @@ public struct ForceSyncMacro: PeerMacro {
 
         // Add 'try' if the original function throws
         if isThrowing {
-            return ExprSyntax(TryExprSyntax(expression: ExprSyntax(taskForceSyncCall)))
+            return ExprSyntax(TryExprSyntax(expression: ExprSyntax(taskNoasyncCall)))
         } else {
-            return ExprSyntax(taskForceSyncCall)
+            return ExprSyntax(taskNoasyncCall)
         }
     }
 
@@ -177,12 +177,12 @@ public struct ForceSyncMacro: PeerMacro {
             returnClause: returnType.map { ReturnClauseSyntax(type: $0) })
     }
 
-    /// Filters out the ForceSync attribute from the attributes list
+    /// Filters out the Awaitless attribute from the attributes list
     private static func filterAttributes(_ attributes: AttributeListSyntax) -> AttributeListSyntax {
         attributes.filter { attr in
             if case let .attribute(actualAttr) = attr,
                let attrName = actualAttr.attributeName.as(IdentifierTypeSyntax.self),
-               attrName.name.text == "ForceSync"
+               attrName.name.text == "Awaitless"
             {
                 return false
             }
@@ -217,16 +217,16 @@ public struct ForceSyncMacro: PeerMacro {
     }
 }
 
-// MARK: - ForceSyncMacroDiagnostic
+// MARK: - AwaitlessMacroDiagnostic
 
-/// Diagnostics for errors related to the ForceSync macro
-enum ForceSyncMacroDiagnostic: String, DiagnosticMessage {
-    case requiresFunction = "@ForceSync can only be applied to functions"
-    case requiresAsync = "@ForceSync requires the function to be 'async'"
+/// Diagnostics for errors related to the Awaitless macro
+enum AwaitlessMacroDiagnostic: String, DiagnosticMessage {
+    case requiresFunction = "@Awaitless can only be applied to functions"
+    case requiresAsync = "@Awaitless requires the function to be 'async'"
 
     var severity: DiagnosticSeverity { .error }
     var message: String { rawValue }
     var diagnosticID: MessageID {
-        MessageID(domain: "ForceSyncMacros", id: rawValue)
+        MessageID(domain: "AwaitlessMacros", id: rawValue)
     }
 }
