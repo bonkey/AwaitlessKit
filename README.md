@@ -1,26 +1,59 @@
 # AwaitlessKit
 
-Helps you to do bad things: use `async` without `await` and other blasphemies.
-
 - [Overview](#overview)
-- [Features](#features)
-- [Installation](#installation)
 - [Usage](#usage)
-- [Warning](#warning)
+- [Installation](#installation)
+- [Credits](#credits)
 
 ## Overview
 
-AwaitlessKit is a collection of Swift macros and utilities that let you commit unspeakable asynchronous sins - like calling async functions from synchronous contexts without awaiting them properly. The Swift Concurrency Police™ would like to have a word with you.
+`AwaitlessKit` is a collection of Swift macros and utilities that let you commit unspeakable asynchronous sins - like calling `async` functions from synchronous contexts without awaiting them properly.
 
-## Features
+> **Warning!** This package is the equivalent of using a chainsaw to butter your toast. It might work, but think twice if you want to use it in production code. Use responsibly.
 
-- **@Awaitless**: Macro that generates a synchronous version of your async functions
-- **#awaitless()**: Free-standing macro to execute async expressions synchronously
-- **@IsolatedSafe**: Macro for thread-safe access to nonisolated(unsafe) properties
+- `#awaitless()`: Free-standing macro to execute `async` expressions synchronously
+- `@Awaitless`: Macro that generates a synchronous version of your `async` functions
+- `@IsolatedSafe`: Macro to create thread-safe queue for accessing `nonisolated(unsafe)` properties
+
+## Usage
+
+```swift
+import AwaitlessKit
+
+final class FooBar: Sendable {
+    // (1) Mark async functions to generate sync versions
+    @Awaitless
+    private func fetchData() async throws -> Data {
+        // ...
+    }
+
+    public func run() {}
+        // (2a) Now you can call the generated sync version
+        let data = try awaitless_fetchData()
+
+        // (2b) Or use the freestanding macro
+        let result = try #awaitless(try fetchData())
+
+        // Safe access to _unsafeStrings
+        strings.append("and")
+        strings.append("universe")
+
+        // Safe access to _unsafeProcessCount
+        processCount += 1
+    }
+
+    @IsolatedSafe
+    private nonisolated(unsafe) var _unsafeStrings: [String] = ["Hello", "World"]
+    
+    @IsolatedSafe(writable: true)
+    private nonisolated(unsafe) var _unsafeProcessCount: Int = 0
+}
+
+```
 
 ## Installation
 
-Add AwaitlessKit to your `Package.swift`:
+Add `AwaitlessKit` to your `Package.swift`:
 
 ```swift
 dependencies: [
@@ -29,34 +62,13 @@ dependencies: [
 targets: [
     .target(
         name: "YourTarget",
-        dependencies: ["AwaitlessKit"],
-        plugins: [
-            .plugin(name: "AwaitlessKitMacros", package: "AwaitlessKit")
-        ]
+        dependencies: ["AwaitlessKit"]
     )
 ]
 ```
 
-## Usage
-
-```swift
-import AwaitlessKit
-
-// Mark async functions to generate sync versions
-@Awaitless
-private func fetchData() async throws -> Data {
-    // ... async code
-}
-
-// Now you can call the generated sync version
-let data = try awaitless_fetchData()
-
-// Or use the freestanding macro
-let result = #awaitless(await processStuff())
-```
-
-## Warning
-
-This package is the programming equivalent of using a chainsaw to butter your toast. It might work, but it's probably not a good idea for production code. Use responsibly.
-
 > The `AwaitlessApp` included in the repo is just a simple demo app showing these features in action.
+
+## Credits
+
+Wade Tregaskis for `Task.noasync` from [Calling Swift Concurrency async code synchronously in Swift](https://wadetregaskis.com/calling-swift-concurrency-async-code-synchronously-in-swift/)
