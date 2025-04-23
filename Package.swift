@@ -15,14 +15,20 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "AwaitlessCore",
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency"),
+            ]),
+        .target(
             name: "AwaitlessKit",
-            dependencies: ["AwaitlessKitMacros"],
+            dependencies: ["AwaitlessKitMacros", "AwaitlessCore"],
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency"),
             ]),
         .macro(
             name: "AwaitlessKitMacros",
             dependencies: [
+                "AwaitlessCore",
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
             ],

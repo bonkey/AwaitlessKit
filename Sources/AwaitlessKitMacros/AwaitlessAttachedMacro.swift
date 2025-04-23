@@ -8,6 +8,7 @@ import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
+import AwaitlessCore
 
 // MARK: - AwaitlessAttachedMacro
 

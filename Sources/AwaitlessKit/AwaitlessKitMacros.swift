@@ -2,8 +2,10 @@
 // Copyright (c) 2025 Daniel Bauke
 //
 
+import AwaitlessCore
+
 @attached(peer, names: arbitrary)
-public macro Awaitless(deprecated: Bool = false, deprecatedMessage: String? = nil) = #externalMacro(
+public macro Awaitless(_ available: AwaitlessAvailability? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "AwaitlessAttachedMacro")
 
