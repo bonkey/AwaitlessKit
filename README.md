@@ -1,9 +1,12 @@
 # AwaitlessKit
 
 - [Overview](#overview)
+  - [`#awaitless()`](#awaitless)
+  - [`@Awaitless`](#awaitless-1)
+  - [`@IsolatedSafe`](#isolatedsafe)
 - [Usage](#usage)
-  - [Awaitless](#awaitless)
-  - [IsolatedSafe](#isolatedsafe)
+  - [Awaitless](#awaitless-2)
+  - [IsolatedSafe](#isolatedsafe-1)
 - [Installation](#installation)
 - [Credits](#credits)
 
@@ -13,9 +16,23 @@
 
 > **Warning!** This package is the equivalent of using a chainsaw to butter your toast. It might work, but think twice if you want to use it in production code.
 
-- `#awaitless()`: Free-standing macro to execute `async` expressions synchronously
-- `@Awaitless`: Macro that generates a synchronous version of your `async` functions
-- `@IsolatedSafe`: Macro to create thread-safe queue for accessing `nonisolated(unsafe)` properties
+### `#awaitless()`
+
+A freestanding expression macro that executes `async` code blocks synchronously.
+
+Particularly valuable when interfacing with third-party APIs or legacy systems where asynchronous context isn't available, but you need to integrate with your `async` implementations.
+
+### `@Awaitless`
+
+An attached macro that automatically generates synchronous counterparts for your `async` functions.
+
+Ideal for API design patterns requiring both synchronous and asynchronous interfaces, eliminating the need to manually maintain duplicate implementations and providing simple deprecation for the future.
+
+### `@IsolatedSafe`
+
+An attached property macro that implements a serial dispatch queue to provide thread-safe access to `nonisolated(unsafe)` properties.
+
+Offers runtime concurrency protection when compile-time isolation isn't feasible, effectively preventing data races through a property protected with `DispatchQueue`.
 
 ## Usage
 
