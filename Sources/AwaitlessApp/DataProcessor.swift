@@ -12,12 +12,12 @@ final class DataProcessor: Sendable {
         }
 
         #awaitless(processSomething())
-        
+
         awaitless_processSomething()
 
         let processedRiskyData1 = try #awaitless(try processRiskyData())
         let processedRiskyData2 = try awaitless_processRiskyData()
-        
+
         let processedSafeData1 = #awaitless(processSafeData())
         let processedSafeData2 = awaitless_processSafeData()
 
@@ -29,7 +29,7 @@ final class DataProcessor: Sendable {
 
     @IsolatedSafe
     private nonisolated(unsafe) var _unsafeStrings: [String] = ["Hello", "World"]
-    
+
     @IsolatedSafe(writable: true)
     private nonisolated(unsafe) var _unsafeProcessCount: Int = 0
 
@@ -51,8 +51,8 @@ final class DataProcessor: Sendable {
     @discardableResult
     private func processData() async throws -> String {
         processCount += 1
-        let waitTime = round(Double.random(in: 0...0.7) * 10) / 10
-        
+        let waitTime = round(Double.random(in: 0 ... 0.7) * 10) / 10
+
         print("🚥 Starting async operation #\(processCount)... (\(waitTime)s)")
         try await Task.sleep(for: .seconds(waitTime))
         let result = "👍 Processed data from processData (count: \(processCount))"

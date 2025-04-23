@@ -243,8 +243,7 @@ public struct IsolatedSafeMacro: PeerMacro {
                         ExprSyntax("""
                         \(raw: queueName).async(flags: .barrier) { self.\(raw: unsafePropertyName) = newValue }
                         """)
-                    })
-            )
+                    }))
         }
 
         // Create the computed property with get and set accessors

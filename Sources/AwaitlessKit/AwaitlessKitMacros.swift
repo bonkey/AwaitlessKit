@@ -12,7 +12,6 @@ public macro awaitless<T>(_ expression: T) -> T = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "AwaitlessFreestandingMacro")
 
-
 @attached(peer, names: arbitrary)
 public macro IsolatedSafe(writable: Bool = false, queueName: String? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",

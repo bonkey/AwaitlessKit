@@ -2,12 +2,12 @@
 // Copyright (c) 2025 Daniel Bauke
 //
 
+import Foundation
 import SwiftCompilerPlugin
 import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
-import Foundation
 
 // MARK: - AwaitlessAttachedMacro
 
@@ -49,7 +49,9 @@ public struct AwaitlessAttachedMacro: PeerMacro {
                 if let label = argument.label?.text {
                     if label == "deprecated", let expr = argument.expression.as(BooleanLiteralExprSyntax.self) {
                         isDeprecated = expr.literal.tokenKind == .keyword(.true)
-                    } else if label == "deprecatedMessage", let expr = argument.expression.as(StringLiteralExprSyntax.self) {
+                    } else if label == "deprecatedMessage",
+                              let expr = argument.expression.as(StringLiteralExprSyntax.self)
+                    {
                         deprecatedMessage = expr.segments.description.trimmingCharacters(in: .whitespacesAndNewlines)
                     }
                 }
@@ -57,7 +59,10 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         }
 
         // Create the new synchronous function
-        let syncFunction = createSyncFunction(from: funcDecl, deprecated: isDeprecated, deprecatedMessage: deprecatedMessage)
+        let syncFunction = createSyncFunction(
+            from: funcDecl,
+            deprecated: isDeprecated,
+            deprecatedMessage: deprecatedMessage)
         return [DeclSyntax(syncFunction)]
     }
 
@@ -137,8 +142,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
                         label: .identifier("renamed"),
                         colon: .colonToken(),
                         expression: StringLiteralExprSyntax(content: originalFuncName))
-                }
-            ),
+                }),
             rightParen: .rightParenToken())
     }
 

@@ -51,10 +51,7 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
                         StmtSyntax(
                             ReturnStmtSyntax(
                                 returnKeyword: .keyword(.return, trailingTrivia: .space),
-                                expression: finalExpr
-                            )
-                        )
-                    ))
+                                expression: finalExpr))))
                 }))
 
         // Create the Task.noasync call with the closure and return the result directly
@@ -68,8 +65,7 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
                 arguments: LabeledExprListSyntax {
                     LabeledExprSyntax(expression: closure)
                 },
-                rightParen: .rightParenToken())
-        )
+                rightParen: .rightParenToken()))
     }
 
     /// Check if an expression contains try by examining the syntax tree
