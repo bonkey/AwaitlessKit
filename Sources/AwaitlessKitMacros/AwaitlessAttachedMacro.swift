@@ -7,6 +7,7 @@ import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
+import Foundation
 
 // MARK: - AwaitlessAttachedMacro
 
@@ -39,13 +40,34 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             return []
         }
 
+        // Extract deprecated and deprecatedMessage arguments from the attribute
+        var isDeprecated = false
+        var deprecatedMessage: String? = nil
+
+        if case let .argumentList(arguments) = node.arguments {
+            for argument in arguments {
+                if let label = argument.label?.text {
+                    if label == "deprecated", let expr = argument.expression.as(BooleanLiteralExprSyntax.self) {
+                        isDeprecated = expr.literal.tokenKind == .keyword(.true)
+                    } else if label == "deprecatedMessage", let expr = argument.expression.as(StringLiteralExprSyntax.self) {
+                        deprecatedMessage = expr.segments.description.trimmingCharacters(in: .whitespacesAndNewlines)
+                    }
+                }
+            }
+        }
+
         // Create the new synchronous function
-        let syncFunction = createSyncFunction(from: funcDecl)
+        let syncFunction = createSyncFunction(from: funcDecl, deprecated: isDeprecated, deprecatedMessage: deprecatedMessage)
         return [DeclSyntax(syncFunction)]
     }
 
     /// Creates a synchronous version of the provided async function
-    private static func createSyncFunction(from funcDecl: FunctionDeclSyntax) -> FunctionDeclSyntax {
+    private static func createSyncFunction(
+        from funcDecl: FunctionDeclSyntax,
+        deprecated: Bool,
+        deprecatedMessage: String?)
+        -> FunctionDeclSyntax
+    {
         let originalFuncName = funcDecl.name.text
         let newFuncName = "awaitless_" + originalFuncName
 
@@ -65,9 +87,20 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             isThrowing: isThrowing,
             returnType: returnTypeSyntax)
 
+        // Create attributes for the new function
+        var attributes = filterAttributes(funcDecl.attributes)
+
+        // Add deprecation attribute if needed
+        if deprecated {
+            let deprecationAttr = createDeprecationAttribute(
+                originalFuncName: originalFuncName,
+                deprecatedMessage: deprecatedMessage)
+            attributes = attributes + [AttributeListSyntax.Element(deprecationAttr)]
+        }
+
         // Create the new function, copying most attributes from the original
         return FunctionDeclSyntax(
-            attributes: filterAttributes(funcDecl.attributes),
+            attributes: attributes,
             modifiers: funcDecl.modifiers,
             funcKeyword: .keyword(.func),
             name: .identifier(newFuncName),
@@ -75,6 +108,38 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             signature: newSignature,
             genericWhereClause: funcDecl.genericWhereClause,
             body: newBody)
+    }
+
+    /// Creates a deprecation attribute for the function
+    private static func createDeprecationAttribute(
+        originalFuncName: String,
+        deprecatedMessage: String?)
+        -> AttributeSyntax
+    {
+        // Create default message if none provided
+        let message = deprecatedMessage ?? "Use async \(originalFuncName) function instead"
+
+        // Format as: @available(*, deprecated, message: "<message>", renamed: "<originalFunc>")
+        return AttributeSyntax(
+            attributeName: IdentifierTypeSyntax(name: .identifier("available")),
+            leftParen: .leftParenToken(),
+            arguments: .argumentList(
+                LabeledExprListSyntax {
+                    LabeledExprSyntax(
+                        expression: DeclReferenceExprSyntax(baseName: .stringSegment("*")))
+                    LabeledExprSyntax(
+                        expression: DeclReferenceExprSyntax(baseName: .identifier("deprecated")))
+                    LabeledExprSyntax(
+                        label: .identifier("message"),
+                        colon: .colonToken(),
+                        expression: StringLiteralExprSyntax(content: message))
+                    LabeledExprSyntax(
+                        label: .identifier("renamed"),
+                        colon: .colonToken(),
+                        expression: StringLiteralExprSyntax(content: originalFuncName))
+                }
+            ),
+            rightParen: .rightParenToken())
     }
 
     /// Creates the function body that wraps the async call in Task.noasync

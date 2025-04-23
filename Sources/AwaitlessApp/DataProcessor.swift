@@ -13,6 +13,8 @@ final class DataProcessor: Sendable {
 
         #awaitless(processSomething())
         
+        awaitless_processSomething()
+
         let processedRiskyData1 = try #awaitless(try processRiskyData())
         let processedRiskyData2 = try awaitless_processRiskyData()
         
@@ -31,7 +33,7 @@ final class DataProcessor: Sendable {
     @IsolatedSafe(writable: true)
     private nonisolated(unsafe) var _unsafeProcessCount: Int = 0
 
-    @Awaitless
+    @Awaitless(deprecated: true)
     private func processSomething() async {
         _ = try? await processData()
     }

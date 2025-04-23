@@ -3,7 +3,7 @@
 //
 
 @attached(peer, names: arbitrary)
-public macro Awaitless() = #externalMacro(
+public macro Awaitless(deprecated: Bool = false, deprecatedMessage: String? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "AwaitlessAttachedMacro")
 
