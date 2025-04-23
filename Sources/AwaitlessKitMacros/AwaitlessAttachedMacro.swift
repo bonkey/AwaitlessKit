@@ -2,13 +2,13 @@
 // Copyright (c) 2025 Daniel Bauke
 //
 
+import AwaitlessCore
 import Foundation
 import SwiftCompilerPlugin
 import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
-import AwaitlessCore
 
 // MARK: - AwaitlessAttachedMacro
 
@@ -41,19 +41,36 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             return []
         }
 
-        // Extract deprecated and deprecatedMessage arguments from the attribute
-        var isDeprecated = false
-        var deprecatedMessage: String? = nil
+        // Extract availability from the attribute
+        var availability: AwaitlessAvailability? = nil
 
-        if case let .argumentList(arguments) = node.arguments {
-            for argument in arguments {
-                if let label = argument.label?.text {
-                    if label == "deprecated", let expr = argument.expression.as(BooleanLiteralExprSyntax.self) {
-                        isDeprecated = expr.literal.tokenKind == .keyword(.true)
-                    } else if label == "deprecatedMessage",
-                              let expr = argument.expression.as(StringLiteralExprSyntax.self)
-                    {
-                        deprecatedMessage = expr.segments.description.trimmingCharacters(in: .whitespacesAndNewlines)
+        if case let .argumentList(arguments) = node.arguments, let firstArg = arguments.first {
+            if let memberAccess = firstArg.expression.as(MemberAccessExprSyntax.self) {
+                // Handle cases like: @Awaitless(.deprecated) or @Awaitless(.unavailable)
+                if memberAccess.declName.baseName.text == "deprecated" {
+                    availability = .deprecated()
+                } else if memberAccess.declName.baseName.text == "unavailable" {
+                    availability = .unavailable()
+                }
+            } else if let functionCall = firstArg.expression.as(FunctionCallExprSyntax.self),
+                      let calledExpr = functionCall.calledExpression.as(MemberAccessExprSyntax.self)
+            {
+                // Handle cases like: @Awaitless(.deprecated("message")) or @Awaitless(.unavailable("message"))
+                if calledExpr.declName.baseName.text == "deprecated" {
+                    if let firstArgument = functionCall.arguments.first?.expression.as(StringLiteralExprSyntax.self) {
+                        let message = firstArgument.segments.description
+                            .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+                        availability = .deprecated(message)
+                    } else {
+                        availability = .deprecated()
+                    }
+                } else if calledExpr.declName.baseName.text == "unavailable" {
+                    if let firstArgument = functionCall.arguments.first?.expression.as(StringLiteralExprSyntax.self) {
+                        let message = firstArgument.segments.description
+                            .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+                        availability = .unavailable(message)
+                    } else {
+                        availability = .unavailable()
                     }
                 }
             }
@@ -62,16 +79,14 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         // Create the new synchronous function
         let syncFunction = createSyncFunction(
             from: funcDecl,
-            deprecated: isDeprecated,
-            deprecatedMessage: deprecatedMessage)
+            availability: availability)
         return [DeclSyntax(syncFunction)]
     }
 
     /// Creates a synchronous version of the provided async function
     private static func createSyncFunction(
         from funcDecl: FunctionDeclSyntax,
-        deprecated: Bool,
-        deprecatedMessage: String?)
+        availability: AwaitlessAvailability?)
         -> FunctionDeclSyntax
     {
         let originalFuncName = funcDecl.name.text
@@ -96,12 +111,12 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         // Create attributes for the new function
         var attributes = filterAttributes(funcDecl.attributes)
 
-        // Add deprecation attribute if needed
-        if deprecated {
-            let deprecationAttr = createDeprecationAttribute(
+        // Add availability attribute if needed
+        if let availability {
+            let availabilityAttr = createAvailabilityAttribute(
                 originalFuncName: originalFuncName,
-                deprecatedMessage: deprecatedMessage)
-            attributes = attributes + [AttributeListSyntax.Element(deprecationAttr)]
+                availability: availability)
+            attributes = attributes + [AttributeListSyntax.Element(availabilityAttr)]
         }
 
         // Create the new function, copying most attributes from the original
@@ -116,35 +131,59 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             body: newBody)
     }
 
-    /// Creates a deprecation attribute for the function
-    private static func createDeprecationAttribute(
+    /// Creates an availability attribute for the function
+    private static func createAvailabilityAttribute(
         originalFuncName: String,
-        deprecatedMessage: String?)
+        availability: AwaitlessAvailability)
         -> AttributeSyntax
     {
-        // Create default message if none provided
-        let message = deprecatedMessage ?? "Use async \(originalFuncName) function instead"
+        switch availability {
+        case let .deprecated(messageOpt):
+            // Create default message if none provided
+            let message = messageOpt ?? "Use async \(originalFuncName) function instead"
 
-        // Format as: @available(*, deprecated, message: "<message>", renamed: "<originalFunc>")
-        return AttributeSyntax(
-            attributeName: IdentifierTypeSyntax(name: .identifier("available")),
-            leftParen: .leftParenToken(),
-            arguments: .argumentList(
-                LabeledExprListSyntax {
-                    LabeledExprSyntax(
-                        expression: DeclReferenceExprSyntax(baseName: .stringSegment("*")))
-                    LabeledExprSyntax(
-                        expression: DeclReferenceExprSyntax(baseName: .identifier("deprecated")))
-                    LabeledExprSyntax(
-                        label: .identifier("message"),
-                        colon: .colonToken(),
-                        expression: StringLiteralExprSyntax(content: message))
-                    LabeledExprSyntax(
-                        label: .identifier("renamed"),
-                        colon: .colonToken(),
-                        expression: StringLiteralExprSyntax(content: originalFuncName))
-                }),
-            rightParen: .rightParenToken())
+            // Format as: @available(*, deprecated, message: "<message>", renamed: "<originalFunc>")
+            return AttributeSyntax(
+                attributeName: IdentifierTypeSyntax(name: .identifier("available")),
+                leftParen: .leftParenToken(),
+                arguments: .argumentList(
+                    LabeledExprListSyntax {
+                        LabeledExprSyntax(
+                            expression: DeclReferenceExprSyntax(baseName: .stringSegment("*")))
+                        LabeledExprSyntax(
+                            expression: DeclReferenceExprSyntax(baseName: .identifier("deprecated")))
+                        LabeledExprSyntax(
+                            label: .identifier("message"),
+                            colon: .colonToken(),
+                            expression: StringLiteralExprSyntax(content: message))
+                        LabeledExprSyntax(
+                            label: .identifier("renamed"),
+                            colon: .colonToken(),
+                            expression: StringLiteralExprSyntax(content: originalFuncName))
+                    }),
+                rightParen: .rightParenToken())
+
+        case let .unavailable(messageOpt):
+            // Create default message if none provided
+            let message = messageOpt ?? "This synchronous version of \(originalFuncName) is unavailable"
+
+            // Format as: @available(*, unavailable, message: "<message>")
+            return AttributeSyntax(
+                attributeName: IdentifierTypeSyntax(name: .identifier("available")),
+                leftParen: .leftParenToken(),
+                arguments: .argumentList(
+                    LabeledExprListSyntax {
+                        LabeledExprSyntax(
+                            expression: DeclReferenceExprSyntax(baseName: .stringSegment("*")))
+                        LabeledExprSyntax(
+                            expression: DeclReferenceExprSyntax(baseName: .identifier("unavailable")))
+                        LabeledExprSyntax(
+                            label: .identifier("message"),
+                            colon: .colonToken(),
+                            expression: StringLiteralExprSyntax(content: message))
+                    }),
+                rightParen: .rightParenToken())
+        }
     }
 
     /// Creates the function body that wraps the async call in Task.noasync

@@ -3,11 +3,15 @@
 //
 
 @testable import AwaitlessKit
-import Testing
 import Dispatch
 import Foundation
+import Testing
 
 struct TaskNoAsyncTests {
+    enum TestError: Error, Equatable {
+        case simpleError
+    }
+
     @Test("Execute basic async operation synchronously")
     func basicExecution() throws {
         let result = try Task.noasync {
@@ -49,10 +53,6 @@ struct TaskNoAsyncTests {
         #expect(wasExecuted)
     }
 
-    enum TestError: Error, Equatable {
-        case simpleError
-    }
-
     @Test("Propagate errors correctly")
     func errorPropagation() throws {
         #expect(throws: TestError.simpleError) {
@@ -79,15 +79,15 @@ struct TaskNoAsyncTests {
         let count = 1000
         var results: [Int] = []
 
-        for i in 0..<count {
+        for i in 0 ..< count {
             let result = try Task.noasync {
-                try await Task.sleep(for: .milliseconds(Double.random(in: 1...5)))
+                try await Task.sleep(for: .milliseconds(Double.random(in: 1 ... 5)))
                 return i
             }
             results.append(result)
         }
 
-        let expectedResults = Array(0..<count)
+        let expectedResults = Array(0 ..< count)
 
         // Also verify array as a whole
         #expect(results == expectedResults)

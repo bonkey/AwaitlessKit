@@ -1,10 +1,6 @@
 //
-//  AwaitlessAvailability.swift
-//  AwaitlessKit
+// Copyright (c) 2025 Daniel Bauke
 //
-//  Created by Daniel Bauke on 23.04.25.
-//
-
 
 import Foundation
 

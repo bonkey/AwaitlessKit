@@ -33,7 +33,7 @@ final class DataProcessor: Sendable {
     @IsolatedSafe(writable: true)
     private nonisolated(unsafe) var _unsafeProcessCount: Int = 0
 
-    @Awaitless(deprecated: true)
+    @Awaitless(.deprecated())
     private func processSomething() async {
         _ = try? await processData()
     }

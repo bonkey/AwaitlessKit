@@ -67,7 +67,7 @@ struct AwaitlessAttachedTests {
     func deprecated() {
         assertMacro {
             """
-            @Awaitless(deprecated: true)
+            @Awaitless(.unavailable())
             func getData() async -> Data {
                 await Task.sleep(nanoseconds: 1_000_000)
                 return Data()
@@ -80,7 +80,7 @@ struct AwaitlessAttachedTests {
                 return Data()
             }
 
-            @available(*, deprecated, message: "Use async getData function instead", renamed: "getData") func awaitless_getData() -> Data {
+            @available(*, unavailable, message: "This synchronous version of getData is unavailable") func awaitless_getData() -> Data {
                 Task.noasync({
                         await getData()
                     })
@@ -93,7 +93,7 @@ struct AwaitlessAttachedTests {
     func customMessage() {
         assertMacro {
             """
-            @Awaitless(deprecated: true, deprecatedMessage: "This sync version will be removed in v2.0")
+            @Awaitless(.deprecated("This sync version will be removed in v2.0"))
             func processItems() async throws -> Bool {
                 try await Task.sleep(nanoseconds: 1_000_000)
                 return true
