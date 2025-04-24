@@ -1,3 +1,5 @@
+[![Swift Tests](https://github.com/bonkey/AwaitlessKit/actions/workflows/test.yml/badge.svg)](https://github.com/bonkey/AwaitlessKit/actions/workflows/test.yml)
+
 # AwaitlessKit
 
 - [Overview](#overview)
