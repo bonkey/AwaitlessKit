@@ -3,6 +3,20 @@
 import CompilerPluginSupport
 import PackageDescription
 
+let swiftSettings: [SwiftSetting] = [
+    .enableUpcomingFeature("ConciseMagicFile"),
+    .enableUpcomingFeature("ForwardTrailingClosures"),
+    .enableUpcomingFeature("StrictConcurrency"),
+    .enableUpcomingFeature("BareSlashRegexLiterals"),
+    .enableUpcomingFeature("DeprecateApplicationMain"),
+    .enableUpcomingFeature("ImportObjcForwardDeclarations"),
+    .enableUpcomingFeature("DisableOutwardActorInference"),
+    .enableUpcomingFeature("InternalImportsByDefault"),
+    .enableUpcomingFeature("IsolatedDefaultValues"),
+    .enableUpcomingFeature("GlobalConcurrency"),
+    .unsafeFlags(["-warn-concurrency", "-enable-actor-data-race-checks"]),
+]
+
 let package = Package(
     name: "AwaitlessKit",
     platforms: [.macOS(.v14), .iOS(.v15), .tvOS(.v13), .watchOS(.v10), .macCatalyst(.v13)],
@@ -14,17 +28,14 @@ let package = Package(
         .package(url: "git@github.com:pointfreeco/swift-macro-testing.git", from: "0.6.2"),
     ],
     targets: [
-        .target(
-            name: "AwaitlessCore",
-            swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency"),
-            ]),
+        .executableTarget(
+            name: "AwaitlessApp",
+            dependencies: ["AwaitlessKit"],
+            swiftSettings: swiftSettings),
         .target(
             name: "AwaitlessKit",
             dependencies: ["AwaitlessKitMacros", "AwaitlessCore"],
-            swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency"),
-            ]),
+            swiftSettings: swiftSettings),
         .macro(
             name: "AwaitlessKitMacros",
             dependencies: [
@@ -32,15 +43,10 @@ let package = Package(
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
             ],
-            swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency"),
-            ]),
-        .executableTarget(
-            name: "AwaitlessApp",
-            dependencies: ["AwaitlessKit"],
-            swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency"),
-            ]),
+            swiftSettings: swiftSettings),
+        .target(
+            name: "AwaitlessCore",
+            swiftSettings: swiftSettings),
         .testTarget(
             name: "AwaitlessKitTests",
             dependencies: [
@@ -49,7 +55,5 @@ let package = Package(
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
                 .product(name: "MacroTesting", package: "swift-macro-testing"),
             ],
-            swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency"),
-            ]),
+            swiftSettings: swiftSettings),
     ])

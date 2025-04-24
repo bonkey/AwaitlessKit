@@ -2,12 +2,14 @@
 // Copyright (c) 2025 Daniel Bauke
 //
 
+public import SwiftSyntax
+public import SwiftSyntaxMacros
+
+import AwaitlessCore
 import Foundation
 import SwiftCompilerPlugin
 import SwiftDiagnostics
-import SwiftSyntax
 import SwiftSyntaxBuilder
-import SwiftSyntaxMacros
 
 // MARK: - AccessLevel
 
