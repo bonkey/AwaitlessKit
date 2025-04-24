@@ -6,6 +6,7 @@ import AwaitlessKit
 import Foundation
 
 final class DataProcessor: Sendable {
+    
     func run() throws {
         for string in strings {
             print(string)

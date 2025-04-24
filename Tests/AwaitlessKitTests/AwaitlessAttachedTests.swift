@@ -28,7 +28,7 @@ struct AwaitlessAttachedTests {
                 return ["Hello", "World"]
             }
 
-            func awaitless_fetchData() throws -> [String] {
+            @available(*, noasync) func awaitless_fetchData() throws -> [String] {
                 try Task.noasync({
                         try await fetchData()
                     })
@@ -54,7 +54,7 @@ struct AwaitlessAttachedTests {
                 return loudly ? "HELLO, \(name.uppercased())!" : "Hello, \(name)."
             }
 
-            func awaitless_greet(name: String, loudly: Bool = false) -> String {
+            @available(*, noasync) func awaitless_greet(name: String, loudly: Bool = false) -> String {
                 Task.noasync({
                         await greet(name name loudly loudly)
                     })
@@ -80,7 +80,7 @@ struct AwaitlessAttachedTests {
                 return Data()
             }
 
-            @available(*, unavailable, message: "This synchronous version of getData is unavailable") func awaitless_getData() -> Data {
+            @available(*, noasync) @available(*, unavailable, message: "This synchronous version of getData is unavailable") func awaitless_getData() -> Data {
                 Task.noasync({
                         await getData()
                     })
@@ -106,7 +106,7 @@ struct AwaitlessAttachedTests {
                 return true
             }
 
-            @available(*, deprecated, message: "This sync version will be removed in v2.0", renamed: "processItems") func awaitless_processItems() throws -> Bool {
+            @available(*, noasync) @available(*, deprecated, message: "This sync version will be removed in v2.0", renamed: "processItems") func awaitless_processItems() throws -> Bool {
                 try Task.noasync({
                         try await processItems()
                     })

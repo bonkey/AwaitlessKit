@@ -111,6 +111,10 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         // Create attributes for the new function
         var attributes = filterAttributes(funcDecl.attributes)
 
+        // Add noasync attribute to all generated functions
+        let noasyncAttr = createNoasyncAttribute()
+        attributes = attributes + [AttributeListSyntax.Element(noasyncAttr)]
+
         // Add availability attribute if needed
         if let availability {
             let availabilityAttr = createAvailabilityAttribute(
@@ -129,6 +133,21 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             signature: newSignature,
             genericWhereClause: funcDecl.genericWhereClause,
             body: newBody)
+    }
+
+    /// Creates a noasync attribute for the function
+    private static func createNoasyncAttribute() -> AttributeSyntax {
+        return AttributeSyntax(
+            attributeName: IdentifierTypeSyntax(name: .identifier("available")),
+            leftParen: .leftParenToken(),
+            arguments: .argumentList(
+                LabeledExprListSyntax {
+                    LabeledExprSyntax(
+                        expression: DeclReferenceExprSyntax(baseName: .stringSegment("*")))
+                    LabeledExprSyntax(
+                        expression: DeclReferenceExprSyntax(baseName: .identifier("noasync")))
+                }),
+            rightParen: .rightParenToken())
     }
 
     /// Creates an availability attribute for the function

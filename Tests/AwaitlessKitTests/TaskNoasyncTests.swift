@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Daniel Bauke
 //
 
-@testable import AwaitlessKit
+import AwaitlessCore
 import Dispatch
 import Foundation
 import Testing
