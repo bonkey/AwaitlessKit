@@ -44,18 +44,42 @@ Offers runtime concurrency protection when compile-time isolation isn't feasible
 import AwaitlessKit
 
 final class AwaitlessExample: Sendable {
-    // (1) Mark async functions to generate synchronous versions
+    // Basic usage - generates a sync version with same name
     @Awaitless
-    private func fetchData() async throws -> Data {
-        // ...
+    func fetchData() async throws -> Data {
+        // ...async implementation
+    }
+
+    func onlyAsyncFetchData() async throws -> Data {
+        // ...async implementation
+    }
+
+    // With deprecation warning
+    @Awaitless(.deprecated("Synchronous API will be phased out, migrate to async version"))
+    func processItems() async throws -> [String] {
+        // ...async implementation
+    }
+
+    // Make sync version unavailable
+    @Awaitless(.unavailable("Synchronous API has been removed, use async version"))
+    func loadResources() async throws -> [Resource] {
+        // ...async implementation
+    }
+
+    // Custom prefix for generated function
+    @Awaitless(prefix: "sync_")
+    func loadConfig() async -> Config {
+        // ...async implementation
     }
 
     public func run() {
-        // (2a) Now you can call the generated sync version
-        let data = try awaitless_fetchData()
+        // Call generated sync versions
+        let data = try fetchData()
+        let items = try processItems() // Shows deprecation warning
+        let config = sync_loadConfig()
 
-        // (2b) Or use the freestanding macro
-        let result = try #awaitless(try fetchData())
+        // Or use the freestanding macro
+        let result = try #awaitless(try onlyAsyncFetchData())
     }
 }
 ```

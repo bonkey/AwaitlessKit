@@ -28,7 +28,7 @@ struct AwaitlessAttachedTests {
                 return ["Hello", "World"]
             }
 
-            @available(*, noasync) func awaitless_fetchData() throws -> [String] {
+            @available(*, noasync) func fetchData() throws -> [String] {
                 try Task.noasync({
                         try await fetchData()
                     })
@@ -54,7 +54,7 @@ struct AwaitlessAttachedTests {
                 return loudly ? "HELLO, \(name.uppercased())!" : "Hello, \(name)."
             }
 
-            @available(*, noasync) func awaitless_greet(name: String, loudly: Bool = false) -> String {
+            @available(*, noasync) func greet(name: String, loudly: Bool = false) -> String {
                 Task.noasync({
                         await greet(name name loudly loudly)
                     })
@@ -80,7 +80,7 @@ struct AwaitlessAttachedTests {
                 return Data()
             }
 
-            @available(*, noasync) @available(*, unavailable, message: "This synchronous version of getData is unavailable") func awaitless_getData() -> Data {
+            @available(*, noasync) @available(*, unavailable, message: "This synchronous version of getData is unavailable") func getData() -> Data {
                 Task.noasync({
                         await getData()
                     })
@@ -106,9 +106,111 @@ struct AwaitlessAttachedTests {
                 return true
             }
 
-            @available(*, noasync) @available(*, deprecated, message: "This sync version will be removed in v2.0", renamed: "processItems") func awaitless_processItems() throws -> Bool {
+            @available(*, noasync) @available(*, deprecated, message: "This sync version will be removed in v2.0", renamed: "processItems") func processItems() throws -> Bool {
                 try Task.noasync({
                         try await processItems()
+                    })
+            }
+            """
+        }
+    }
+
+    @Test("Handle deprecated without message")
+    func deprecatedNoMessage() {
+        assertMacro {
+            """
+            @Awaitless(.deprecated("This sync version will be removed in v2.0"))
+            func fetchItems() async -> [Int] {
+                await Task.sleep(nanoseconds: 1_000_000)
+                return [1, 2, 3]
+            }
+            """
+        } expansion: {
+            """
+            func fetchItems() async -> [Int] {
+                await Task.sleep(nanoseconds: 1_000_000)
+                return [1, 2, 3]
+            }
+
+            @available(*, noasync) @available(*, deprecated, message: "This sync version will be removed in v2.0", renamed: "fetchItems") func fetchItems() -> [Int] {
+                Task.noasync({
+                        await fetchItems()
+                    })
+            }
+            """
+        }
+    }
+
+    @Test("Handle unavailable with custom message")
+    func unavailableCustomMessage() {
+        assertMacro {
+            """
+            @Awaitless(.unavailable("Please use the async version instead"))
+            func loadConfig() async throws -> [String: Any] {
+                try await Task.sleep(nanoseconds: 1_000_000)
+                return ["key": "value"]
+            }
+            """
+        } expansion: {
+            """
+            func loadConfig() async throws -> [String: Any] {
+                try await Task.sleep(nanoseconds: 1_000_000)
+                return ["key": "value"]
+            }
+
+            @available(*, noasync) @available(*, unavailable, message: "Please use the async version instead") func loadConfig() throws -> [String: Any] {
+                try Task.noasync({
+                        try await loadConfig()
+                    })
+            }
+            """
+        }
+    }
+
+    @Test("Handle empty prefix")
+    func emptyPrefix() {
+        assertMacro {
+            """
+            @Awaitless(prefix: "")
+            func processQueue() async throws -> Void {
+                try await Task.sleep(nanoseconds: 1_000_000)
+            }
+            """
+        } expansion: {
+            """
+            func processQueue() async throws -> Void {
+                try await Task.sleep(nanoseconds: 1_000_000)
+            }
+
+            @available(*, noasync) func processQueue() throws -> Void {
+                try Task.noasync({
+                        try await processQueue()
+                    })
+            }
+            """
+        }
+    }
+
+    @Test("Handle custom prefix")
+    func customPrefix() {
+        assertMacro {
+            """
+            @Awaitless(prefix: "sync_")
+            func downloadFile(url: URL) async throws -> Data {
+                try await Task.sleep(nanoseconds: 1_000_000)
+                return Data()
+            }
+            """
+        } expansion: {
+            """
+            func downloadFile(url: URL) async throws -> Data {
+                try await Task.sleep(nanoseconds: 1_000_000)
+                return Data()
+            }
+
+            @available(*, noasync) func sync_downloadFile(url: URL) throws -> Data {
+                try Task.noasync({
+                        try await downloadFile(url url)
                     })
             }
             """

@@ -6,7 +6,6 @@ import AwaitlessKit
 import Foundation
 
 final class DataProcessor: Sendable {
-    
     func run() throws {
         for string in strings {
             print(string)
@@ -14,13 +13,11 @@ final class DataProcessor: Sendable {
 
         #awaitless(processSomething())
 
-        awaitless_processSomething()
-
         let processedRiskyData1 = try #awaitless(try processRiskyData())
-        let processedRiskyData2 = try awaitless_processRiskyData()
+        let processedRiskyData2 = try processRiskyData()
 
         let processedSafeData1 = #awaitless(processSafeData())
-        let processedSafeData2 = awaitless_processSafeData()
+        let processedSafeData2 = processSafeData()
 
         print(processedRiskyData1)
         print(processedRiskyData2)
@@ -39,7 +36,7 @@ final class DataProcessor: Sendable {
         _ = try? await processData()
     }
 
-    @Awaitless
+    @Awaitless(prefix: "")
     private func processRiskyData() async throws -> String {
         try await processData()
     }

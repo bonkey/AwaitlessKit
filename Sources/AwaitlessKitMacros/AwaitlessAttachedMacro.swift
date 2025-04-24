@@ -4,7 +4,6 @@
 
 public import SwiftSyntax
 public import SwiftSyntaxMacros
-
 import AwaitlessCore
 import Foundation
 import SwiftCompilerPlugin
@@ -14,7 +13,7 @@ import SwiftSyntaxBuilder
 // MARK: - AwaitlessAttachedMacro
 
 /// A macro that generates a synchronous version of an async function.
-/// This macro creates a twin function with prefix "awaitless_" that wraps the original
+/// This macro creates a twin function with specified prefix that wraps the original
 /// async function in a Task.noasync call, making it callable from synchronous contexts.
 public struct AwaitlessAttachedMacro: PeerMacro {
     public static func expansion(
@@ -42,36 +41,58 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             return []
         }
 
-        // Extract availability from the attribute
+        // Extract prefix and availability from the attribute
+        var prefix = ""
         var availability: AwaitlessAvailability? = nil
 
-        if case let .argumentList(arguments) = node.arguments, let firstArg = arguments.first {
-            if let memberAccess = firstArg.expression.as(MemberAccessExprSyntax.self) {
-                // Handle cases like: @Awaitless(.deprecated) or @Awaitless(.unavailable)
-                if memberAccess.declName.baseName.text == "deprecated" {
-                    availability = .deprecated()
-                } else if memberAccess.declName.baseName.text == "unavailable" {
-                    availability = .unavailable()
+        if case let .argumentList(arguments) = node.arguments {
+            // Check for prefix parameter
+            for argument in arguments {
+                let labeledExpr = argument
+                if labeledExpr.label?.text == "prefix",
+                   let stringLiteral = labeledExpr.expression.as(StringLiteralExprSyntax.self)
+                {
+                    // Extract prefix from the string literal
+                    prefix = stringLiteral.segments.description
+                        .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
                 }
-            } else if let functionCall = firstArg.expression.as(FunctionCallExprSyntax.self),
-                      let calledExpr = functionCall.calledExpression.as(MemberAccessExprSyntax.self)
+            }
+
+            // Check for availability parameter (first unlabeled argument)
+            if let firstArg = arguments.first,
+               !(firstArg.label?.text == "prefix")
             {
-                // Handle cases like: @Awaitless(.deprecated("message")) or @Awaitless(.unavailable("message"))
-                if calledExpr.declName.baseName.text == "deprecated" {
-                    if let firstArgument = functionCall.arguments.first?.expression.as(StringLiteralExprSyntax.self) {
-                        let message = firstArgument.segments.description
-                            .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
-                        availability = .deprecated(message)
-                    } else {
+                if let memberAccess = firstArg.expression.as(MemberAccessExprSyntax.self) {
+                    // Handle cases like: @Awaitless(.deprecated) or @Awaitless(.unavailable)
+                    if memberAccess.declName.baseName.text == "deprecated" {
                         availability = .deprecated()
-                    }
-                } else if calledExpr.declName.baseName.text == "unavailable" {
-                    if let firstArgument = functionCall.arguments.first?.expression.as(StringLiteralExprSyntax.self) {
-                        let message = firstArgument.segments.description
-                            .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
-                        availability = .unavailable(message)
-                    } else {
+                    } else if memberAccess.declName.baseName.text == "unavailable" {
                         availability = .unavailable()
+                    }
+                } else if let functionCall = firstArg.expression.as(FunctionCallExprSyntax.self),
+                          let calledExpr = functionCall.calledExpression.as(MemberAccessExprSyntax.self)
+                {
+                    // Handle cases like: @Awaitless(.deprecated("message")) or @Awaitless(.unavailable("message"))
+                    if calledExpr.declName.baseName.text == "deprecated" {
+                        if let firstArgument = functionCall.arguments.first?.expression
+                            .as(StringLiteralExprSyntax.self)
+                        {
+                            let message = firstArgument.segments.description
+                                .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+                            availability = .deprecated(message)
+                        } else {
+                            availability = .deprecated()
+                        }
+                    } else if calledExpr.declName.baseName.text == "unavailable" {
+                        if let firstArgument = functionCall.arguments.first?.expression
+                            .as(StringLiteralExprSyntax.self)
+                        {
+                            let message = firstArgument.segments.description
+                                .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+                            availability = .unavailable(message)
+                        } else {
+                            availability = .unavailable()
+                        }
                     }
                 }
             }
@@ -80,6 +101,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         // Create the new synchronous function
         let syncFunction = createSyncFunction(
             from: funcDecl,
+            prefix: prefix,
             availability: availability)
         return [DeclSyntax(syncFunction)]
     }
@@ -87,11 +109,12 @@ public struct AwaitlessAttachedMacro: PeerMacro {
     /// Creates a synchronous version of the provided async function
     private static func createSyncFunction(
         from funcDecl: FunctionDeclSyntax,
+        prefix: String,
         availability: AwaitlessAvailability?)
         -> FunctionDeclSyntax
     {
         let originalFuncName = funcDecl.name.text
-        let newFuncName = "awaitless_" + originalFuncName
+        let newFuncName = prefix + originalFuncName
 
         // Extract return type and determine if the function throws
         let (returnTypeSyntax, _) = extractReturnType(funcDecl: funcDecl)
@@ -138,7 +161,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
 
     /// Creates a noasync attribute for the function
     private static func createNoasyncAttribute() -> AttributeSyntax {
-        return AttributeSyntax(
+        AttributeSyntax(
             attributeName: IdentifierTypeSyntax(name: .identifier("available")),
             leftParen: .leftParenToken(),
             arguments: .argumentList(

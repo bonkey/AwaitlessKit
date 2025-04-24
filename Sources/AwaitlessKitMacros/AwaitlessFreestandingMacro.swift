@@ -4,7 +4,6 @@
 
 public import SwiftSyntax
 public import SwiftSyntaxMacros
-
 import AwaitlessCore
 import Foundation
 import SwiftCompilerPlugin
