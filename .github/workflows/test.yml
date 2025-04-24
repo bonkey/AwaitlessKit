@@ -15,8 +15,6 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Configure Git for HTTPS instead of SSH
-        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
       - name: Use Xcode ${{ env.XCODE_VERSION }}
         run: xcodes select ${{ env.XCODE_VERSION }}
       - name: Build and Test
