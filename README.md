@@ -115,7 +115,7 @@ Add `AwaitlessKit` to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/AwaitlessKit.git", from: "2.0.0")
+    .package(url: "https://github.com/yourusername/AwaitlessKit.git", from: "3.0.0")
 ],
 targets: [
     .target(
@@ -124,7 +124,7 @@ targets: [
     )
 ]
 ```
- 
+
 ## SampleApp
 
 The `SampleApp` included in the repo is just a simple demo app showing these features in action.
