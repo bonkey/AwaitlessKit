@@ -6,43 +6,32 @@ import AwaitlessKit
 import Foundation
 
 final class DataProcessor: Sendable {
-    func run() throws {
-        for string in strings {
-            print(string)
-        }
-
-        #awaitless(processSomething())
-
-        let processedRiskyData1 = try #awaitless(try processRiskyData())
-        let processedRiskyData2 = try processRiskyData()
-
-        let processedSafeData1 = #awaitless(processSafeData())
-        let processedSafeData2 = processSafeData()
-
-        print(processedRiskyData1)
-        print(processedRiskyData2)
-        print(processedSafeData1)
-        print(processedSafeData2)
-    }
-
+        
     @IsolatedSafe
     private nonisolated(unsafe) var _unsafeStrings: [String] = ["Hello", "World"]
-
+    
     @IsolatedSafe(writable: true)
     private nonisolated(unsafe) var _unsafeProcessCount: Int = 0
+        
 
     @Awaitless(.deprecated())
-    private func processSomething() async {
+    func asyncFunctionWithAwaitlessDeprecated() async {
         _ = try? await processData()
     }
 
-    @Awaitless(prefix: "")
-    private func processRiskyData() async throws -> String {
+    func custom_asyncThrowingFunction() throws -> String {
+        try Task.noasync {
+            try await asyncThrowingFunctionWithAwaitlessCustomPrefix()
+        }
+    }
+
+    @Awaitless(prefix: "awaitless_")
+    func asyncThrowingFunctionWithAwaitlessCustomPrefix() async throws -> String {
         try await processData()
     }
 
     @Awaitless
-    private func processSafeData() async -> String {
+    func asyncFunctionWithAwaitlessDefault() async -> String {
         await (try? processData()) ?? "NO DATA"
     }
 

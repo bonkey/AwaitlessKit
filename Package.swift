@@ -14,7 +14,6 @@ let swiftSettings: [SwiftSetting] = [
     .enableUpcomingFeature("InternalImportsByDefault"),
     .enableUpcomingFeature("IsolatedDefaultValues"),
     .enableUpcomingFeature("GlobalConcurrency"),
-    .unsafeFlags(["-warn-concurrency", "-enable-actor-data-race-checks"]),
 ]
 
 let package = Package(
@@ -28,10 +27,6 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-macro-testing.git", from: "0.6.2"),
     ],
     targets: [
-        .executableTarget(
-            name: "AwaitlessApp",
-            dependencies: ["AwaitlessKit"],
-            swiftSettings: swiftSettings),
         .target(
             name: "AwaitlessKit",
             dependencies: ["AwaitlessKitMacros", "AwaitlessCore"],

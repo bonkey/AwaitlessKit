@@ -122,8 +122,10 @@ targets: [
     )
 ]
 ```
+ 
+## SampleApp
 
-> The `AwaitlessApp` included in the repo is just a simple demo app showing these features in action.
+The `SampleApp` included in the repo is just a simple demo app showing these features in action.
 
 ## Credits
 
