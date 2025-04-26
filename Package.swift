@@ -54,5 +54,4 @@ let package = Package(
                 .product(name: "MacroTesting", package: "swift-macro-testing"),
             ],
             swiftSettings: swiftSettings),
-    ]
- )
+    ])

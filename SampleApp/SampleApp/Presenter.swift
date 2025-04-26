@@ -1,38 +1,48 @@
 //
-//  DataPresenter.swift
-//  SampleApp
-//
-//  Created by Daniel Bauke on 25.04.25.
+// Copyright (c) 2025 Daniel Bauke
 //
 
 import AwaitlessKit
 import Foundation
 
 final class Presenter: Sendable {
-    private let dataProcessor = DataProcessor()
-    
     func run() throws {
-        accessIsolatedSafeProperty()
-        executeWithAwaitlessMacro()
-        try processWithAwaitlessThrowingFunction()
-        processWithAwaitlessNonThrowingFunction()
+//        accessIsolatedSafeProperty()
+//        executeWithAwaitlessMacro()
+//        try processWithAwaitlessThrowingFunction()
+//        processWithAwaitlessNonThrowingFunction()
+
+        test()
     }
-    
+
+    private let dataProcessor = DataProcessor()
+
     private func accessIsolatedSafeProperty() {
         for string in dataProcessor.strings {
             print(string)
         }
     }
-    
+
     private func executeWithAwaitlessMacro() {
         #awaitless(dataProcessor.asyncFunctionWithAwaitlessDeprecated())
     }
-    
+
+    private func test() {
+        Noasync.withCompletion(dataProcessor.custom_asyncThrowingFunction) { (result: Result<String, Error>) in
+            switch result {
+            case let .failure(error):
+                print("Error: \(error)")
+            case let .success(value):
+                print(value)
+            }
+        }
+    }
+
     private func processWithAwaitlessThrowingFunction() throws {
         try print(dataProcessor.awaitless_asyncThrowingFunctionWithAwaitlessCustomPrefix())
         try print(dataProcessor.custom_asyncThrowingFunction())
     }
-    
+
     private func processWithAwaitlessNonThrowingFunction() {
         print(dataProcessor.asyncFunctionWithAwaitlessDefault())
         print(#awaitless(dataProcessor.asyncFunctionWithAwaitlessDefault()))

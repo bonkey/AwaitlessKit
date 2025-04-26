@@ -6,21 +6,13 @@ import AwaitlessKit
 import Foundation
 
 final class DataProcessor: Sendable {
-        
-    @IsolatedSafe
-    private nonisolated(unsafe) var _unsafeStrings: [String] = ["Hello", "World"]
-    
-    @IsolatedSafe(writable: true)
-    private nonisolated(unsafe) var _unsafeProcessCount: Int = 0
-        
-
     @Awaitless(.deprecated())
     func asyncFunctionWithAwaitlessDeprecated() async {
         _ = try? await processData()
     }
 
     func custom_asyncThrowingFunction() throws -> String {
-        try Task.noasync {
+        try Noasync.run {
             try await asyncThrowingFunctionWithAwaitlessCustomPrefix()
         }
     }
@@ -34,6 +26,12 @@ final class DataProcessor: Sendable {
     func asyncFunctionWithAwaitlessDefault() async -> String {
         await (try? processData()) ?? "NO DATA"
     }
+
+    @IsolatedSafe
+    private nonisolated(unsafe) var _unsafeStrings: [String] = ["Hello", "World"]
+
+    @IsolatedSafe(writable: true)
+    private nonisolated(unsafe) var _unsafeProcessCount: Int = 0
 
     @discardableResult
     private func processData() async throws -> String {

@@ -12,7 +12,7 @@ import SwiftSyntaxBuilder
 
 // MARK: - AwaitlessFreestandingMacro
 
-/// A freestanding macro that wraps an expression with Task.noasync
+/// A freestanding macro that wraps an expression with Awaitless.noasync
 /// Usage: #awaitless(someAsyncFunction())
 public struct AwaitlessFreestandingMacro: ExpressionMacro {
     public static func expansion(
@@ -20,7 +20,7 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
         in context: some MacroExpansionContext) throws
         -> ExprSyntax
     {
-        // Get the expression to wrap with Task.noasync
+        // Get the expression to wrap with Awaitless.noasync
         guard let argument = node.arguments.first?.expression else {
             let diagnostic = Diagnostic(
                 node: Syntax(node),
@@ -56,13 +56,13 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
                                 expression: finalExpr))))
                 }))
 
-        // Create the Task.noasync call with the closure and return the result directly
+        // Create the Awaitless.noasync call with the closure and return the result directly
         return ExprSyntax(
             FunctionCallExprSyntax(
                 calledExpression: MemberAccessExprSyntax(
-                    base: DeclReferenceExprSyntax(baseName: .identifier("Task")),
+                    base: DeclReferenceExprSyntax(baseName: .identifier("Noasync")),
                     period: .periodToken(),
-                    name: .identifier("noasync")),
+                    name: .identifier("run")),
                 leftParen: .leftParenToken(),
                 arguments: LabeledExprListSyntax {
                     LabeledExprSyntax(expression: closure)

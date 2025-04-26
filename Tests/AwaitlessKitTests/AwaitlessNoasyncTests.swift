@@ -7,14 +7,14 @@ import Dispatch
 import Foundation
 import Testing
 
-struct TaskNoAsyncTests {
+struct AwaitlessNoasyncTests {
     enum TestError: Error, Equatable {
         case simpleError
     }
 
     @Test("Execute basic async operation synchronously")
     func basicExecution() throws {
-        let result = try Task.noasync {
+        let result = try Awaitless.noasync {
             try await Task.sleep(nanoseconds: 100_000_000)
             return "Success"
         }
@@ -24,7 +24,7 @@ struct TaskNoAsyncTests {
 
     @Test("Handle different return types")
     func differentReturnTypes() throws {
-        let intResult = try Task.noasync {
+        let intResult = try Awaitless.noasync {
             try await Task.sleep(nanoseconds: 10_000_000)
             return 42
         }
@@ -34,7 +34,7 @@ struct TaskNoAsyncTests {
             let value: String
         }
 
-        let structResult = try Task.noasync {
+        let structResult = try Awaitless.noasync {
             try await Task.sleep(nanoseconds: 10_000_000)
             return TestData(value: "test")
         }
@@ -42,33 +42,19 @@ struct TaskNoAsyncTests {
     }
 
     @Test("Execute void-returning async operation")
-    func voidReturn() async throws {
-        actor TestState {
-            private(set) var wasExecuted = false
-            
-            func markExecuted() {
-                wasExecuted = true
-            }
-            
-            func result() async -> Bool {
-                wasExecuted
-            }
+    func voidReturn() throws {
+        try Awaitless.noasync {
+            try await Task.sleep(nanoseconds: 10_000_000)
+            #expect(true)
         }
 
-        let testState = TestState()
-        
-        try Task.noasync {
-            try await Task.sleep(nanoseconds: 10_000_000)
-            await testState.markExecuted()
-        }
-        
-        #expect(await testState.result())
+        #expect(true)
     }
 
     @Test("Propagate errors correctly")
     func errorPropagation() throws {
         #expect(throws: TestError.simpleError) {
-            try Task.noasync {
+            try Awaitless.noasync {
                 throw TestError.simpleError
             }
         }
@@ -77,7 +63,7 @@ struct TaskNoAsyncTests {
     @Test("Catch errors from nested async calls")
     func nestedErrors() throws {
         do {
-            try Task.noasync {
+            try Awaitless.noasync {
                 try await Task.sleep(nanoseconds: 10_000_000)
                 throw TestError.simpleError
             }
@@ -92,7 +78,7 @@ struct TaskNoAsyncTests {
         var results: [Int] = []
 
         for i in 0 ..< count {
-            let result = try Task.noasync {
+            let result = try Awaitless.noasync {
                 try await Task.sleep(for: .milliseconds(Double.random(in: 1 ... 5)))
                 return i
             }

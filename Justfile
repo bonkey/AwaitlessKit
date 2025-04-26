@@ -20,6 +20,9 @@ xcode_project := "SampleApp/SampleApp.xcodeproj"
 xcode_scheme := "SampleApp"
 xcode_formatter := `if command -v xcbeautify >/dev/null 2>&1; then echo "| xcbeautify"; elif command -v xcpretty >/dev/null 2>&1; then echo "| xcpretty"; else echo ""; fi`
 
+kill-xcode:
+    pkill -9 Xcode
+
 build-swift6:
     @just build "{{swift_toolchain_610}}"
 
@@ -36,7 +39,7 @@ swift-version toolchain:
 test:
     swift test
 
-clean toolchain="com.apple.dt.toolchain.XcodeDefault":
+clean toolchain="com.apple.dt.toolchain.XcodeDefault": kill-xcode
     swift package clean
     @just resolve-package "{{toolchain}}"
     @just resolve-sample-app "{{toolchain}}"

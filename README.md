@@ -4,9 +4,11 @@
 
 # AwaitlessKit
 
-`AwaitlessKit` is a collection of Swift macros and utilities that let you commit unspeakable asynchronous sins - like calling `async` functions from synchronous contexts without awaiting them properly.
+`AwaitlessKit` is a collection of Swift macros and utilities that lets you commit unspeakable asynchronous sins - like calling `async` functions from a `nonasync` context without awaiting them properly.
 
-> **Remember!** It's basically fighting Swift Concurrency. It uses well-known approach, and it might work, but think twice if you want to use it in production code.
+In other words, it simplifies the migration to `async/await` code from Structured Concurrency using some loopholes. It likely performs better than your ad hoc hacks.
+
+> **Remember!** This framework deliberately sidesteps type-safety guardrails. Though it leverages battle-tested patterns, do your due diligence on edge cases before using it in production.
 
 - [Available macros](#available-macros)
   - [`#awaitless()`](#awaitless)
@@ -38,6 +40,16 @@ Ideal for API design patterns requiring both synchronous and asynchronous interf
 An attached property macro that implements a serial dispatch queue to provide thread-safe access to `nonisolated(unsafe)` properties.
 
 Offers runtime concurrency protection when compile-time isolation isn't feasible, effectively preventing data races through a property protected with `DispatchQueue`.
+
+## Available functions
+
+### `Awaitless.noasync()`
+
+Allows to run `async` code in `noasync` context.
+
+Powers `@Awaitless()` and `#awaitless()` macros.
+
+More details in [Calling Swift Concurrency async code synchronously in Swift](https://wadetregaskis.com/calling-swift-concurrency-async-code-synchronously-in-swift/)
 
 ## Usage
 

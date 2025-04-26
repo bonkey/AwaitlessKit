@@ -14,7 +14,7 @@ import SwiftSyntaxBuilder
 
 /// A macro that generates a synchronous version of an async function.
 /// This macro creates a twin function with specified prefix that wraps the original
-/// async function in a Task.noasync call, making it callable from synchronous contexts.
+/// async function in a Awaitless.noasync call, making it callable from synchronous contexts.
 public struct AwaitlessAttachedMacro: PeerMacro {
     public static func expansion(
         of node: AttributeSyntax,
@@ -230,7 +230,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         }
     }
 
-    /// Creates the function body that wraps the async call in Task.noasync
+    /// Creates the function body that wraps the async call in Awaitless.noasync
     private static func createSyncFunctionBody(
         originalFuncName: String,
         parameters: FunctionParameterListSyntax,
@@ -256,30 +256,30 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             ? ExprSyntax(TryExprSyntax(expression: awaitExpression))
             : awaitExpression
 
-        // Create the closure to pass to Task.noasync
+        // Create the closure to pass to Awaitless.noasync
         let innerClosure = ExprSyntax(
             ClosureExprSyntax(
                 statements: CodeBlockItemListSyntax {
                     CodeBlockItemSyntax(item: .expr(innerCallExpr))
                 }))
 
-        // Create the Task.noasync call
+        // Create the Awaitless.noasync call
         let taskNoasyncCall = createTaskNoasyncCall(with: innerClosure, isThrowing: isThrowing)
 
-        // Create the function body with the Task.noasync call
+        // Create the function body with the Awaitless.noasync call
         return CodeBlockSyntax(
             statements: CodeBlockItemListSyntax {
                 CodeBlockItemSyntax(item: .expr(ExprSyntax(taskNoasyncCall)))
             })
     }
 
-    /// Creates a Task.noasync function call with the provided closure
+    /// Creates a Awaitless.noasync function call with the provided closure
     private static func createTaskNoasyncCall(with closure: ExprSyntax, isThrowing: Bool) -> ExprSyntax {
         let taskNoasyncCall = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
-                base: DeclReferenceExprSyntax(baseName: .identifier("Task")),
+                base: DeclReferenceExprSyntax(baseName: .identifier("Noasync")),
                 period: .periodToken(),
-                name: .identifier("noasync")),
+                name: .identifier("run")),
             leftParen: .leftParenToken(),
             arguments: LabeledExprListSyntax {
                 LabeledExprSyntax(expression: closure)
@@ -321,19 +321,18 @@ public struct AwaitlessAttachedMacro: PeerMacro {
     {
         // Create new effect specifiers for the function
         // In Swift Syntax 5.10, we need to recreate the effect specifiers differently
-        let newEffectSpecifiers: FunctionEffectSpecifiersSyntax?
-        if isThrowing {
-            // Create effect specifiers with throws but without async
-            // In Swift Syntax 5.10, the initializer has different parameters
-            newEffectSpecifiers = FunctionEffectSpecifiersSyntax(
-                leadingTrivia: funcDecl.signature.effectSpecifiers?.leadingTrivia ?? [],
-                throwsSpecifier: .keyword(.throws),
-                trailingTrivia: funcDecl.signature.effectSpecifiers?.trailingTrivia ?? []
-            )
-        } else {
-            // No effect specifiers needed for non-throwing, non-async function
-            newEffectSpecifiers = nil
-        }
+        let newEffectSpecifiers: FunctionEffectSpecifiersSyntax? =
+            if isThrowing {
+                // Create effect specifiers with throws but without async
+                // In Swift Syntax 5.10, the initializer has different parameters
+                FunctionEffectSpecifiersSyntax(
+                    leadingTrivia: funcDecl.signature.effectSpecifiers?.leadingTrivia ?? [],
+                    throwsSpecifier: .keyword(.throws),
+                    trailingTrivia: funcDecl.signature.effectSpecifiers?.trailingTrivia ?? [])
+            } else {
+                // No effect specifiers needed for non-throwing, non-async function
+                nil
+            }
 
         return FunctionSignatureSyntax(
             parameterClause: funcDecl.signature.parameterClause,
