@@ -42,15 +42,27 @@ struct TaskNoAsyncTests {
     }
 
     @Test("Execute void-returning async operation")
-    func voidReturn() throws {
-        var wasExecuted = false
-
-        try Task.noasync {
-            try await Task.sleep(nanoseconds: 10_000_000)
-            wasExecuted = true
+    func voidReturn() async throws {
+        actor TestState {
+            private(set) var wasExecuted = false
+            
+            func markExecuted() {
+                wasExecuted = true
+            }
+            
+            func result() async -> Bool {
+                wasExecuted
+            }
         }
 
-        #expect(wasExecuted)
+        let testState = TestState()
+        
+        try Task.noasync {
+            try await Task.sleep(nanoseconds: 10_000_000)
+            await testState.markExecuted()
+        }
+        
+        #expect(await testState.result())
     }
 
     @Test("Propagate errors correctly")

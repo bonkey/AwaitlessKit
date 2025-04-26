@@ -50,7 +50,7 @@ extension Task {
         nonisolated(unsafe) var result: Result<Success, Failure>? = nil // 2
 
         withoutActuallyEscaping(code) { // 3
-            let sendableCode = $0 // removed nonisolated(unsafe)
+            let sendableCode = $0 // removed nonisolated(unsafe) for compatibility with @Sendable
 
             let coreTask = Task<Void, Never>.detached(priority: .userInitiated) { @Sendable () async in // 5
                 do {
