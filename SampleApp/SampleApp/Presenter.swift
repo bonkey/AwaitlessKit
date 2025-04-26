@@ -7,12 +7,12 @@ import Foundation
 
 final class Presenter: Sendable {
     func run() throws {
-//        accessIsolatedSafeProperty()
-//        executeWithAwaitlessMacro()
-//        try processWithAwaitlessThrowingFunction()
-//        processWithAwaitlessNonThrowingFunction()
+        accessIsolatedSafeProperty()
+        executeWithAwaitlessMacro()
+        try processWithAwaitlessThrowingFunction()
+        processWithAwaitlessNonThrowingFunction()
 
-        test()
+//      WIP: withCompletion()
     }
 
     private let dataProcessor = DataProcessor()
@@ -27,7 +27,7 @@ final class Presenter: Sendable {
         #awaitless(dataProcessor.asyncFunctionWithAwaitlessDeprecated())
     }
 
-    private func test() {
+    private func withCompletion() {
         Noasync.withCompletion(dataProcessor.custom_asyncThrowingFunction) { (result: Result<String, Error>) in
             switch result {
             case let .failure(error):

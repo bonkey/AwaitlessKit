@@ -14,7 +14,7 @@ import SwiftSyntaxBuilder
 
 /// A macro that generates a synchronous version of an async function.
 /// This macro creates a twin function with specified prefix that wraps the original
-/// async function in a Awaitless.noasync call, making it callable from synchronous contexts.
+/// async function in a Noasync.run call, making it callable from synchronous contexts.
 public struct AwaitlessAttachedMacro: PeerMacro {
     public static func expansion(
         of node: AttributeSyntax,
@@ -230,7 +230,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         }
     }
 
-    /// Creates the function body that wraps the async call in Awaitless.noasync
+    /// Creates the function body that wraps the async call in Noasync.run
     private static func createSyncFunctionBody(
         originalFuncName: String,
         parameters: FunctionParameterListSyntax,
@@ -256,24 +256,24 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             ? ExprSyntax(TryExprSyntax(expression: awaitExpression))
             : awaitExpression
 
-        // Create the closure to pass to Awaitless.noasync
+        // Create the closure to pass to Noasync.run
         let innerClosure = ExprSyntax(
             ClosureExprSyntax(
                 statements: CodeBlockItemListSyntax {
                     CodeBlockItemSyntax(item: .expr(innerCallExpr))
                 }))
 
-        // Create the Awaitless.noasync call
+        // Create the Noasync.run call
         let taskNoasyncCall = createTaskNoasyncCall(with: innerClosure, isThrowing: isThrowing)
 
-        // Create the function body with the Awaitless.noasync call
+        // Create the function body with the Noasync.run call
         return CodeBlockSyntax(
             statements: CodeBlockItemListSyntax {
                 CodeBlockItemSyntax(item: .expr(ExprSyntax(taskNoasyncCall)))
             })
     }
 
-    /// Creates a Awaitless.noasync function call with the provided closure
+    /// Creates a Noasync.run function call with the provided closure
     private static func createTaskNoasyncCall(with closure: ExprSyntax, isThrowing: Bool) -> ExprSyntax {
         let taskNoasyncCall = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(

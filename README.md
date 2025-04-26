@@ -43,7 +43,7 @@ Offers runtime concurrency protection when compile-time isolation isn't feasible
 
 ## Available functions
 
-### `Awaitless.noasync()`
+### `Noasync.run()`
 
 Allows to run `async` code in `noasync` context.
 

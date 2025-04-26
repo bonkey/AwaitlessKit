@@ -29,7 +29,7 @@ struct AwaitlessAttachedTests {
             }
 
             @available(*, noasync) func fetchData() throws -> [String] {
-                try Awaitless.noasync({
+                try Noasync.run({
                         try await fetchData()
                     })
             }
@@ -55,7 +55,7 @@ struct AwaitlessAttachedTests {
             }
 
             @available(*, noasync) func greet(name: String, loudly: Bool = false) -> String {
-                Awaitless.noasync({
+                Noasync.run({
                         await greet(name name loudly loudly)
                     })
             }
@@ -81,7 +81,7 @@ struct AwaitlessAttachedTests {
             }
 
             @available(*, noasync) @available(*, unavailable, message: "This synchronous version of getData is unavailable") func getData() -> Data {
-                Awaitless.noasync({
+                Noasync.run({
                         await getData()
                     })
             }
@@ -107,7 +107,7 @@ struct AwaitlessAttachedTests {
             }
 
             @available(*, noasync) @available(*, deprecated, message: "This sync version will be removed in v2.0", renamed: "processItems") func processItems() throws -> Bool {
-                try Awaitless.noasync({
+                try Noasync.run({
                         try await processItems()
                     })
             }
@@ -133,7 +133,7 @@ struct AwaitlessAttachedTests {
             }
 
             @available(*, noasync) @available(*, deprecated, message: "This sync version will be removed in v2.0", renamed: "fetchItems") func fetchItems() -> [Int] {
-                Awaitless.noasync({
+                Noasync.run({
                         await fetchItems()
                     })
             }
@@ -159,7 +159,7 @@ struct AwaitlessAttachedTests {
             }
 
             @available(*, noasync) @available(*, unavailable, message: "Please use the async version instead") func loadConfig() throws -> [String: Any] {
-                try Awaitless.noasync({
+                try Noasync.run({
                         try await loadConfig()
                     })
             }
@@ -183,7 +183,7 @@ struct AwaitlessAttachedTests {
             }
 
             @available(*, noasync) func processQueue() throws -> Void {
-                try Awaitless.noasync({
+                try Noasync.run({
                         try await processQueue()
                     })
             }
@@ -209,7 +209,7 @@ struct AwaitlessAttachedTests {
             }
 
             @available(*, noasync) func sync_downloadFile(url: URL) throws -> Data {
-                try Awaitless.noasync({
+                try Noasync.run({
                         try await downloadFile(url url)
                     })
             }
