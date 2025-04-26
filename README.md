@@ -4,9 +4,11 @@
 
 # AwaitlessKit
 
-> **Warning!** This package is the equivalent of using a chainsaw to butter your toast. It might work, but think twice if you want to use it in production code.
+`AwaitlessKit` is a collection of Swift macros and utilities that let you commit unspeakable asynchronous sins - like calling `async` functions from synchronous contexts without awaiting them properly.
 
-- [Overview](#overview)
+> **Remember!** It's basically fighting Swift Concurrency. It uses well-known approach, and it might work, but think twice if you want to use it in production code.
+
+- [Available macros](#available-macros)
   - [`#awaitless()`](#awaitless)
   - [`@Awaitless`](#awaitless-1)
   - [`@IsolatedSafe`](#isolatedsafe)
@@ -14,11 +16,10 @@
   - [Awaitless](#awaitless-2)
   - [IsolatedSafe](#isolatedsafe-1)
 - [Installation](#installation)
+- [SampleApp](#sampleapp)
 - [Credits](#credits)
 
-## Overview
-
-`AwaitlessKit` is a collection of Swift macros and utilities that let you commit unspeakable asynchronous sins - like calling `async` functions from synchronous contexts without awaiting them properly.
+## Available macros
 
 ### `#awaitless()`
 
