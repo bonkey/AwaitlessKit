@@ -27,7 +27,7 @@ build-swift5:
     @just build "{{swift_toolchain_510}}"
 
 build toolchain="com.apple.dt.toolchain.XcodeDefault":
-    just swift-version "{{toolchain}}"
+    @just swift-version "{{toolchain}}"
     xcrun --toolchain "{{toolchain}}" swift build
 
 swift-version toolchain:
@@ -55,6 +55,7 @@ build-sample-app-swift5:
     @just build-sample-app "{{swift_toolchain_510}}"
 
 xcodebuild project_type project scheme toolchain="com.apple.dt.toolchain.XcodeDefault" *ARGS:
+    @just swift-version "{{toolchain}}"
     xcrun --toolchain "{{toolchain}}" xcodebuild \
         -derivedDataPath "{{xcode_derived_data}}" \
         -destination 'generic/platform=macOS' \
@@ -64,11 +65,9 @@ xcodebuild project_type project scheme toolchain="com.apple.dt.toolchain.XcodeDe
         {{xcode_formatter}}
 
 xcodebuild-sample-app toolchain="com.apple.dt.toolchain.XcodeDefault" *ARGS:
-    @just swift-version "{{toolchain}}"
     @just xcodebuild "project" "{{xcode_project}}" "{{xcode_scheme}}" "{{toolchain}}" {{ARGS}}
 
 xcodebuild-package toolchain="com.apple.dt.toolchain.XcodeDefault" *ARGS:
-    @just swift-version "{{toolchain}}"
     @just xcodebuild "workspace" "{{package_workspace}}" "{{package_scheme}}" "{{toolchain}}" {{ARGS}}
 
 resolve-sample-app toolchain="com.apple.dt.toolchain.XcodeDefault":
