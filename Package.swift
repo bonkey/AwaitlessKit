@@ -4,9 +4,11 @@ import CompilerPluginSupport
 import PackageDescription
 
 let swiftSettings: [SwiftSetting] = [
+    .enableUpcomingFeature("StrictConcurrency"),
+    .enableUpcomingFeature("AccessLevelOnImport"),
+
     .enableUpcomingFeature("ConciseMagicFile"),
     .enableUpcomingFeature("ForwardTrailingClosures"),
-    .enableUpcomingFeature("StrictConcurrency"),
     .enableUpcomingFeature("BareSlashRegexLiterals"),
     .enableUpcomingFeature("DeprecateApplicationMain"),
     .enableUpcomingFeature("ImportObjcForwardDeclarations"),
@@ -18,13 +20,14 @@ let swiftSettings: [SwiftSetting] = [
 
 let package = Package(
     name: "AwaitlessKit",
-    platforms: [.macOS(.v14), .iOS(.v15), .tvOS(.v13), .watchOS(.v10), .macCatalyst(.v13)],
+    platforms: [.macOS(.v14), .iOS(.v15), .tvOS(.v13), .watchOS(.v10), .macCatalyst(.v14)],
     products: [
         .library(name: "AwaitlessKit", targets: ["AwaitlessKit"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "600.0.0-latest"),
-        .package(url: "https://github.com/pointfreeco/swift-macro-testing.git", from: "0.6.2"),
+        .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "510.0.0"),
+        .package(url: "https://github.com/bonkey/swift-macro-testing.git", branch: "main"),
+//        .package(url: "https://github.com/pointfreeco/swift-macro-testing.git", from: "0.6.2"),
     ],
     targets: [
         .target(
@@ -51,4 +54,5 @@ let package = Package(
                 .product(name: "MacroTesting", package: "swift-macro-testing"),
             ],
             swiftSettings: swiftSettings),
-    ])
+    ]
+ )

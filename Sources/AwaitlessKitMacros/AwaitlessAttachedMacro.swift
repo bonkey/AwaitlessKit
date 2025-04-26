@@ -118,7 +118,8 @@ public struct AwaitlessAttachedMacro: PeerMacro {
 
         // Extract return type and determine if the function throws
         let (returnTypeSyntax, _) = extractReturnType(funcDecl: funcDecl)
-        let isThrowing = funcDecl.signature.effectSpecifiers?.throwsClause != nil
+        // In Swift Syntax 5.10, check for throws keyword differently
+        let isThrowing = funcDecl.signature.effectSpecifiers?.description.contains("throws") ?? false
 
         // Create the function body that calls the original async function
         let newBody = createSyncFunctionBody(
@@ -318,14 +319,25 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         returnType: TypeSyntax?)
         -> FunctionSignatureSyntax
     {
-        // Preserve the throws specifier if needed
-        let throwsSpecifier = isThrowing ? funcDecl.signature.effectSpecifiers?.throwsClause?.trimmed : nil
-        let newEffectSpecifiers = FunctionEffectSpecifiersSyntax(
-            throwsClause: throwsSpecifier).trimmed
+        // Create new effect specifiers for the function
+        // In Swift Syntax 5.10, we need to recreate the effect specifiers differently
+        let newEffectSpecifiers: FunctionEffectSpecifiersSyntax?
+        if isThrowing {
+            // Create effect specifiers with throws but without async
+            // In Swift Syntax 5.10, the initializer has different parameters
+            newEffectSpecifiers = FunctionEffectSpecifiersSyntax(
+                leadingTrivia: funcDecl.signature.effectSpecifiers?.leadingTrivia ?? [],
+                throwsSpecifier: .keyword(.throws),
+                trailingTrivia: funcDecl.signature.effectSpecifiers?.trailingTrivia ?? []
+            )
+        } else {
+            // No effect specifiers needed for non-throwing, non-async function
+            newEffectSpecifiers = nil
+        }
 
         return FunctionSignatureSyntax(
             parameterClause: funcDecl.signature.parameterClause,
-            effectSpecifiers: newEffectSpecifiers.throwsClause != nil ? newEffectSpecifiers : nil,
+            effectSpecifiers: newEffectSpecifiers,
             returnClause: returnType.map { ReturnClauseSyntax(type: $0) })
     }
 
