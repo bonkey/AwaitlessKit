@@ -47,22 +47,22 @@ extension Noasync {
         }
     #else
         @available(*, noasync)
-        public static func run(_ code: @escaping () async throws -> Success) throws -> Success {
+        public static func run(_ code: () async throws -> Success) throws -> Success {
             let semaphore = DispatchSemaphore(value: 0)
 
             nonisolated(unsafe) var result: Result<Success, Error>? = nil
 
-            withoutActuallyEscaping(code) { escapableCode in
-                // Create a detached task to run the async code
-                let coreTask = Task<Void, Never>.detached(priority: .userInitiated) {
+            withoutActuallyEscaping(code) {
+                nonisolated(unsafe) let sendableCode = $0 // 4
+
+                let coreTask = Task<Void, Never>.detached(priority: .userInitiated) { @Sendable in
                     do {
-                        result = try await .success(escapableCode())
+                        result = try await .success(sendableCode())
                     } catch {
                         result = .failure(error)
                     }
                 }
 
-                // Create another task to wait for the completion and signal the semaphore
                 Task<Void, Never>.detached(priority: .userInitiated) {
                     await coreTask.value
                     semaphore.signal()
@@ -71,15 +71,7 @@ extension Noasync {
                 semaphore.wait()
             }
 
-            do {
-                return try result!.get()
-            } catch let error as Failure {
-                throw error
-            } catch {
-                // In Swift 5.x we can't constrain the thrown error type in the function signature
-                // This fallback should never happen if used correctly
-                fatalError("Unexpected error type: \(type(of: error))")
-            }
+            return try result!.get()
         }
     #endif
 }

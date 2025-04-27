@@ -13,7 +13,7 @@ final class DataProcessor: Sendable {
 
     func custom_asyncThrowingFunction() throws -> String {
         try Noasync.run {
-            try await asyncThrowingFunctionWithAwaitlessCustomPrefix()
+            try await self.processData()
         }
     }
 

@@ -24,10 +24,13 @@ final class Presenter: Sendable {
     }
 
     private func executeWithAwaitlessMacro() {
+        #if compiler(>=6.0)
         #awaitless(dataProcessor.asyncFunctionWithAwaitlessDeprecated())
+        #endif
     }
 
     private func withCompletion() {
+        #if compiler(>=6.0)
         Noasync.withCompletion(dataProcessor.custom_asyncThrowingFunction) { (result: Result<String, Error>) in
             switch result {
             case let .failure(error):
@@ -36,6 +39,7 @@ final class Presenter: Sendable {
                 print(value)
             }
         }
+        #endif
     }
 
     private func processWithAwaitlessThrowingFunction() throws {
@@ -44,7 +48,11 @@ final class Presenter: Sendable {
     }
 
     private func processWithAwaitlessNonThrowingFunction() {
+        #if compiler(>=6.0)
         print(dataProcessor.asyncFunctionWithAwaitlessDefault())
         print(#awaitless(dataProcessor.asyncFunctionWithAwaitlessDefault()))
+        #else
+        print(try? dataProcessor.asyncFunctionWithAwaitlessDefault() as Any)
+        #endif
     }
 }

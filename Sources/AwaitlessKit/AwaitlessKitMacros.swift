@@ -9,10 +9,12 @@ public macro Awaitless(prefix: String = "", _ availability: AwaitlessAvailabilit
     module: "AwaitlessKitMacros",
     type: "AwaitlessAttachedMacro")
 
+#if compiler(>=6.0)
 @freestanding(expression)
 public macro awaitless<T>(_ expression: T) -> T = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "AwaitlessFreestandingMacro")
+#endif
 
 @attached(peer, names: arbitrary)
 public macro IsolatedSafe(writable: Bool = false, queueName: String? = nil) = #externalMacro(

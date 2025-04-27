@@ -13,10 +13,13 @@ In other words, it simplifies the migration to `async/await` code from Structure
 
 > **Remember!** This framework deliberately sidesteps type-safety guardrails. Though it leverages battle-tested patterns, do your due diligence on edge cases before using it in production.
 
+- [Requirements](#requirements)
 - [Available macros](#available-macros)
   - [`#awaitless()`](#awaitless)
   - [`@Awaitless`](#awaitless-1)
   - [`@IsolatedSafe`](#isolatedsafe)
+- [Available functions](#available-functions)
+  - [`Noasync.run()`](#noasyncrun)
 - [Usage](#usage)
   - [Awaitless](#awaitless-2)
   - [IsolatedSafe](#isolatedsafe-1)
@@ -24,9 +27,17 @@ In other words, it simplifies the migration to `async/await` code from Structure
 - [SampleApp](#sampleapp)
 - [Credits](#credits)
 
+## Requirements
+
+While `AwaitlessKit` *should* work with Xcode 15 and Swift 5.x, it's support is considered **experimental**.
+
+For the best experience, Xcode 16 is highly recommended. Your project can still be in Swift 5.x.
+
 ## Available macros
 
 ### `#awaitless()`
+
+*Not available in Swift 5.x / Xcode 15*
 
 A freestanding expression macro that executes `async` code blocks synchronously.
 
