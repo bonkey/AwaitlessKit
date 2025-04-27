@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -100,7 +100,7 @@
 				};
 			};
 			buildConfigurationList = 81B2F77F2DBB48D000581875 /* Build configuration list for PBXProject "SampleApp" */;
-			compatibilityVersion = "Xcode 15.0";
+			compatibilityVersion = "Xcode 15.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -108,7 +108,6 @@
 				Base,
 			);
 			mainGroup = 81B2F77B2DBB48D000581875;
-			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				81B2F7902DBB491F00581875 /* XCLocalSwiftPackageReference "../../AwaitlessKit" */,
 			);
