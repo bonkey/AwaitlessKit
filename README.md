@@ -62,6 +62,7 @@ More details in [Calling Swift Concurrency async code synchronously in Swift](ht
 import AwaitlessKit
 
 final class AwaitlessExample: Sendable {
+
     // Basic usage - generates a sync version with same name
     @Awaitless
     func fetchData() async throws -> Data {
@@ -115,11 +116,11 @@ final class IsolatedSafeExample: Sendable {
     private nonisolated(unsafe) var _unsafeProcessCount: Int = 0
 
     public func run() {
-        // (1b) Safe access to _unsafeStrings through generated accessors
+        // (1b) Safe access to "_unsafeStrings" through generated thread-safe "string" property
         strings.append("and")
         strings.append("universe")
 
-        // (2b) Safe access to _unsafeProcessCount through generated accessors
+        // (2b) Safe access to "_unsafeProcessCount" through generated thread-safe "processCount" property
         processCount += 1
     }
 }
@@ -131,7 +132,7 @@ Add `AwaitlessKit` to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/AwaitlessKit.git", from: "3.0.0")
+    .package(url: "https://github.com/yourusername/AwaitlessKit.git", from: "5.0.0")
 ],
 targets: [
     .target(
