@@ -1,5 +1,5 @@
 [![Tests on Xcode 16](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_xcode16.yml/badge.svg)](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_xcode16.yml)
-[![Tests on Xcode 15](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_xcode15.yml/badge.svg)](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_xcode15.yml)
+[![Build on Xcode 15](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_build_xcode15.yml/badge.svg)](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_build_xcode15.yml)
 [![Tests on Linux](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_linux.yml/badge.svg)](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_linux.yml)
 
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fbonkey%2FAwaitlessKit%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/bonkey/AwaitlessKit)
