@@ -1,4 +1,4 @@
-name: Swift Tests
+name: Tests on Xcode 16
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: Swift Tests
+name: Tests on Linux
 
 on:
   push:
