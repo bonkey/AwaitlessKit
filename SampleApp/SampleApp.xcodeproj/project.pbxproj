@@ -3,10 +3,13 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		816A73302DBE45B8005B7E99 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 816A732D2DBE45AF005B7E99 /* main.swift */; };
+		816A73312DBE45B8005B7E99 /* Presenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 816A732E2DBE45AF005B7E99 /* Presenter.swift */; };
+		816A73322DBE45B8005B7E99 /* DataProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 816A732C2DBE45AF005B7E99 /* DataProcessor.swift */; };
 		81B2F7922DBB491F00581875 /* AwaitlessKit in Frameworks */ = {isa = PBXBuildFile; productRef = 81B2F7912DBB491F00581875 /* AwaitlessKit */; };
 /* End PBXBuildFile section */
 
@@ -23,12 +26,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		816A732C2DBE45AF005B7E99 /* DataProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataProcessor.swift; sourceTree = "<group>"; };
+		816A732D2DBE45AF005B7E99 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		816A732E2DBE45AF005B7E99 /* Presenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Presenter.swift; sourceTree = "<group>"; };
 		81B2F7842DBB48D000581875 /* SampleApp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SampleApp; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		81B2F7862DBB48D000581875 /* SampleApp */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SampleApp; sourceTree = "<group>"; };
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		81B2F7812DBB48D000581875 /* Frameworks */ = {
@@ -42,10 +44,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		816A732F2DBE45AF005B7E99 /* SampleApp */ = {
+			isa = PBXGroup;
+			children = (
+				816A732C2DBE45AF005B7E99 /* DataProcessor.swift */,
+				816A732D2DBE45AF005B7E99 /* main.swift */,
+				816A732E2DBE45AF005B7E99 /* Presenter.swift */,
+			);
+			path = SampleApp;
+			sourceTree = "<group>";
+		};
 		81B2F77B2DBB48D000581875 = {
 			isa = PBXGroup;
 			children = (
-				81B2F7862DBB48D000581875 /* SampleApp */,
+				816A732F2DBE45AF005B7E99 /* SampleApp */,
 				81B2F7852DBB48D000581875 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -73,9 +85,6 @@
 			);
 			dependencies = (
 			);
-			fileSystemSynchronizedGroups = (
-				81B2F7862DBB48D000581875 /* SampleApp */,
-			);
 			name = SampleApp;
 			packageProductDependencies = (
 				81B2F7912DBB491F00581875 /* AwaitlessKit */,
@@ -100,7 +109,7 @@
 				};
 			};
 			buildConfigurationList = 81B2F77F2DBB48D000581875 /* Build configuration list for PBXProject "SampleApp" */;
-			compatibilityVersion = "Xcode 13.0";
+			compatibilityVersion = "Xcode 15.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -125,6 +134,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				816A73302DBE45B8005B7E99 /* main.swift in Sources */,
+				816A73312DBE45B8005B7E99 /* Presenter.swift in Sources */,
+				816A73322DBE45B8005B7E99 /* DataProcessor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
