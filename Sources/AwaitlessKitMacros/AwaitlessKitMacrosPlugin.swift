@@ -3,7 +3,7 @@
 //
 
 import SwiftCompilerPlugin
-public import SwiftSyntaxMacros
+import SwiftSyntaxMacros
 
 @main
 struct AwaitlessKitMacrosPlugin: CompilerPlugin {

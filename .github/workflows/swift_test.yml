@@ -42,6 +42,8 @@ jobs:
         with:
           path: .build
           key: .build-xcode15
+      - name: Use Xcode 15.4
+        run: xcodes select 15.4
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
         with:
