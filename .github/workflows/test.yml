@@ -7,6 +7,34 @@ on:
     branches: [main]
 
 jobs:
+  test-cirrus-macos:
+    name: Test on Cirrurs Runners macOS
+    runs-on: ghcr.io/cirruslabs/macos-runner:sequoia
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Xcode 16.3
+        run: xcodes select 16.3
+      - name: Build and Test
+        run: swift test
+
+  test-cirrus-linux:
+    name: Test on Linux
+    runs-on: ghcr.io/cirruslabs/ubuntu-runner-amd64:24.04-md
+    container:
+      image: swift:latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Swift
+        run: |
+          curl -O "https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz" && \
+          tar zxf "swiftly-$(uname -m).tar.gz" && \
+          ./swiftly init --quiet-shell-followup && \
+          . ~/.local/share/swiftly/env.sh && \
+          hash -r
+
+      - name: Build and Test
+        run: swift test
+
   test-xcode16:
     name: Test on Xcode 16
     runs-on: macos-15
@@ -32,7 +60,5 @@ jobs:
       image: swift:latest
     steps:
       - uses: actions/checkout@v3
-      - name: Configure Git for HTTPS instead of SSH
-        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
       - name: Build and Test
         run: swift test
