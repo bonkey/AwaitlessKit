@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -27,11 +27,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		81B2F7862DBB48D000581875 /* SampleApp */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SampleApp;
-			sourceTree = "<group>";
-		};
+		81B2F7862DBB48D000581875 /* SampleApp */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SampleApp; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,6 +100,7 @@
 				};
 			};
 			buildConfigurationList = 81B2F77F2DBB48D000581875 /* Build configuration list for PBXProject "SampleApp" */;
+			compatibilityVersion = "Xcode 15.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -115,7 +112,6 @@
 			packageReferences = (
 				81B2F7902DBB491F00581875 /* XCLocalSwiftPackageReference "../../AwaitlessKit" */,
 			);
-			preferredProjectObjectVersion = 77;
 			productRefGroup = 81B2F7852DBB48D000581875 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
