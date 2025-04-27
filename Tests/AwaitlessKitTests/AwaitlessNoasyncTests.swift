@@ -79,7 +79,7 @@ struct AwaitlessNoasyncTests {
 
         for i in 0 ..< count {
             let result = try Noasync.run {
-                try await Task.sleep(for: .milliseconds(Double.random(in: 1 ... 5)))
+                try await Task.sleep(for: .microseconds(Int.random(in: 10 ... 5000)))
                 return i
             }
             results.append(result)

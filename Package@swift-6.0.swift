@@ -1,23 +1,9 @@
-// swift-tools-version: 5.10
+// swift-tools-version: 6.0
 
 import CompilerPluginSupport
 import PackageDescription
 
-let swiftSettings: [SwiftSetting] = [
-    .enableUpcomingFeature("StrictConcurrency"),
-
-    .enableExperimentalFeature("AccessLevelOnImport"),
-    .enableUpcomingFeature("InternalImportsByDefault"),
-
-    .enableUpcomingFeature("ConciseMagicFile"),
-    .enableUpcomingFeature("ForwardTrailingClosures"),
-    .enableUpcomingFeature("BareSlashRegexLiterals"),
-    .enableUpcomingFeature("DeprecateApplicationMain"),
-    .enableUpcomingFeature("ImportObjcForwardDeclarations"),
-    .enableUpcomingFeature("DisableOutwardActorInference"),
-    .enableUpcomingFeature("IsolatedDefaultValues"),
-    .enableUpcomingFeature("GlobalConcurrency"),
-]
+let swiftSettings: [SwiftSetting] = []
 
 let package = Package(
     name: "AwaitlessKit",
@@ -55,4 +41,5 @@ let package = Package(
                 .product(name: "MacroTesting", package: "swift-macro-testing"),
             ],
             swiftSettings: swiftSettings),
-    ])
+    ],
+    swiftLanguageModes: [.v5, .v6])

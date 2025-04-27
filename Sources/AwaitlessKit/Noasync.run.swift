@@ -47,25 +47,27 @@ extension Noasync {
         }
     #else
         @available(*, noasync)
-        public static func run(_ code: @Sendable () async throws(Failure) -> Success) throws(Failure)
-            -> Success
-        { // 1
+        public static func run<
+            Success,
+            Failure: Error
+        >(_ code: @escaping () async throws -> Success) throws -> Success {
             let semaphore = DispatchSemaphore(value: 0)
 
-            nonisolated(unsafe) var result: Result<Success, Failure>? = nil // 2
+            // Swift 5.x doesn't have nonisolated(unsafe), so we use a regular variable
+            var result: Result<Success, Error>? = nil
 
-            withoutActuallyEscaping(code) { // 3
-                let sendableCode = $0 // removed nonisolated(unsafe) for compatibility with @Sendable
-
-                let coreTask = Task<Void, Never>.detached(priority: .userInitiated) { @Sendable () async in // 5
+            withoutActuallyEscaping(code) { escapableCode in
+                // Create a detached task to run the async code
+                let coreTask = Task<Void, Never>.detached(priority: .userInitiated) {
                     do {
-                        result = try await .success(sendableCode())
+                        result = try await .success(escapableCode())
                     } catch {
-                        result = .failure(error as! Failure)
+                        result = .failure(error)
                     }
                 }
 
-                Task<Void, Never>.detached(priority: .userInitiated) { // 6
+                // Create another task to wait for the completion and signal the semaphore
+                Task<Void, Never>.detached(priority: .userInitiated) {
                     await coreTask.value
                     semaphore.signal()
                 }
@@ -73,7 +75,15 @@ extension Noasync {
                 semaphore.wait()
             }
 
-            return try result!.get() // 7
+            do {
+                return try result!.get()
+            } catch let error as Failure {
+                throw error
+            } catch {
+                // In Swift 5.x we can't constrain the thrown error type in the function signature
+                // This fallback should never happen if used correctly
+                fatalError("Unexpected error type: \(type(of: error))")
+            }
         }
     #endif
 }

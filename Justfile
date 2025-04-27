@@ -21,7 +21,7 @@ xcode_scheme := "SampleApp"
 xcode_formatter := `if command -v xcbeautify >/dev/null 2>&1; then echo "| xcbeautify"; elif command -v xcpretty >/dev/null 2>&1; then echo "| xcpretty"; else echo ""; fi`
 
 kill-xcode:
-    pkill -9 Xcode
+    -pkill -9 Xcode
 
 build-swift6:
     @just build "{{swift_toolchain_610}}"
