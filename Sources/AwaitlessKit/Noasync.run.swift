@@ -47,14 +47,10 @@ extension Noasync {
         }
     #else
         @available(*, noasync)
-        public static func run<
-            Success,
-            Failure: Error
-        >(_ code: @escaping () async throws -> Success) throws -> Success {
+        public static func run(_ code: @escaping () async throws -> Success) throws -> Success {
             let semaphore = DispatchSemaphore(value: 0)
 
-            // Swift 5.x doesn't have nonisolated(unsafe), so we use a regular variable
-            var result: Result<Success, Error>? = nil
+            nonisolated(unsafe) var result: Result<Success, Error>? = nil
 
             withoutActuallyEscaping(code) { escapableCode in
                 // Create a detached task to run the async code
