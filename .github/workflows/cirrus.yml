@@ -15,7 +15,6 @@ on:
 
 jobs:
   test-cirrus-macos:
-    if: ${{ false }} # DISABLED
     name: Test on Cirrurs Runners macOS
     runs-on: ghcr.io/cirruslabs/macos-runner:sequoia
     steps:
@@ -31,28 +30,5 @@ jobs:
           key: .build
       - name: Use Xcode 16.3
         run: xcodes select 16.3
-      - name: Build and Test
-        run: swift test
-
-  test-cirrus-linux:
-    name: Test on Linux
-    runs-on: ghcr.io/cirruslabs/ubuntu-runner-amd64:24.04-md
-    container:
-      image: swift:latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          detached: true
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
-
-      - name: Install Swift
-        run: |
-          apt-get install curl
-          curl -O "https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz" && \
-          tar zxf "swiftly-$(uname -m).tar.gz" && \
-          ./swiftly init --quiet-shell-followup --assume-yes
-
       - name: Build and Test
         run: swift test
