@@ -1,4 +1,4 @@
-name: Tests on Xcode 15
+name: Build on Xcode 15
 
 on:
   push:
