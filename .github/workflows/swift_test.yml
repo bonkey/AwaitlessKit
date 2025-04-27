@@ -22,7 +22,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .build
-          key: .build
+          key: .build-xcode16
       - name: Use Xcode 16.3
         run: xcodes select 16.3
       - name: Setup tmate session
@@ -41,7 +41,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .build
-          key: .build
+          key: .build-xcode15
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
         with:
@@ -60,7 +60,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .build
-          key: .build
+          key: .build-linux
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
         with:
