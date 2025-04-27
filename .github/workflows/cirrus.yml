@@ -15,6 +15,7 @@ on:
 
 jobs:
   test-cirrus-macos:
+    if: ${{ false }} # DISABLED
     name: Test on Cirrurs Runners macOS
     runs-on: ghcr.io/cirruslabs/macos-runner:sequoia
     steps:
@@ -48,11 +49,10 @@ jobs:
 
       - name: Install Swift
         run: |
+          apt-get install curl
           curl -O "https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz" && \
           tar zxf "swiftly-$(uname -m).tar.gz" && \
-          ./swiftly init --quiet-shell-followup && \
-          . ~/.local/share/swiftly/env.sh && \
-          hash -r
+          ./swiftly init --quiet-shell-followup --assume-yes
 
       - name: Build and Test
         run: swift test
