@@ -1,0 +1,34 @@
+name: Swift Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: "Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)"
+        required: false
+        default: false
+
+jobs:
+  test-xcode16:
+    name: Test on Xcode 16
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v4
+        with:
+          path: .build
+          key: .build-xcode16
+      - name: Use Xcode 16.3
+        run: xcodes select 16.3
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+      - name: Build and Test
+        run: swift test
