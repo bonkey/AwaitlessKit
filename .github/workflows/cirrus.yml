@@ -13,9 +13,13 @@ on:
         required: false
         default: false
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   test-cirrus-macos:
-    name: Test on Cirrurs Runners macOS
+    name: Test on Cirrus Runners macOS
     runs-on: ghcr.io/cirruslabs/macos-runner:sequoia
     steps:
       - uses: actions/checkout@v3
