@@ -13,6 +13,7 @@ In other words, it simplifies the migration to `async/await` code from Structure
 
 > **Remember!** This framework deliberately sidesteps type-safety guardrails. Though it leverages battle-tested patterns, do your due diligence on edge cases before using it in production.
 
+- [Motivation](#motivation)
 - [Requirements](#requirements)
 - [Available macros](#available-macros)
   - [`#awaitless()`](#awaitless)
@@ -26,6 +27,14 @@ In other words, it simplifies the migration to `async/await` code from Structure
 - [Installation](#installation)
 - [SampleApp](#sampleapp)
 - [Credits](#credits)
+
+## Motivation
+
+From Swift's Evolution [Improving the approachability of data-race safety](https://github.com/hborla/swift-evolution/blob/approachable-concurrency-vision/visions/approachable-concurrency.md#bridging-between-synchronous-and-asynchronous-code):
+
+> Introducing async/await into an existing codebase is difficult to do incrementally, because the language does not provide tools to bridge between synchronous and asynchronous code. Sometimes programmers can kick off a new unstructured task to perform the async work, and other times that is not suitable, e.g. because the synchronous code needs a result from the async operation. It’s also not always possible to propagate async throughout callers, because the function signature might be declared in a library dependency that you don’t own.
+
+`AwaitlessKit` aims to bridge that gap and simplify the adoption of `async/await`.
 
 ## Requirements
 
