@@ -25,20 +25,20 @@ final class Presenter: Sendable {
 
     private func executeWithAwaitlessMacro() {
         #if compiler(>=6.0)
-        #awaitless(dataProcessor.asyncFunctionWithAwaitlessDeprecated())
+            #awaitless(dataProcessor.asyncFunctionWithAwaitlessDeprecated())
         #endif
     }
 
     private func withCompletion() {
         #if compiler(>=6.0)
-        Noasync.withCompletion(dataProcessor.custom_asyncThrowingFunction) { (result: Result<String, Error>) in
-            switch result {
-            case let .failure(error):
-                print("Error: \(error)")
-            case let .success(value):
-                print(value)
+            Noasync.withCompletion(dataProcessor.custom_asyncThrowingFunction) { (result: Result<String, Error>) in
+                switch result {
+                case let .failure(error):
+                    print("Error: \(error)")
+                case let .success(value):
+                    print(value)
+                }
             }
-        }
         #endif
     }
 
@@ -49,10 +49,10 @@ final class Presenter: Sendable {
 
     private func processWithAwaitlessNonThrowingFunction() {
         #if compiler(>=6.0)
-        print(dataProcessor.asyncFunctionWithAwaitlessDefault())
-        print(#awaitless(dataProcessor.asyncFunctionWithAwaitlessDefault()))
+            print(dataProcessor.asyncFunctionWithAwaitlessDefault())
+            print(#awaitless(dataProcessor.asyncFunctionWithAwaitlessDefault()))
         #else
-        print(try? dataProcessor.asyncFunctionWithAwaitlessDefault() as Any)
+            print(try? dataProcessor.asyncFunctionWithAwaitlessDefault() as Any)
         #endif
     }
 }

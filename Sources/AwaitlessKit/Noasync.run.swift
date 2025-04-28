@@ -53,7 +53,7 @@ extension Noasync {
             nonisolated(unsafe) var result: Result<Success, Error>? = nil
 
             withoutActuallyEscaping(code) {
-                nonisolated(unsafe) let sendableCode = $0 // 4
+                nonisolated(unsafe) let sendableCode = $0
 
                 let coreTask = Task<Void, Never>.detached(priority: .userInitiated) { @Sendable in
                     do {

@@ -7,7 +7,7 @@ import Dispatch
 import Foundation
 import Testing
 
-struct AwaitlessNoasyncTests {
+struct AwaitlessNoasyncRunTests {
     enum TestError: Error, Equatable {
         case simpleError
     }
@@ -87,7 +87,6 @@ struct AwaitlessNoasyncTests {
 
         let expectedResults = Array(0 ..< count)
 
-        // Also verify array as a whole
         #expect(results == expectedResults)
     }
 }

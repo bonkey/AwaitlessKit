@@ -5,10 +5,12 @@
 import SwiftCompilerPlugin
 
 #if compiler(>=6.0)
-import SwiftSyntaxMacros
+    import SwiftSyntaxMacros
 #else
-public import SwiftSyntaxMacros
+    public import SwiftSyntaxMacros
 #endif
+
+// MARK: - AwaitlessKitMacrosPlugin
 
 @main
 struct AwaitlessKitMacrosPlugin: CompilerPlugin {

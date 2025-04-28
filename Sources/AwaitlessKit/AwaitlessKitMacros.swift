@@ -10,10 +10,10 @@ public macro Awaitless(prefix: String = "", _ availability: AwaitlessAvailabilit
     type: "AwaitlessAttachedMacro")
 
 #if compiler(>=6.0)
-@freestanding(expression)
-public macro awaitless<T>(_ expression: T) -> T = #externalMacro(
-    module: "AwaitlessKitMacros",
-    type: "AwaitlessFreestandingMacro")
+    @freestanding(expression)
+    public macro awaitless<T>(_ expression: T) -> T = #externalMacro(
+        module: "AwaitlessKitMacros",
+        type: "AwaitlessFreestandingMacro")
 #endif
 
 @attached(peer, names: arbitrary)

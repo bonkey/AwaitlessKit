@@ -29,15 +29,15 @@ In other words, it simplifies the migration to `async/await` code from Structure
 
 ## Requirements
 
-While `AwaitlessKit` *should* work with Xcode 15 and Swift 5.x, it's support is considered **experimental**.
+While `AwaitlessKit` *should* work with Xcode 15 and Swift 5.x, it's less tested, and support is considered **experimental**.
 
-For the best experience, Xcode 16 is highly recommended. Your project can still be in Swift 5.x.
+For the best experience, Xcode 16 with Swift 6.0 compiler is highly recommended. Your project can still be in Swift 5.x.
 
 ## Available macros
 
 ### `#awaitless()`
 
-*Not available in Swift 5.x / Xcode 15*
+*Note: not yet available in Swift 5.x / Xcode 15*
 
 A freestanding expression macro that executes `async` code blocks synchronously.
 
