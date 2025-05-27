@@ -1,3 +1,5 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bonkey/AwaitlessKit)
+
 [![Tests on Xcode 16](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_xcode16.yml/badge.svg)](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_xcode16.yml)
 [![Build on Xcode 15](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_build_xcode15.yml/badge.svg)](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_build_xcode15.yml)
 [![Tests on Linux](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_linux.yml/badge.svg)](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_linux.yml)
