@@ -12,13 +12,11 @@
 
 - [Quick Start](#quick-start)
 - [Why AwaitlessKit?](#why-awaitlesskit)
-- [Table of Contents](#table-of-contents)
+- [Requirements](#requirements)
 - [Installation](#installation)
 - [Core Features](#core-features)
 - [Quick Examples](#quick-examples)
-- [API Reference](#api-reference)
 - [Migration Guide](#migration-guide)
-- [Requirements](#requirements)
 - [License](#license)
 - [Credits](#credits)
 
@@ -60,6 +58,16 @@ let user2 = try service.fetchUser(id: "456")        // Generated sync version
 - ✅ Keep existing APIs stable while modernizing internals
 
 > **⚠️ Important:** This library intentionally bypasses Swift's concurrency safety mechanisms. Use during migration periods only, not as a permanent solution.
+
+## Requirements
+
+| Swift Version | Xcode Version | Support Level                          |
+| ------------- | ------------- | -------------------------------------- |
+| Swift 6.0+    | Xcode 16+     | ✅ Full support                         |
+| Swift 5.9+    | Xcode 15+     | ⚠️ Limited (`#awaitless()` unavailable) |
+| Swift 5.8-    | Xcode 14-     | ❌ Not supported                        |
+
+**Recommended:** Xcode 16 with Swift 6.0 for the best experience.
 
 ## Installation
 
@@ -193,60 +201,9 @@ class SharedState: Sendable {
 }
 ```
 
-## API Reference
-
-### `@Awaitless`
-
-**Syntax:**
-
-```swift
-@Awaitless                                   // Basic usage
-@Awaitless(prefix: "sync_")                  // Custom prefix
-@Awaitless(.deprecated("Message"))           // Mark as deprecated
-@Awaitless(.unavailable("Message"))          // Mark as unavailable
-```
-
-**Parameters:**
-
-- `prefix`: Custom prefix for generated function name (default: `""`)
-- `availability`: Control availability of generated function
-  - `.deprecated("message")`: Mark as deprecated
-  - `.unavailable("message")`: Mark as unavailable
-
-### `#awaitless()`
-
-**Syntax:**
-
-```swift
-let result = try #awaitless(asyncFunction())
-```
-
-**Requirements:** Swift 6.0+ / Xcode 16+
-
-### `@IsolatedSafe`
-
-**Syntax:**
-
-```swift
-@IsolatedSafe                     // Read-only property
-@IsolatedSafe(writable: true)     // Read-write property
-```
-
-**Note:** Property name must start with `_unsafe`. Generated property removes it.
-
-### `Noasync.run()`
-
-**Syntax:**
-
-```swift
-let result = try Noasync.run {
-    try await asyncFunction()
-}
-```
-
 ## Migration Guide
 
-### Phase 1: Add Async Implementations
+### Phase 1: Add Async Code
 
 ```swift
 class DataManager {
@@ -289,16 +246,6 @@ class DataManager {
     }
 }
 ```
-
-## Requirements
-
-| Swift Version | Xcode Version | Support Level                          |
-| ------------- | ------------- | -------------------------------------- |
-| Swift 6.0+    | Xcode 16+     | ✅ Full support                         |
-| Swift 5.9+    | Xcode 15+     | ⚠️ Limited (`#awaitless()` unavailable) |
-| Swift 5.8-    | Xcode 14-     | ❌ Not supported                        |
-
-**Recommended:** Xcode 16 with Swift 6.0 for the best experience.
 
 ## License
 
