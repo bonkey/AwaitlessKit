@@ -5,55 +5,15 @@
 import AwaitlessKit
 import Foundation
 
-final class DataProcessor: Sendable {
-    @Awaitless(.deprecated())
-    func asyncFunctionWithAwaitlessDeprecated() async {
-        _ = try? await processData()
-    }
+// Sample classes demonstrating AwaitlessKit Quick Examples
 
-    func custom_asyncThrowingFunction() throws -> String {
-        try Noasync.run {
-            try await self.processData()
-        }
-    }
+import AwaitlessKit
+import Foundation
 
-    @Awaitless(prefix: "awaitless_")
-    func asyncThrowingFunctionWithAwaitlessCustomPrefix() async throws -> String {
-        try await processData()
-    }
+// MARK: - Basic Usage
 
-    @Awaitless
-    func asyncFunctionWithArguments(
-        _ arg1: String,
-        arg2: String,
-        arg3 internalArg: String,
-        arg4: String = "default") async
-        -> String
-    {
-        print("Arguments received: \(arg1), \(arg2), \(internalArg), \(arg4)")
-        return await (try? processData()) ?? "NO DATA"
-    }
+// MARK: - Migration with Deprecation
 
-    @Awaitless
-    func asyncFunctionWithAwaitlessDefault() async -> String {
-        await (try? processData()) ?? "NO DATA"
-    }
+// MARK: - Custom Naming
 
-    @IsolatedSafe
-    private nonisolated(unsafe) var _unsafeStrings: [String] = ["Hello", "World"]
-
-    @IsolatedSafe(writable: true)
-    private nonisolated(unsafe) var _unsafeProcessCount: Int = 0
-
-    @discardableResult
-    private func processData() async throws -> String {
-        processCount += 1
-        let waitTime = round(Double.random(in: 0 ... 0.7) * 10) / 10
-
-        print("🚥 Starting async operation #\(processCount)... (\(waitTime)s)")
-        try await Task.sleep(for: .seconds(waitTime))
-        let result = "👍 Processed data from processData (count: \(processCount))"
-        print("🏁 Async operation #\(processCount) completed")
-        return result
-    }
-}
+// MARK: - Thread-Safe Properties

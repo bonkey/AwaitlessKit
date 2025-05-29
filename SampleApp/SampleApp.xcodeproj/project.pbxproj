@@ -7,9 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		816A73302DBE45B8005B7E99 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 816A732D2DBE45AF005B7E99 /* main.swift */; };
-		816A73312DBE45B8005B7E99 /* Presenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 816A732E2DBE45AF005B7E99 /* Presenter.swift */; };
-		816A73322DBE45B8005B7E99 /* DataProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 816A732C2DBE45AF005B7E99 /* DataProcessor.swift */; };
+		816A73312DBE45B8005B7E99 /* SampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 816A732E2DBE45AF005B7E99 /* SampleApp.swift */; };
+		818714712DE886BE007214CC /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 818714702DE886BE007214CC /* NetworkManager.swift */; };
+		818714732DE886C8007214CC /* LegacyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 818714722DE886C8007214CC /* LegacyService.swift */; };
+		818714752DE886CE007214CC /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 818714742DE886CE007214CC /* APIClient.swift */; };
+		818714772DE886D4007214CC /* SharedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 818714762DE886D4007214CC /* SharedState.swift */; };
 		81B2F7922DBB491F00581875 /* AwaitlessKit in Frameworks */ = {isa = PBXBuildFile; productRef = 81B2F7912DBB491F00581875 /* AwaitlessKit */; };
 /* End PBXBuildFile section */
 
@@ -26,9 +28,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		816A732C2DBE45AF005B7E99 /* DataProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataProcessor.swift; sourceTree = "<group>"; };
-		816A732D2DBE45AF005B7E99 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		816A732E2DBE45AF005B7E99 /* Presenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Presenter.swift; sourceTree = "<group>"; };
+		816A732E2DBE45AF005B7E99 /* SampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleApp.swift; sourceTree = "<group>"; };
+		818714702DE886BE007214CC /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
+		818714722DE886C8007214CC /* LegacyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyService.swift; sourceTree = "<group>"; };
+		818714742DE886CE007214CC /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		818714762DE886D4007214CC /* SharedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedState.swift; sourceTree = "<group>"; };
 		81B2F7842DBB48D000581875 /* SampleApp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SampleApp; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -47,9 +51,11 @@
 		816A732F2DBE45AF005B7E99 /* SampleApp */ = {
 			isa = PBXGroup;
 			children = (
-				816A732C2DBE45AF005B7E99 /* DataProcessor.swift */,
-				816A732D2DBE45AF005B7E99 /* main.swift */,
-				816A732E2DBE45AF005B7E99 /* Presenter.swift */,
+				818714742DE886CE007214CC /* APIClient.swift */,
+				818714722DE886C8007214CC /* LegacyService.swift */,
+				818714702DE886BE007214CC /* NetworkManager.swift */,
+				816A732E2DBE45AF005B7E99 /* SampleApp.swift */,
+				818714762DE886D4007214CC /* SharedState.swift */,
 			);
 			path = SampleApp;
 			sourceTree = "<group>";
@@ -134,9 +140,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				816A73302DBE45B8005B7E99 /* main.swift in Sources */,
-				816A73312DBE45B8005B7E99 /* Presenter.swift in Sources */,
-				816A73322DBE45B8005B7E99 /* DataProcessor.swift in Sources */,
+				818714772DE886D4007214CC /* SharedState.swift in Sources */,
+				818714712DE886BE007214CC /* NetworkManager.swift in Sources */,
+				816A73312DBE45B8005B7E99 /* SampleApp.swift in Sources */,
+				818714732DE886C8007214CC /* LegacyService.swift in Sources */,
+				818714752DE886CE007214CC /* APIClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
