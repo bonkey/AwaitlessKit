@@ -37,7 +37,7 @@ struct AwaitlessAttachedTests {
         }
     }
 
-    @Test("Expand macro with function parameters")
+    @Test("Expand macro with simple function parameters")
     func withParams() {
         assertMacro {
             """
@@ -62,6 +62,7 @@ struct AwaitlessAttachedTests {
             """#
         }
     }
+
 
     @Test("Handle deprecated flag")
     func deprecated() {

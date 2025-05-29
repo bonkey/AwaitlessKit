@@ -23,6 +23,18 @@ final class DataProcessor: Sendable {
     }
 
     @Awaitless
+    func asyncFunctionWithArguments(
+        _ arg1: String,
+        arg2: String,
+        arg3 internalArg: String,
+        arg4: String = "default") async
+        -> String
+    {
+        print("Arguments received: \(arg1), \(arg2), \(internalArg), \(arg4)")
+        return await (try? processData()) ?? "NO DATA"
+    }
+
+    @Awaitless
     func asyncFunctionWithAwaitlessDefault() async -> String {
         await (try? processData()) ?? "NO DATA"
     }

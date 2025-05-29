@@ -13,3 +13,4 @@ public enum AwaitlessAvailability {
     /// - Parameter message: An optional custom unavailability message.
     case unavailable(_ message: String? = nil)
 }
+

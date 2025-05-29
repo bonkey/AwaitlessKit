@@ -29,18 +29,18 @@ final class Presenter: Sendable {
         #endif
     }
 
-    private func withCompletion() {
-        #if compiler(>=6.0)
-            Noasync.withCompletion(dataProcessor.custom_asyncThrowingFunction) { (result: Result<String, Error>) in
-                switch result {
-                case let .failure(error):
-                    print("Error: \(error)")
-                case let .success(value):
-                    print(value)
-                }
-            }
-        #endif
-    }
+//    private func withCompletion() {
+//        #if compiler(>=6.0)
+//            Noasync.withCompletion(dataProcessor.custom_asyncThrowingFunction) { (result: Result<String, Error>) in
+//                switch result {
+//                case let .failure(error):
+//                    print("Error: \(error)")
+//                case let .success(value):
+//                    print(value)
+//                }
+//            }
+//        #endif
+//    }
 
     private func processWithAwaitlessThrowingFunction() throws {
         try print(dataProcessor.awaitless_asyncThrowingFunctionWithAwaitlessCustomPrefix())
@@ -54,5 +54,13 @@ final class Presenter: Sendable {
         #else
             print(try? dataProcessor.asyncFunctionWithAwaitlessDefault() as Any)
         #endif
+    }
+
+    private func processWithArguments() throws {
+        print(dataProcessor.asyncFunctionWithArguments(
+            "arg1",
+            arg2: "arg2",
+            arg3: "arg3",
+            arg4: "arg4"))
     }
 }

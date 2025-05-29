@@ -115,8 +115,7 @@ struct AwaitlessArgumentVariantsTests {
                 _ arg1: String,
                 arg2: String,
                 arg3 internalArg: String,
-                arg4: String = "default",
-                args: String...) async -> String {
+                arg4: String = "default") async -> String {
                 return arg1 + arg2 + internalArg + arg4 + args.joined()
             }
             """
@@ -366,7 +365,7 @@ struct AwaitlessArgumentVariantsTests {
                 transform: @escaping (String) -> String,
                 options: [String: Any] = [:]) throws -> Bool {
                 try Noasync.run({
-                        try await complexOperation(input, output: output, transform: transform, options: options)
+                        try await complexOperation(input, output: &output, transform: transform, options: options)
                     })
             }
             """
