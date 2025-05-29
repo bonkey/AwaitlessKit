@@ -1,17 +1,18 @@
 name: Swift Tests on Cirrus Runners
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
-    inputs:
-      debug_enabled:
-        type: boolean
-        description: "Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)"
-        required: false
-        default: false
+  {}
+  # push:
+  #   branches: [main]
+  # pull_request:
+  #   branches: [main]
+  # workflow_dispatch:
+  #   inputs:
+  #     debug_enabled:
+  #       type: boolean
+  #       description: "Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)"
+  #       required: false
+  #       default: false
 
 concurrency:
   group: ${{ github.workflow }}

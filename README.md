@@ -171,4 +171,5 @@ The `SampleApp` included in the repo is just a simple demo app showing these fea
 ## Credits
 
 - Wade Tregaskis for `Task.noasync` from [Calling Swift Concurrency async code synchronously in Swift](https://wadetregaskis.com/calling-swift-concurrency-async-code-synchronously-in-swift/)
-- [Zed Editor](https://zed.dev) for its powerful GenAI support and Claude 3.7 model
+- [Zed Editor](https://zed.dev) for its powerful GenAI support
+- Anthropic for its 3.7 and 4.0 models
