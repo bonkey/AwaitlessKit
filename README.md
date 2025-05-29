@@ -84,43 +84,65 @@ More details in [Calling Swift Concurrency async code synchronously in Swift](ht
 import AwaitlessKit
 
 final class AwaitlessExample: Sendable {
+    public func runBasicExample() throws {
+        // Call sync function generated from async
+        let data = try fetchUserData()
+        print("Fetched data: \(String(data: data, encoding: .utf8) ?? "")")
+    }
 
-    // Basic usage - generates a sync version with same name
     @Awaitless
-    func fetchData() async throws -> Data {
-        // ...async implementation
+    private func fetchUserData() async throws -> Data {
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        return "User data from API".data(using: .utf8)!
     }
 
-    func onlyAsyncFetchData() async throws -> Data {
-        // ...async implementation
+    public func runDeprecatedExample() {
+        // Call deprecated sync version - shows deprecation warning
+        let items = try! processOrderItems()
+        print("Processed items: \(items)")
     }
 
-    // With deprecation warning
     @Awaitless(.deprecated("Synchronous API will be phased out, migrate to async version"))
-    func processItems() async throws -> [String] {
-        // ...async implementation
+    private func processOrderItems() async throws -> [String] {
+        try await Task.sleep(nanoseconds: 750_000_000)
+        return ["Order Item 1", "Order Item 2", "Order Item 3"]
     }
 
-    // Make sync version unavailable
-    @Awaitless(.unavailable("Synchronous API has been removed, use async version"))
-    func loadResources() async throws -> [Resource] {
-        // ...async implementation
+    public func runCustomPrefixExample() {
+        // Call sync version with custom prefix
+        let config = sync_loadAppConfig()
+        print("Loaded config:", config)
     }
 
     // Custom prefix for generated function
     @Awaitless(prefix: "sync_")
-    func loadConfig() async -> Config {
-        // ...async implementation
+    private func loadAppConfig() async -> [String: Sendable] {
+        await Task.sleep(nanoseconds: 300_000_000)
+        return ["apiUrl": "https://api.example.com", "timeout": 30]
     }
 
-    public func run() {
-        // Call generated sync versions
-        let data = try fetchData()
-        let items = try processItems() // Shows deprecation warning
-        let config = sync_loadConfig()
+    public func runFreestandingMacroExample() throw {
+        // Use the freestanding macro
+        let result = try #awaitless(try downloadFileData())
+        print("Downloaded: \(String(decoding: result, as: UTF8.self))")
+    }
 
-        // Or use the freestanding macro
-        let result = try #awaitless(try onlyAsyncFetchData())
+    private func downloadFileData() async throws -> Data? {
+        try await Task.sleep(nanoseconds: 500_000_000)
+        return "Downloaded file content".data(using: .utf8)
+    }
+
+    public func runUnavailableExample() throws {
+        // Call sync version that is unavailable - this will cause a compile error
+        // let resources = try loadDatabaseResources()
+        // print("Loaded resources: \(resources)")
+    }
+
+    // Make sync version unavailable
+    @Awaitless(.unavailable("Synchronous API has been removed, use async version"))
+    private func loadDatabaseResources() async throws -> [String] {
+        try await Task.sleep(nanoseconds: 2_000_000_000)
+        return ["Record 1", "Record 2", "Record 3"]
     }
 }
 ```
@@ -129,22 +151,22 @@ final class AwaitlessExample: Sendable {
 
 ```swift
 final class IsolatedSafeExample: Sendable {
-    // (1a) Thread-safe wrapper for unsafe property access
+    public func runStringExample() {
+        // Safe access to "_unsafeStrings" through generated thread-safe "string" property
+        strings.append("and")
+        strings.append("universe")
+    }
+
     @IsolatedSafe
     private nonisolated(unsafe) var _unsafeStrings: [String] = ["Hello", "World"]
 
-    // (2a) Thread-safe wrapper with write access
-    @IsolatedSafe(writable: true)
-    private nonisolated(unsafe) var _unsafeProcessCount: Int = 0
-
-    public func run() {
-        // (1b) Safe access to "_unsafeStrings" through generated thread-safe "string" property
-        strings.append("and")
-        strings.append("universe")
-
-        // (2b) Safe access to "_unsafeProcessCount" through generated thread-safe "processCount" property
+    public func runProcessCountExample() {
+        // Safe access to "_unsafeProcessCount" through generated thread-safe "processCount" property
         processCount += 1
     }
+
+    @IsolatedSafe(writable: true)
+    private nonisolated(unsafe) var _unsafeProcessCount: Int = 0
 }
 ```
 
@@ -154,7 +176,7 @@ Add `AwaitlessKit` to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/AwaitlessKit.git", from: "5.0.0")
+    .package(url: "https://github.com/yourusername/AwaitlessKit.git", from: "6.0.0")
 ],
 targets: [
     .target(
