@@ -56,7 +56,7 @@ struct AwaitlessAttachedTests {
 
             @available(*, noasync) func greet(name: String, loudly: Bool = false) -> String {
                 Noasync.run({
-                        await greet(name name loudly loudly)
+                        await greet(name: name, loudly: loudly)
                     })
             }
             """#
@@ -211,7 +211,7 @@ struct AwaitlessAttachedTests {
 
             @available(*, noasync) func sync_downloadFile(url: URL) throws -> Data {
                 try Noasync.run({
-                        try await downloadFile(url url)
+                        try await downloadFile(url: url)
                     })
             }
             """
