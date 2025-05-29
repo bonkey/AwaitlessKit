@@ -18,8 +18,8 @@ In other words, it simplifies the migration to `async/await` code from Structure
 - [Motivation](#motivation)
 - [Requirements](#requirements)
 - [Available macros](#available-macros)
-  - [`#awaitless()`](#awaitless)
-  - [`@Awaitless`](#awaitless-1)
+  - [`@Awaitless`](#awaitless)
+  - [`#awaitless()`](#awaitless-1)
   - [`@IsolatedSafe`](#isolatedsafe)
 - [Available functions](#available-functions)
   - [`Noasync.run()`](#noasyncrun)
@@ -46,6 +46,12 @@ For the best experience, Xcode 16 with Swift 6.0 compiler is highly recommended.
 
 ## Available macros
 
+### `@Awaitless`
+
+An attached macro that automatically generates synchronous counterparts for your `async` functions.
+
+**Key USP: Built-in deprecation and unavailability controls** - mark generated sync functions as deprecated or unavailable to guide migration timelines and enforce async-first APIs. This eliminates the maintenance burden of manually tracking which legacy sync methods should be phased out, providing a clear, compiler-enforced migration path that prevents technical debt accumulation while maintaining backward compatibility during transitions.
+
 ### `#awaitless()`
 
 *Note: not yet available in Swift 5.x / Xcode 15*
@@ -53,12 +59,6 @@ For the best experience, Xcode 16 with Swift 6.0 compiler is highly recommended.
 A freestanding expression macro that executes `async` code blocks synchronously.
 
 Particularly valuable when interfacing with third-party APIs or legacy systems where asynchronous context isn't available, but you need to integrate with your `async` implementations.
-
-### `@Awaitless`
-
-An attached macro that automatically generates synchronous counterparts for your `async` functions.
-
-Ideal for API design patterns requiring both synchronous and asynchronous interfaces, eliminating the need to manually maintain duplicate implementations and providing simple deprecation for the future.
 
 ### `@IsolatedSafe`
 
