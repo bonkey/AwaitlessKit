@@ -300,38 +300,36 @@ public struct AwaitlessAttachedMacro: PeerMacro {
 
     /// Creates argument list from function parameters
     private static func createArgumentList(from parameters: FunctionParameterListSyntax) -> LabeledExprListSyntax {
-        let callArguments = parameters.enumerated().map { (index, param) in
+        let callArguments = parameters.enumerated().map { index, param in
             // Get the argument label (external name) and parameter name (internal name)
-            let argumentLabel = param.firstName  // External name (can be _)
-            let parameterName = param.secondName ?? param.firstName  // Internal name, fallback to firstName if nil
-            
+            let argumentLabel = param.firstName // External name (can be _)
+            let parameterName = param.secondName ?? param.firstName // Internal name, fallback to firstName if nil
+
             // Check if this is an inout parameter by looking at the type description
             let isInout = param.type.description.contains("inout")
-            
+
             // Create the expression - add & prefix for inout parameters
-            let expression: ExprSyntax
-            if isInout {
-                expression = ExprSyntax(InOutExprSyntax(expression: DeclReferenceExprSyntax(baseName: parameterName.trimmed)))
-            } else {
-                expression = ExprSyntax(DeclReferenceExprSyntax(baseName: parameterName.trimmed))
-            }
-            
+            let expression =
+                if isInout {
+                    ExprSyntax(InOutExprSyntax(expression: DeclReferenceExprSyntax(baseName: parameterName.trimmed)))
+                } else {
+                    ExprSyntax(DeclReferenceExprSyntax(baseName: parameterName.trimmed))
+                }
+
             // Add trailing comma for all except the last parameter
             let trailingComma: TokenSyntax? = index < parameters.count - 1 ? .commaToken() : nil
-            
+
             // Check if the parameter is unlabeled (argument label is _)
             if argumentLabel.tokenKind == .wildcard {
                 return LabeledExprSyntax(
                     expression: expression,
-                    trailingComma: trailingComma
-                )
+                    trailingComma: trailingComma)
             } else {
                 return LabeledExprSyntax(
                     label: argumentLabel.trimmed,
                     colon: .colonToken(),
                     expression: expression,
-                    trailingComma: trailingComma
-                )
+                    trailingComma: trailingComma)
             }
         }
         return LabeledExprListSyntax(callArguments)

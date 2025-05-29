@@ -63,7 +63,6 @@ struct AwaitlessAttachedTests {
         }
     }
 
-
     @Test("Handle deprecated flag")
     func deprecated() {
         assertMacro {
