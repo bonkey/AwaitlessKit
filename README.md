@@ -4,9 +4,23 @@
 
 # AwaitlessKit
 
-**Bridge the gap between async/await and legacy synchronous code during migration.**
+**Use modern `async/await` in legacy synchronous code and migrate at your own pace.**
 
-AwaitlessKit provides Swift macros that automatically generate synchronous wrappers for async functions, enabling incremental adoption of async/await in existing codebases without breaking existing APIs.
+`AwaitlessKit` provides Swift macros to automatically generate synchronous wrappers for your `async` functions, making it easy to call new async APIs from existing nonasync code. This helps you gradually adopt async/await without breaking old APIs or rewriting everything at once.
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Why AwaitlessKit?](#why-awaitlesskit)
+- [Table of Contents](#table-of-contents)
+- [Installation](#installation)
+- [Core Features](#core-features)
+- [Quick Examples](#quick-examples)
+- [API Reference](#api-reference)
+- [Migration Guide](#migration-guide)
+- [Requirements](#requirements)
+- [License](#license)
+- [Credits](#credits)
 
 ## Quick Start
 
@@ -46,20 +60,6 @@ let user2 = try service.fetchUser(id: "456")        // Generated sync version
 - ✅ Keep existing APIs stable while modernizing internals
 
 > **⚠️ Important:** This library intentionally bypasses Swift's concurrency safety mechanisms. Use during migration periods only, not as a permanent solution.
-
-## Table of Contents
-
-- [Quick Start](#quick-start)
-- [Why AwaitlessKit?](#why-awaitlesskit)
-- [Table of Contents](#table-of-contents)
-- [Installation](#installation)
-- [Core Features](#core-features)
-- [Quick Examples](#quick-examples)
-- [API Reference](#api-reference)
-- [Migration Guide](#migration-guide)
-- [Requirements](#requirements)
-- [License](#license)
-- [Credits](#credits)
 
 ## Installation
 
