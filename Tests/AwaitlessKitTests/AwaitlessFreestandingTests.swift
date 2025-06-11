@@ -375,4 +375,81 @@ struct AwaitlessFreestandingTests {
             """
         }
     }
+
+    @Test("Async property accessor (should not expand)")
+    func asyncPropertyAccessor() {
+        assertMacro {
+            """
+            let value = #awaitless(object.asyncProperty)
+            """
+        } expansion: {
+            // Property access is not an async call; expansion should probably fail or be a no-op, depending on macro
+            // behavior.
+            """
+            let value = Noasync.run({
+                    return await object.asyncProperty
+                })
+            """
+        }
+    }
+
+    @Test("Async subscript call")
+    func asyncSubscript() {
+        assertMacro {
+            """
+            let result = #awaitless(object[42])
+            """
+        } expansion: {
+            """
+            let result = Noasync.run({
+                    return await object[42]
+                })
+            """
+        }
+    }
+
+    @Test("Async initializer")
+    func asyncInitializer() {
+        assertMacro {
+            """
+            let value = #awaitless(MyTypeAsync.init(param: 7))
+            """
+        } expansion: {
+            """
+            let value = Noasync.run({
+                    return await MyTypeAsync.init(param: 7)
+                })
+            """
+        }
+    }
+
+    @Test("Async void return")
+    func asyncVoidReturn() {
+        assertMacro {
+            """
+            #awaitless(doSomethingAsync())
+            """
+        } expansion: {
+            """
+            Noasync.run({
+                    return await doSomethingAsync()
+                })
+            """
+        }
+    }
+
+    @Test("Static async method call")
+    func staticAsyncMethod() {
+        assertMacro {
+            """
+            let value = #awaitless(MyType.staticAsyncMethod(with: 5))
+            """
+        } expansion: {
+            """
+            let value = Noasync.run({
+                    return await MyType.staticAsyncMethod(with: 5)
+                })
+            """
+        }
+    }
 }

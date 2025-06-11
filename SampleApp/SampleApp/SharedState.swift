@@ -6,14 +6,14 @@ import AwaitlessKit
 import Foundation
 
 final class SharedState: Sendable {
-    @IsolatedSafe
-    private nonisolated(unsafe) var _unsafeCounter: Int = 0
-    
     func incrementCounter() {
         accessQueueCounter.async(flags: .barrier) {
             self._unsafeCounter += 1
         }
     }
+
+    @IsolatedSafe
+    private nonisolated(unsafe) var _unsafeCounter: Int = 0
 
     // Generates:
     //

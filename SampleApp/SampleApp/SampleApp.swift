@@ -3,8 +3,8 @@
 //
 
 import AwaitlessKit
-import Foundation
 import Darwin
+import Foundation
 
 @main
 final class SampleApp {
@@ -12,7 +12,7 @@ final class SampleApp {
         let app = SampleApp()
         try app.run()
     }
-    
+
     func run() throws {
         try basicUsageExample()
         try migrationWithDeprecationExample()
