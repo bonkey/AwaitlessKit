@@ -114,7 +114,7 @@ public struct CompletionBlockAttachedMacro: PeerMacro {
         -> FunctionDeclSyntax
     {
         let originalFuncName = funcDecl.name.text
-        let newFuncName = originalFuncName + prefix.prefix(1).capitalized + prefix.dropFirst()
+        let newFuncName = originalFuncName + prefix.capitalized
 
         // Extract return type and determine if the function throws
         let (returnTypeSyntax, isVoid) = extractReturnType(funcDecl: funcDecl)
