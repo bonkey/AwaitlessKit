@@ -278,7 +278,7 @@ public struct CompletionBlockAttachedMacro: PeerMacro {
                     } else {
                         // For non-void functions: let result = try await call, then completion(.success(result))
                         CodeBlockItemSyntax(
-                            item: .stmt(StmtSyntax(
+                            item: .decl(DeclSyntax(
                                 VariableDeclSyntax(
                                     bindingSpecifier: .keyword(.let),
                                     bindings: PatternBindingListSyntax {
@@ -322,7 +322,7 @@ public struct CompletionBlockAttachedMacro: PeerMacro {
                                 item: .expr(createCompletionCall(isSuccess: true, isVoid: true)))
                         } else {
                             CodeBlockItemSyntax(
-                                item: .stmt(StmtSyntax(
+                                item: .decl(DeclSyntax(
                                     VariableDeclSyntax(
                                         bindingSpecifier: .keyword(.let),
                                         bindings: PatternBindingListSyntax {
