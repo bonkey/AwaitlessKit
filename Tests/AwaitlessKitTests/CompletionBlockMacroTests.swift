@@ -28,15 +28,15 @@ struct CompletionBlockMacroTests {
                 return ["Hello", "World"]
             }
 
-            func fetchDataWithCompletion(completion: @escaping (Result<[String], Error>) -> Void) {
-                Task {
-                    do {
-                        let result = try await fetchData()
-                        completion(Result.success(result))
-                    } catch {
-                        completion(Result.failure(error))
-                    }
-                }
+            func fetchDataWithCompletion(completion: @escaping(Result<[String], Error>) -> Void) {
+                Task({
+                        do {
+                            let result = try await fetchData()
+                            completion(Result.success(result))
+                        } catch {
+                            completion(Result.failure(error))
+                        }
+                    })
             }
             """
         }
@@ -59,11 +59,11 @@ struct CompletionBlockMacroTests {
                 return loudly ? "HELLO, \\(name.uppercased())!" : "Hello, \\(name)."
             }
 
-            func greetWithCompletion(name: String, loudly: Bool = false, completion: @escaping (Result<String, Error>) -> Void) {
-                Task {
-                    let result = await greet(name: name, loudly: loudly)
-                    completion(Result.success(result))
-                }
+            func greetWithCompletion(name: String, loudly: Bool = false, completion: @escaping(Result<String, Error>) -> Void) {
+                Task({
+                        let result = await greet(name: name, loudly: loudly)
+                        completion(Result.success(result))
+                    })
             }
             """
         }
@@ -86,15 +86,15 @@ struct CompletionBlockMacroTests {
                 print("Action completed")
             }
 
-            func performActionWithCompletion(completion: @escaping (Result<Void, Error>) -> Void) {
-                Task {
-                    do {
-                        try await performAction()
-                        completion(Result.success(()))
-                    } catch {
-                        completion(Result.failure(error))
-                    }
-                }
+            func performActionWithCompletion(completion: @escaping(Result<Void, Error>) -> Void) {
+                Task({
+                        do {
+                            try await performAction()
+                            completion(Result.success(()))
+                        } catch {
+                            completion(Result.failure(error))
+                        }
+                    })
             }
             """
         }
@@ -117,15 +117,15 @@ struct CompletionBlockMacroTests {
                 return data
             }
 
-            func downloadFileCallback(url: URL, completion: @escaping (Result<Data, Error>) -> Void) {
-                Task {
-                    do {
-                        let result = try await downloadFile(url: url)
-                        completion(Result.success(result))
-                    } catch {
-                        completion(Result.failure(error))
-                    }
-                }
+            func downloadFileCallback(url: URL, completion: @escaping(Result<Data, Error>) -> Void) {
+                Task({
+                        do {
+                            let result = try await downloadFile(url: url)
+                            completion(Result.success(result))
+                        } catch {
+                            completion(Result.failure(error))
+                        }
+                    })
             }
             """
         }
@@ -148,12 +148,11 @@ struct CompletionBlockMacroTests {
                 return "Legacy result"
             }
 
-            @available(*, deprecated, message: "Use async version instead", renamed: "legacyFunction")
-            func legacyFunctionWithCompletion(completion: @escaping (Result<String, Error>) -> Void) {
-                Task {
-                    let result = await legacyFunction()
-                    completion(Result.success(result))
-                }
+            @available(*, deprecated, message: "Use async version instead", renamed: "legacyFunction") func legacyFunctionWithCompletion(completion: @escaping(Result<String, Error>) -> Void) {
+                Task({
+                        let result = await legacyFunction()
+                        completion(Result.success(result))
+                    })
             }
             """
         }
@@ -176,16 +175,15 @@ struct CompletionBlockMacroTests {
                 return 42
             }
 
-            @available(*, unavailable, message: "This completion version is not supported")
-            func modernFunctionWithCompletion(completion: @escaping (Result<Int, Error>) -> Void) {
-                Task {
-                    do {
-                        let result = try await modernFunction()
-                        completion(Result.success(result))
-                    } catch {
-                        completion(Result.failure(error))
-                    }
-                }
+            @available(*, unavailable, message: "This completion version is not supported") func modernFunctionWithCompletion(completion: @escaping(Result<Int, Error>) -> Void) {
+                Task({
+                        do {
+                            let result = try await modernFunction()
+                            completion(Result.success(result))
+                        } catch {
+                            completion(Result.failure(error))
+                        }
+                    })
             }
             """
         }
@@ -208,11 +206,11 @@ struct CompletionBlockMacroTests {
                 return "Simple result"
             }
 
-            func simpleAsyncWithCompletion(completion: @escaping (Result<String, Error>) -> Void) {
-                Task {
-                    let result = await simpleAsync()
-                    completion(Result.success(result))
-                }
+            func simpleAsyncWithCompletion(completion: @escaping(Result<String, Error>) -> Void) {
+                Task({
+                        let result = await simpleAsync()
+                        completion(Result.success(result))
+                    })
             }
             """
         }
@@ -256,4 +254,3 @@ struct CompletionBlockMacroTests {
         }
     }
 }
-

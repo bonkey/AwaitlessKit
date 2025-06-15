@@ -114,7 +114,7 @@ public struct CompletionBlockAttachedMacro: PeerMacro {
         -> FunctionDeclSyntax
     {
         let originalFuncName = funcDecl.name.text
-        let newFuncName = originalFuncName + prefix.capitalized
+        let newFuncName = originalFuncName + prefix.prefix(1).capitalized + prefix.dropFirst()
 
         // Extract return type and determine if the function throws
         let (returnTypeSyntax, isVoid) = extractReturnType(funcDecl: funcDecl)
@@ -245,11 +245,11 @@ public struct CompletionBlockAttachedMacro: PeerMacro {
         let taskCall = ExprSyntax(
             FunctionCallExprSyntax(
                 calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Task")),
-                leftParen: .leftParenToken(),
+                leftParen: nil,
                 arguments: LabeledExprListSyntax {
                     LabeledExprSyntax(expression: taskBody)
                 },
-                rightParen: .rightParenToken()))
+                rightParen: nil))
 
         // Create the function body with the Task call
         return CodeBlockSyntax(
@@ -587,4 +587,3 @@ enum CompletionBlockAttachedMacroDiagnostic: String, DiagnosticMessage {
         MessageID(domain: "CompletionBlockMacros", id: rawValue)
     }
 }
-
