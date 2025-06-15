@@ -18,8 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-xcode15:
-    name: Test on Xcode 15
+  build-xcode15:
+    name: Build on Xcode 15
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v3
