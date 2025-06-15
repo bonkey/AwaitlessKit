@@ -20,3 +20,8 @@ public macro Awaitless(prefix: String = "", _ availability: AwaitlessAvailabilit
 public macro IsolatedSafe(writable: Bool = false, queueName: String? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "IsolatedSafeMacro")
+
+@attached(peer, names: arbitrary)
+public macro CompletionBlock(prefix: String = "withCompletion", _ availability: AwaitlessAvailability? = nil) = #externalMacro(
+    module: "AwaitlessKitMacros",
+    type: "CompletionBlockAttachedMacro")

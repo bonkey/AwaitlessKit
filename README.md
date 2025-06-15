@@ -95,6 +95,10 @@ Generates synchronous wrappers for async functions with built-in deprecation con
 
 Execute async code blocks synchronously (Swift 6.0+ only).
 
+### `@CompletionBlock` - automatic completion handler generation
+
+Generates completion block wrappers for async functions using `Result<T, Error>` pattern.
+
 ### `@IsolatedSafe` - generate thread-safe properties
 
 Automatic runtime thread-safe wrappers for `nonisolated(unsafe)` properties.
@@ -157,6 +161,62 @@ class APIClient {
     //     try Noasync.run({
     //             try await authenticate()
     //         })
+    // }
+}
+```
+
+### Completion Block Generation
+
+```swift
+class NetworkService {
+    @CompletionBlock
+    func fetchUser(id: String) async throws -> User {
+        let response = try await URLSession.shared.data(from: userURL(id))
+        return try JSONDecoder().decode(User.self, from: response.0)
+    }
+
+    // Generates:
+    // func fetchUserWithCompletion(id: String, completion: @escaping (Result<User, Error>) -> Void) {
+    //     Task {
+    //         do {
+    //             let result = try await fetchUser(id: id)
+    //             completion(Result.success(result))
+    //         } catch {
+    //             completion(Result.failure(error))
+    //         }
+    //     }
+    // }
+}
+
+// Usage with completion blocks
+service.fetchUserWithCompletion(id: "123") { result in
+    switch result {
+    case .success(let user):
+        print("User: \(user.name)")
+    case .failure(let error):
+        print("Error: \(error)")
+    }
+}
+```
+
+### Custom Completion Naming
+
+```swift
+class APIClient {
+    @CompletionBlock(prefix: "Callback")
+    func authenticate() async throws -> Token {
+        try await performAuthentication()
+    }
+    // Generates:
+    // func authenticateCallback(completion: @escaping (Result<Token, Error>) -> Void) {
+    //     Task {
+    //         do {
+    //             let result = try await authenticate()
+    //             completion(Result.success(result))
+    //         } catch {
+    //             completion(Result.failure(error))
+    //         }
+    //     }
     // }
 }
 ```
