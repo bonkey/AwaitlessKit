@@ -27,8 +27,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "510.0.0"),
-        .package(url: "https://github.com/bonkey/swift-macro-testing.git", branch: "main"),
-//        .package(url: "https://github.com/pointfreeco/swift-macro-testing.git", from: "0.6.2"),
+        .package(url: "https://github.com/pointfreeco/swift-macro-testing.git", from: "0.6.3"),
     ],
     targets: [
         .target(

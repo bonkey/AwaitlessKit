@@ -61,13 +61,11 @@ let user2 = try service.fetchUser(id: "456")        // Generated sync version
 
 ## Requirements
 
-| Swift Version | Xcode Version | Support Level                          |
-| ------------- | ------------- | -------------------------------------- |
-| Swift 6.0+    | Xcode 16+     | ✅ Full support                         |
-| Swift 5.9+    | Xcode 15+     | ⚠️ Limited (`#awaitless()` unavailable) |
-| Swift 5.8-    | Xcode 14-     | ❌ Not supported                        |
-
-**Recommended:** Xcode 16 with Swift 6.0 for the best experience.
+| Swift Compiler Version | Xcode Version | Support Level                           |
+| ---------------------- | ------------- | --------------------------------------- |
+| Swift 6.0+             | Xcode 16+     | ✅ Full support                         |
+| Swift 5.9+             | Xcode 15+     | ⚠️ Limited (`#awaitless()` unavailable) |
+| Swift 5.8-             | Xcode 14-     | ❌ Not supported                        |
 
 ## Installation
 
@@ -89,7 +87,7 @@ targets: [
 
 ### `@Awaitless` - automatic sync function generation
 
-Generates synchronous wrappers for async functions with built-in deprecation controls.
+Generates synchronous wrappers for `async` functions with built-in deprecation controls.
 
 ### `#awaitless()` - inline async code execution
 
@@ -117,7 +115,7 @@ class NetworkManager {
         return data
     }
 
-    // Generated automatically without async:
+    // Generated automatically:
     // @available(*, noasync) func downloadFile(url: URL) throws -> Data {
     //    try Noasync.run({
     //            try await downloadFile(url: url)
@@ -133,7 +131,7 @@ let data = try NetowrkManager().downloadFile(url: fileURL) // Sync call
 
 ```swift
 class LegacyService {
-    @Awaitless(.deprecated("Use async version. Sync version will be removed in v2.0"))
+    @Awaitless(.deprecated("Use async version. Non-async version will be removed in v2.0"))
     func processData() async throws -> String {
         try await Task.sleep(nanoseconds: 1_000_000)
         return "Processed"
@@ -259,4 +257,4 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-***Remember:** AwaitlessKit is a migration tool, not a permanent solution. Plan your async/await adoption strategy and use this library to smooth the transition.*
+**\*Remember:** AwaitlessKit is a migration tool, not a permanent solution. Plan your async/await adoption strategy and use this library to smooth the transition.\*
