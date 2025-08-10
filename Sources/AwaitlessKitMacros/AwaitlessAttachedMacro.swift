@@ -9,6 +9,7 @@ import Foundation
 import SwiftCompilerPlugin
 import SwiftDiagnostics
 import SwiftSyntaxBuilder
+import Combine
 
 // MARK: - AwaitlessAttachedMacro
 
@@ -22,7 +23,12 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         in context: some MacroExpansionContext) throws
         -> [DeclSyntax]
     {
-        // Validate that the declaration is a function
+        // Handle protocol declarations
+        if let protocolDecl = declaration.as(ProtocolDeclSyntax.self) {
+            return try expandProtocol(protocolDecl, node: node, context: context)
+        }
+        
+        // Handle function declarations (existing behavior)
         guard let funcDecl = declaration.as(FunctionDeclSyntax.self) else {
             let diagnostic = Diagnostic(
                 node: Syntax(declaration),
@@ -41,8 +47,9 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             return []
         }
 
-        // Extract prefix and availability from the attribute
+        // Extract prefix, output type, and availability from the attribute
         var prefix = ""
+        var outputType: AwaitlessOutputType = .sync
         var availability: AwaitlessAvailability? = nil
 
         if case let .argumentList(arguments) = node.arguments {
@@ -56,20 +63,33 @@ public struct AwaitlessAttachedMacro: PeerMacro {
                     prefix = stringLiteral.segments.description
                         .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
                 }
+                
+                // Check for output type parameter
+                if labeledExpr.label?.text == "as",
+                   let memberAccess = labeledExpr.expression.as(MemberAccessExprSyntax.self)
+                {
+                    // Handle cases like: @Awaitless(as: .publisher)
+                    if memberAccess.declName.baseName.text == "publisher" {
+                        outputType = .publisher
+                    } else if memberAccess.declName.baseName.text == "sync" {
+                        outputType = .sync
+                    }
+                }
             }
 
-            // Check for availability parameter (first unlabeled argument)
-            if let firstArg = arguments.first,
-               !(firstArg.label?.text == "prefix")
-            {
-                if let memberAccess = firstArg.expression.as(MemberAccessExprSyntax.self) {
+            // Check for availability parameter (first unlabeled argument or argument without specific label)
+            for argument in arguments {
+                if argument.label?.text != "prefix" && argument.label?.text != "as",
+                   let memberAccess = argument.expression.as(MemberAccessExprSyntax.self)
+                {
                     // Handle cases like: @Awaitless(.deprecated) or @Awaitless(.unavailable)
                     if memberAccess.declName.baseName.text == "deprecated" {
                         availability = .deprecated()
                     } else if memberAccess.declName.baseName.text == "unavailable" {
                         availability = .unavailable()
                     }
-                } else if let functionCall = firstArg.expression.as(FunctionCallExprSyntax.self),
+                } else if argument.label?.text != "prefix" && argument.label?.text != "as",
+                          let functionCall = argument.expression.as(FunctionCallExprSyntax.self),
                           let calledExpr = functionCall.calledExpression.as(MemberAccessExprSyntax.self)
                 {
                     // Handle cases like: @Awaitless(.deprecated("message")) or @Awaitless(.unavailable("message"))
@@ -98,14 +118,117 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             }
         }
 
-        // Create the new synchronous function
-        let syncFunction = createSyncFunction(
+        // Create the new function based on output type
+        let generatedDecl: DeclSyntax = createFunction(
             from: funcDecl,
             prefix: prefix,
+            outputType: outputType,
             availability: availability)
-        return [DeclSyntax(syncFunction)]
+        return [generatedDecl]
+    }
+    
+    /// Expands the @Awaitless macro when applied to a protocol declaration
+    private static func expandProtocol(
+        _ protocolDecl: ProtocolDeclSyntax,
+        node: AttributeSyntax,
+        context: some MacroExpansionContext) throws -> [DeclSyntax]
+    {
+        // For protocols, we create sync versions of async methods as peer declarations
+        var peerDeclarations: [DeclSyntax] = []
+        
+        // Process all members to find async functions
+        for member in protocolDecl.memberBlock.members {
+            // If this is an async function, create its sync version as a peer declaration
+            if let functionDecl = member.decl.as(FunctionDeclSyntax.self),
+               let effectSpecifiers = functionDecl.signature.effectSpecifiers,
+               effectSpecifiers.asyncSpecifier != nil
+            {
+                // Create a sync version of the async function
+                let syncFunction = createSyncFunctionSignature(
+                    from: functionDecl)
+                peerDeclarations.append(DeclSyntax(syncFunction))
+            }
+        }
+        
+        return peerDeclarations
+    }
+    
+    /// Creates a synchronous version of a protocol
+    private static func createSyncProtocol(
+        from protocolDecl: ProtocolDeclSyntax,
+        name: String) -> ProtocolDeclSyntax
+    {
+        // Create an empty member block for now
+        let memberBlock = MemberBlockSyntax(
+            leftBrace: .leftBraceToken(),
+            members: MemberBlockItemListSyntax([]),
+            rightBrace: .rightBraceToken())
+        
+        return ProtocolDeclSyntax(
+            attributes: protocolDecl.attributes,
+            modifiers: protocolDecl.modifiers,
+            protocolKeyword: .keyword(.protocol),
+            name: .identifier(name),
+            inheritanceClause: protocolDecl.inheritanceClause,
+            genericWhereClause: protocolDecl.genericWhereClause,
+            memberBlock: memberBlock)
+    }
+    
+    /// Creates a synchronous function signature from an async function
+    private static func createSyncFunctionSignature(
+        from funcDecl: FunctionDeclSyntax) -> FunctionDeclSyntax
+    {
+        // Remove async specifier but keep throws if present
+        let isThrowing = funcDecl.signature.effectSpecifiers?.description.contains("throws") ?? false
+        
+        let newEffectSpecifiers: FunctionEffectSpecifiersSyntax? = 
+            if isThrowing {
+                FunctionEffectSpecifiersSyntax(
+                    leadingTrivia: [],
+                    throwsSpecifier: .keyword(.throws),
+                    trailingTrivia: [])
+            } else {
+                nil
+            }
+        
+        let newSignature = FunctionSignatureSyntax(
+            parameterClause: funcDecl.signature.parameterClause,
+            effectSpecifiers: newEffectSpecifiers,
+            returnClause: funcDecl.signature.returnClause)
+        
+        return FunctionDeclSyntax(
+            attributes: AttributeListSyntax([]), // No attributes for peer declarations
+            modifiers: funcDecl.modifiers,
+            funcKeyword: .keyword(.func),
+            name: funcDecl.name,
+            genericParameterClause: funcDecl.genericParameterClause,
+            signature: newSignature,
+            genericWhereClause: funcDecl.genericWhereClause,
+            body: nil)
     }
 
+    /// Creates a function based on the specified output type
+    private static func createFunction(
+        from funcDecl: FunctionDeclSyntax,
+        prefix: String,
+        outputType: AwaitlessOutputType,
+        availability: AwaitlessAvailability?)
+        -> DeclSyntax
+    {
+        switch outputType {
+        case .sync:
+            return DeclSyntax(createSyncFunction(
+                from: funcDecl,
+                prefix: prefix,
+                availability: availability))
+        case .publisher:
+            return DeclSyntax(createPublisherFunction(
+                from: funcDecl,
+                prefix: prefix,
+                availability: availability))
+        }
+    }
+    
     /// Creates a synchronous version of the provided async function
     private static func createSyncFunction(
         from funcDecl: FunctionDeclSyntax,
@@ -138,6 +261,72 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         // Add noasync attribute to all generated functions
         let noasyncAttr = createNoasyncAttribute()
         attributes = attributes + [AttributeListSyntax.Element(noasyncAttr)]
+
+        // Add availability attribute if needed
+        if let availability {
+            let availabilityAttr = createAvailabilityAttribute(
+                originalFuncName: originalFuncName,
+                availability: availability)
+            attributes = attributes + [AttributeListSyntax.Element(availabilityAttr)]
+        }
+
+        // Create the new function, copying most attributes from the original
+        return FunctionDeclSyntax(
+            attributes: attributes,
+            modifiers: funcDecl.modifiers,
+            funcKeyword: .keyword(.func),
+            name: .identifier(newFuncName),
+            genericParameterClause: funcDecl.genericParameterClause,
+            signature: newSignature,
+            genericWhereClause: funcDecl.genericWhereClause,
+            body: newBody)
+    }
+    
+    /// Creates a publisher version of the provided async function
+    private static func createPublisherFunction(
+        from funcDecl: FunctionDeclSyntax,
+        prefix: String,
+        availability: AwaitlessAvailability?)
+        -> FunctionDeclSyntax
+    {
+        let originalFuncName = funcDecl.name.text
+        let newFuncName = prefix + originalFuncName
+
+        // Extract return type
+        let (returnTypeSyntax, _) = extractReturnType(funcDecl: funcDecl)
+        let isThrowing = funcDecl.signature.effectSpecifiers?.description.contains("throws") ?? false
+        
+        // Determine publisher return type
+        let publisherReturnType: TypeSyntax = 
+            if isThrowing {
+                if let returnType = returnTypeSyntax {
+                    TypeSyntax(IdentifierTypeSyntax(name: .identifier("AnyPublisher<\(returnType.description), Error>")))
+                } else {
+                    TypeSyntax(IdentifierTypeSyntax(name: .identifier("AnyPublisher<Void, Error>")))
+                }
+            } else {
+                if let returnType = returnTypeSyntax {
+                    TypeSyntax(IdentifierTypeSyntax(name: .identifier("AnyPublisher<\(returnType.description), Never>")))
+                } else {
+                    TypeSyntax(IdentifierTypeSyntax(name: .identifier("AnyPublisher<Void, Never>")))
+                }
+            }
+
+        // Create the function body that creates a publisher
+        let newBody = createPublisherFunctionBody(
+            originalFuncName: originalFuncName,
+            parameters: funcDecl.signature.parameterClause.parameters,
+            isThrowing: isThrowing,
+            returnType: returnTypeSyntax)
+
+        // Create the new function signature
+        let newSignature = FunctionSignatureSyntax(
+            parameterClause: funcDecl.signature.parameterClause,
+            effectSpecifiers: nil, // No async or throws for publisher functions
+            returnClause: ReturnClauseSyntax(type: publisherReturnType))
+
+        // Create attributes for the new function
+        var attributes = filterAttributes(funcDecl.attributes)
 
         // Add availability attribute if needed
         if let availability {
@@ -269,6 +458,72 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         return CodeBlockSyntax(
             statements: CodeBlockItemListSyntax {
                 CodeBlockItemSyntax(item: .expr(ExprSyntax(taskNoasyncCall)))
+            })
+    }
+    
+    /// Creates the function body that creates a publisher from an async function
+    private static func createPublisherFunctionBody(
+        originalFuncName: String,
+        parameters: FunctionParameterListSyntax,
+        isThrowing: Bool,
+        returnType: TypeSyntax?)
+        -> CodeBlockSyntax
+    {
+        // Map parameters from the original function to argument expressions
+        let argumentList = createArgumentList(from: parameters)
+
+        // Create the function call to the original async function
+        let asyncCallExpr = ExprSyntax(
+            FunctionCallExprSyntax(
+                calledExpression: DeclReferenceExprSyntax(baseName: .identifier(originalFuncName)),
+                leftParen: .leftParenToken(),
+                arguments: argumentList,
+                rightParen: .rightParenToken()))
+
+        // Add await to the async call
+        let awaitExpression = ExprSyntax(AwaitExprSyntax(expression: asyncCallExpr))
+
+        // If the original function throws, add try to the call
+        let innerCallExpr = isThrowing
+            ? ExprSyntax(TryExprSyntax(expression: awaitExpression))
+            : awaitExpression
+
+        // Create the closure to pass to Future (without promise parameter)
+        let innerClosure = ExprSyntax(
+            ClosureExprSyntax(
+                statements: CodeBlockItemListSyntax {
+                    CodeBlockItemSyntax(item: .expr(innerCallExpr))
+                }))
+
+        // Create the Future publisher call
+        let publisherCall = FunctionCallExprSyntax(
+            calledExpression: MemberAccessExprSyntax(
+                base: DeclReferenceExprSyntax(baseName: .identifier("Future")),
+                period: .periodToken(),
+                name: .identifier("init")),
+            leftParen: .leftParenToken(),
+            arguments: LabeledExprListSyntax {
+                LabeledExprSyntax(
+                    label: .identifier("attemptToFulfill"),
+                    colon: .colonToken(),
+                    expression: innerClosure)
+            },
+            rightParen: .rightParenToken())
+        
+        // Add .eraseToAnyPublisher()
+        let erasedPublisher = FunctionCallExprSyntax(
+            calledExpression: MemberAccessExprSyntax(
+                base: ExprSyntax(publisherCall),
+                period: .periodToken(),
+                name: .identifier("eraseToAnyPublisher")),
+            leftParen: .leftParenToken(),
+            arguments: LabeledExprListSyntax(),
+            rightParen: .rightParenToken())
+
+        // Create the function body with the publisher call
+        return CodeBlockSyntax(
+            statements: CodeBlockItemListSyntax {
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(erasedPublisher)))
             })
     }
 

@@ -23,6 +23,8 @@ public enum AccessLevel: String, ExpressibleByStringLiteral, Codable {
     }
 }
 
+
+
 // MARK: - IsolatedSafeMacro
 
 /// A macro that generates a thread-safe accessor for a nonisolated(unsafe) property.
@@ -104,6 +106,9 @@ public struct IsolatedSafeMacro: PeerMacro {
 
         // Parse writable flag from macro arguments
         let isWritable = parseWritable(from: node)
+        
+        // Parse synchronization strategy from macro arguments
+        let strategy = parseSynchronizationStrategy(from: node)
 
         // Generate the safe property
         let safeProperty = generateSafeProperty(
@@ -111,12 +116,13 @@ public struct IsolatedSafeMacro: PeerMacro {
             typeAnnotation: initializer,
             accessLevel: accessLevel,
             queueName: queueName,
-            writable: isWritable)
+            writable: isWritable,
+            strategy: strategy)
 
-        // Generate the queue if needed
-        let queue = generateQueue(name: queueName, accessLevel: accessLevel)
+        // Generate the queue(s) based on strategy
+        let queues = generateQueues(name: queueName, accessLevel: accessLevel, strategy: strategy)
 
-        return [DeclSyntax(safeProperty), DeclSyntax(queue)]
+        return [DeclSyntax(safeProperty)] + queues.map { DeclSyntax($0) }
     }
 
     /// Check if the variable has nonisolated(unsafe) modifier
@@ -180,6 +186,31 @@ public struct IsolatedSafeMacro: PeerMacro {
 
         return false
     }
+    
+    /// Parse synchronization strategy from macro arguments
+    private static func parseSynchronizationStrategy(from node: AttributeSyntax) -> AwaitlessSynchronizationStrategy {
+        guard let labeledArguments = node.arguments?.as(LabeledExprListSyntax.self) else {
+            return .concurrent
+        }
+
+        for argument in labeledArguments {
+            if argument.label?.text == "strategy",
+               let memberAccess = argument.expression.as(MemberAccessExprSyntax.self)
+            {
+                let value = memberAccess.declName.baseName.text
+                switch value {
+                case "serial":
+                    return .serial
+                case "concurrent":
+                    return .concurrent
+                default:
+                    return .concurrent
+                }
+            }
+        }
+
+        return .concurrent
+    }
 
     /// Parse queue name from macro arguments or generate one based on property name
     private static func parseQueueName(
@@ -216,7 +247,8 @@ public struct IsolatedSafeMacro: PeerMacro {
         typeAnnotation: TypeAnnotationSyntax,
         accessLevel: AccessLevel,
         queueName: String,
-        writable: Bool = false)
+        writable: Bool = false,
+        strategy: AwaitlessSynchronizationStrategy)
         -> VariableDeclSyntax
     {
         // Compute the new property name by removing "_unsafe" prefix and lowercasing first letter
@@ -229,9 +261,12 @@ public struct IsolatedSafeMacro: PeerMacro {
             AccessorDeclSyntax(
                 accessorSpecifier: .keyword(.get),
                 body: CodeBlockSyntax {
-                    ExprSyntax("""
-                    \(raw: queueName).sync { self.\(raw: unsafePropertyName) }
-                    """)
+                    switch strategy {
+                    case .concurrent, .serial:
+                        ExprSyntax("""
+                        \(raw: queueName).sync { self.\(raw: unsafePropertyName) }
+                        """)
+                    }
                 })
         }
 
@@ -241,9 +276,16 @@ public struct IsolatedSafeMacro: PeerMacro {
                 AccessorDeclSyntax(
                     accessorSpecifier: .keyword(.set),
                     body: CodeBlockSyntax {
-                        ExprSyntax("""
-                        \(raw: queueName).async(flags: .barrier) { self.\(raw: unsafePropertyName) = newValue }
-                        """)
+                        switch strategy {
+                        case .concurrent:
+                            ExprSyntax("""
+                            \(raw: queueName).async(flags: .barrier) { self.\(raw: unsafePropertyName) = newValue }
+                            """)
+                        case .serial:
+                            ExprSyntax("""
+                            \(raw: queueName).sync { self.\(raw: unsafePropertyName) = newValue }
+                            """)
+                        }
                     }))
         }
 
@@ -262,8 +304,22 @@ public struct IsolatedSafeMacro: PeerMacro {
             })
     }
 
-    /// Generate the queue property
-    private static func generateQueue(name: String, accessLevel: AccessLevel) -> VariableDeclSyntax {
+    /// Generate the queue(s) based on the synchronization strategy
+    private static func generateQueues(
+        name: String, 
+        accessLevel: AccessLevel, 
+        strategy: AwaitlessSynchronizationStrategy) -> [VariableDeclSyntax]
+    {
+        switch strategy {
+        case .concurrent:
+            return [generateConcurrentQueue(name: name, accessLevel: accessLevel)]
+        case .serial:
+            return [generateSerialQueue(name: name, accessLevel: accessLevel)]
+        }
+    }
+    
+    /// Generate a concurrent queue
+    private static func generateConcurrentQueue(name: String, accessLevel: AccessLevel) -> VariableDeclSyntax {
         VariableDeclSyntax(
             modifiers: DeclModifierListSyntax {
                 DeclModifierSyntax(name: .identifier("private"))
@@ -275,6 +331,23 @@ public struct IsolatedSafeMacro: PeerMacro {
                     initializer: InitializerClauseSyntax(
                         value: ExprSyntax("""
                         DispatchQueue(label: "\(raw: name)", attributes: .concurrent)
+                        """)))
+            })
+    }
+    
+    /// Generate a serial queue
+    private static func generateSerialQueue(name: String, accessLevel: AccessLevel) -> VariableDeclSyntax {
+        VariableDeclSyntax(
+            modifiers: DeclModifierListSyntax {
+                DeclModifierSyntax(name: .identifier("private"))
+            },
+            bindingSpecifier: .keyword(.let),
+            bindings: PatternBindingListSyntax {
+                PatternBindingSyntax(
+                    pattern: IdentifierPatternSyntax(identifier: .identifier(name)),
+                    initializer: InitializerClauseSyntax(
+                        value: ExprSyntax("""
+                        DispatchQueue(label: "\(raw: name)")
                         """)))
             })
     }

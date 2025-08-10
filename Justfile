@@ -26,8 +26,13 @@ build:
 swift-version:
     @echo "{{ style('warning') }}$(swift -version){{ NORMAL }}"
 
-test:
-    swift test
+test *FILTER:
+    #!/usr/bin/env zsh
+    if [ -n "{{FILTER}}" ]; then
+        swift test --parallel --filter "{{FILTER}}"
+    else
+        swift test --parallel
+    fi
 
 clean: kill-xcode
     swift package clean
