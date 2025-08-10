@@ -16,7 +16,7 @@ import Combine
 /// A macro that generates a synchronous version of an async function.
 /// This macro creates a twin function with specified prefix that wraps the original
 /// async function in a Noasync.run call, making it callable from synchronous contexts.
-public struct AwaitlessAttachedMacro: PeerMacro {
+public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -24,8 +24,8 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         -> [DeclSyntax]
     {
         // Handle protocol declarations
-        if let protocolDecl = declaration.as(ProtocolDeclSyntax.self) {
-            return try expandProtocol(protocolDecl, node: node, context: context)
+        if declaration.is(ProtocolDeclSyntax.self) {
+            return [] // Protocols are handled by MemberMacro
         }
         
         // Handle function declarations (existing behavior)
@@ -127,18 +127,24 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         return [generatedDecl]
     }
     
-    /// Expands the @Awaitless macro when applied to a protocol declaration
-    private static func expandProtocol(
-        _ protocolDecl: ProtocolDeclSyntax,
-        node: AttributeSyntax,
-        context: some MacroExpansionContext) throws -> [DeclSyntax]
-    {
-        // For protocols, we create sync versions of async methods as peer declarations
-        var peerDeclarations: [DeclSyntax] = []
+    // MARK: - MemberMacro Implementation
+    
+    public static func expansion(
+        of node: AttributeSyntax,
+        providingMembersOf declaration: some DeclGroupSyntax,
+        in context: some MacroExpansionContext
+    ) throws -> [DeclSyntax] {
+        // Handle protocol declarations
+        guard let protocolDecl = declaration.as(ProtocolDeclSyntax.self) else {
+            return []
+        }
+        
+        // For protocols, we create sync versions of async methods as member declarations
+        var memberDeclarations: [DeclSyntax] = []
         
         // Process all members to find async functions
         for member in protocolDecl.memberBlock.members {
-            // If this is an async function, create its sync version as a peer declaration
+            // If this is an async function, create its sync version as a member declaration
             if let functionDecl = member.decl.as(FunctionDeclSyntax.self),
                let effectSpecifiers = functionDecl.signature.effectSpecifiers,
                effectSpecifiers.asyncSpecifier != nil
@@ -146,32 +152,26 @@ public struct AwaitlessAttachedMacro: PeerMacro {
                 // Create a sync version of the async function
                 let syncFunction = createSyncFunctionSignature(
                     from: functionDecl)
-                peerDeclarations.append(DeclSyntax(syncFunction))
+                memberDeclarations.append(DeclSyntax(syncFunction))
             }
         }
         
-        return peerDeclarations
+        return memberDeclarations
     }
     
-    /// Creates a synchronous version of a protocol
-    private static func createSyncProtocol(
-        from protocolDecl: ProtocolDeclSyntax,
-        name: String) -> ProtocolDeclSyntax
-    {
-        // Create an empty member block for now
-        let memberBlock = MemberBlockSyntax(
-            leftBrace: .leftBraceToken(),
-            members: MemberBlockItemListSyntax([]),
-            rightBrace: .rightBraceToken())
+    /// Create sync effect specifiers from async ones
+    private static func createSyncEffectSpecifiers(from asyncSpecifiers: FunctionEffectSpecifiersSyntax) -> FunctionEffectSpecifiersSyntax? {
+        // Keep throws if present, remove async
+        let isThrowing = asyncSpecifiers.throwsSpecifier != nil
         
-        return ProtocolDeclSyntax(
-            attributes: protocolDecl.attributes,
-            modifiers: protocolDecl.modifiers,
-            protocolKeyword: .keyword(.protocol),
-            name: .identifier(name),
-            inheritanceClause: protocolDecl.inheritanceClause,
-            genericWhereClause: protocolDecl.genericWhereClause,
-            memberBlock: memberBlock)
+        if isThrowing {
+            return FunctionEffectSpecifiersSyntax(
+                leadingTrivia: [],
+                throwsSpecifier: asyncSpecifiers.throwsSpecifier,
+                trailingTrivia: [])
+        } else {
+            return nil
+        }
     }
     
     /// Creates a synchronous function signature from an async function
@@ -197,7 +197,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             returnClause: funcDecl.signature.returnClause)
         
         return FunctionDeclSyntax(
-            attributes: AttributeListSyntax([]), // No attributes for peer declarations
+            attributes: AttributeListSyntax([]),
             modifiers: funcDecl.modifiers,
             funcKeyword: .keyword(.func),
             name: funcDecl.name,
@@ -286,6 +286,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
     private static func createPublisherFunction(
         from funcDecl: FunctionDeclSyntax,
         prefix: String,
+
         availability: AwaitlessAvailability?)
         -> FunctionDeclSyntax
     {
