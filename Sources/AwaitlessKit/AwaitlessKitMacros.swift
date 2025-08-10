@@ -5,7 +5,10 @@
 public import AwaitlessCore
 
 @attached(peer, names: arbitrary)
-public macro Awaitless(prefix: String = "", _ availability: AwaitlessAvailability? = nil) = #externalMacro(
+public macro Awaitless(
+    prefix: String = "", 
+    as outputType: AwaitlessOutputType = .sync,
+    _ availability: AwaitlessAvailability? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "AwaitlessAttachedMacro")
 
@@ -17,6 +20,9 @@ public macro Awaitless(prefix: String = "", _ availability: AwaitlessAvailabilit
 #endif
 
 @attached(peer, names: arbitrary)
-public macro IsolatedSafe(writable: Bool = false, queueName: String? = nil) = #externalMacro(
+public macro IsolatedSafe(
+    writable: Bool = false, 
+    queueName: String? = nil,
+    strategy: AwaitlessSynchronizationStrategy = .concurrent) = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "IsolatedSafeMacro")
