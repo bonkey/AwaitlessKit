@@ -162,13 +162,12 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
     /// Create sync effect specifiers from async ones
     private static func createSyncEffectSpecifiers(from asyncSpecifiers: FunctionEffectSpecifiersSyntax) -> FunctionEffectSpecifiersSyntax? {
         // Keep throws if present, remove async
-        let isThrowing = asyncSpecifiers.throwsSpecifier != nil
+        let isThrowing = asyncSpecifiers.description.contains("throws")
         
         if isThrowing {
             return FunctionEffectSpecifiersSyntax(
-                leadingTrivia: [],
-                throwsSpecifier: asyncSpecifiers.throwsSpecifier,
-                trailingTrivia: [])
+                asyncSpecifier: nil,
+                throwsSpecifier: .keyword(.throws))
         } else {
             return nil
         }
@@ -184,9 +183,8 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
         let newEffectSpecifiers: FunctionEffectSpecifiersSyntax? = 
             if isThrowing {
                 FunctionEffectSpecifiersSyntax(
-                    leadingTrivia: [],
-                    throwsSpecifier: .keyword(.throws),
-                    trailingTrivia: [])
+                    asyncSpecifier: nil,
+                    throwsSpecifier: .keyword(.throws))
             } else {
                 nil
             }
@@ -430,35 +428,33 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
         let argumentList = createArgumentList(from: parameters)
 
         // Create the function call to the original async function
-        let asyncCallExpr = ExprSyntax(
-            FunctionCallExprSyntax(
-                calledExpression: DeclReferenceExprSyntax(baseName: .identifier(originalFuncName)),
-                leftParen: .leftParenToken(),
-                arguments: argumentList,
-                rightParen: .rightParenToken()))
+        let asyncCallExpr = FunctionCallExprSyntax(
+            calledExpression: DeclReferenceExprSyntax(baseName: .identifier(originalFuncName)),
+            leftParen: .leftParenToken(),
+            arguments: argumentList,
+            rightParen: .rightParenToken())
 
         // Add await to the async call
-        let awaitExpression = ExprSyntax(AwaitExprSyntax(expression: asyncCallExpr))
+        let awaitExpression = AwaitExprSyntax(expression: ExprSyntax(asyncCallExpr))
 
         // If the original function throws, add try to the call
-        let innerCallExpr = isThrowing
+        let innerCallExpr: ExprSyntax = isThrowing
             ? ExprSyntax(TryExprSyntax(expression: awaitExpression))
-            : awaitExpression
+            : ExprSyntax(awaitExpression)
 
         // Create the closure to pass to Noasync.run
-        let innerClosure = ExprSyntax(
-            ClosureExprSyntax(
-                statements: CodeBlockItemListSyntax {
-                    CodeBlockItemSyntax(item: .expr(innerCallExpr))
-                }))
+        let innerClosure = ClosureExprSyntax(
+            statements: CodeBlockItemListSyntax {
+                CodeBlockItemSyntax(item: .expr(innerCallExpr))
+            })
 
         // Create the Noasync.run call
-        let taskNoasyncCall = createTaskNoasyncCall(with: innerClosure, isThrowing: isThrowing)
+        let taskNoasyncCall = createTaskNoasyncCall(with: ExprSyntax(innerClosure), isThrowing: isThrowing)
 
         // Create the function body with the Noasync.run call
         return CodeBlockSyntax(
             statements: CodeBlockItemListSyntax {
-                CodeBlockItemSyntax(item: .expr(ExprSyntax(taskNoasyncCall)))
+                CodeBlockItemSyntax(item: .expr(taskNoasyncCall))
             })
     }
     
@@ -474,27 +470,25 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
         let argumentList = createArgumentList(from: parameters)
 
         // Create the function call to the original async function
-        let asyncCallExpr = ExprSyntax(
-            FunctionCallExprSyntax(
-                calledExpression: DeclReferenceExprSyntax(baseName: .identifier(originalFuncName)),
-                leftParen: .leftParenToken(),
-                arguments: argumentList,
-                rightParen: .rightParenToken()))
+        let asyncCallExpr = FunctionCallExprSyntax(
+            calledExpression: DeclReferenceExprSyntax(baseName: .identifier(originalFuncName)),
+            leftParen: .leftParenToken(),
+            arguments: argumentList,
+            rightParen: .rightParenToken())
 
         // Add await to the async call
-        let awaitExpression = ExprSyntax(AwaitExprSyntax(expression: asyncCallExpr))
+        let awaitExpression = AwaitExprSyntax(expression: ExprSyntax(asyncCallExpr))
 
         // If the original function throws, add try to the call
-        let innerCallExpr = isThrowing
+        let innerCallExpr: ExprSyntax = isThrowing
             ? ExprSyntax(TryExprSyntax(expression: awaitExpression))
-            : awaitExpression
+            : ExprSyntax(awaitExpression)
 
-        // Create the closure to pass to Future (without promise parameter)
-        let innerClosure = ExprSyntax(
-            ClosureExprSyntax(
-                statements: CodeBlockItemListSyntax {
-                    CodeBlockItemSyntax(item: .expr(innerCallExpr))
-                }))
+        // Create the closure to pass to Noasync.run
+        let innerClosure = ClosureExprSyntax(
+            statements: CodeBlockItemListSyntax {
+                CodeBlockItemSyntax(item: .expr(innerCallExpr))
+            })
 
         // Create the Future publisher call
         let publisherCall = FunctionCallExprSyntax(
@@ -521,11 +515,11 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
             arguments: LabeledExprListSyntax(),
             rightParen: .rightParenToken())
 
-        // Create the function body with the publisher call
-        return CodeBlockSyntax(
-            statements: CodeBlockItemListSyntax {
-                CodeBlockItemSyntax(item: .expr(ExprSyntax(erasedPublisher)))
-            })
+    // Create the return statement
+    return CodeBlockSyntax(
+        statements: CodeBlockItemListSyntax {
+            CodeBlockItemSyntax(item: .expr(ExprSyntax(publisherCall)))
+        })
     }
 
     /// Creates a Noasync.run function call with the provided closure
@@ -607,9 +601,8 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
         let newEffectSpecifiers: FunctionEffectSpecifiersSyntax? =
             if isThrowing {
                 FunctionEffectSpecifiersSyntax(
-                    leadingTrivia: [],
-                    throwsSpecifier: .keyword(.throws),
-                    trailingTrivia: [])
+                    asyncSpecifier: nil,
+                    throwsSpecifier: .keyword(.throws))
             } else {
                 nil
             }

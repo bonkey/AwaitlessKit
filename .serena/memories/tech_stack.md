@@ -1,17 +1,20 @@
 # AwaitlessKit Tech Stack
 
 ## Core Technologies
-- **Language**: Swift 5.10+ (with experimental features enabled)
+
+- **Language**: Swift 6.0+ (with Swift 5.x language mode compatibility)
 - **Package Manager**: Swift Package Manager (SPM)
 - **Build System**: Just (Justfile) + Xcode
 - **CI/CD**: GitHub Actions
 - **Testing**: XCTest + SwiftSyntaxMacrosTestSupport + MacroTesting
 
 ## Dependencies
-- **swift-syntax** (510.0.0+) - for macro implementation
+
+- **swift-syntax** (601.0.1+) - for macro implementation
 - **swift-macro-testing** (0.6.3+) - for macro testing
 
 ## Project Structure
+
 ```
 AwaitlessKit/
 ├── Sources/
@@ -26,7 +29,9 @@ AwaitlessKit/
 ```
 
 ## Compiler Features
+
 The project uses several Swift 6.0 experimental and upcoming features:
+
 - StrictConcurrency
 - AccessLevelOnImport
 - InternalImportsByDefault
@@ -34,6 +39,7 @@ The project uses several Swift 6.0 experimental and upcoming features:
 - And several others for forward compatibility
 
 ## Targets
+
 - **AwaitlessKit** - main library
 - **AwaitlessKitMacros** - macro implementations (CompilerPlugin)
 - **AwaitlessCore** - shared types and utilities

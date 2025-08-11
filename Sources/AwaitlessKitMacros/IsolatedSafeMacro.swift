@@ -122,7 +122,9 @@ public struct IsolatedSafeMacro: PeerMacro {
         // Generate the queue(s) based on strategy
         let queues = generateQueues(name: queueName, accessLevel: accessLevel, strategy: strategy)
 
-        return [DeclSyntax(safeProperty)] + queues.map { DeclSyntax($0) }
+        var results: [DeclSyntax] = [DeclSyntax(safeProperty)]
+        results.append(contentsOf: queues.map { DeclSyntax($0) })
+        return results
     }
 
     /// Check if the variable has nonisolated(unsafe) modifier
