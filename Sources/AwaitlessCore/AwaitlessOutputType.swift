@@ -9,5 +9,6 @@ public enum AwaitlessOutputType {
     /// Generates a standard synchronous function.
     case sync
     /// Generates a Combine publisher instead of a synchronous function.
+    /// Requires Combine framework to be available.
     case publisher
 }

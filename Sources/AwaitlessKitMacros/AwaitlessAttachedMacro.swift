@@ -9,7 +9,9 @@ import Foundation
 import SwiftCompilerPlugin
 import SwiftDiagnostics
 import SwiftSyntaxBuilder
+#if canImport(Combine)
 import Combine
+#endif
 
 // MARK: - AwaitlessAttachedMacro
 
@@ -70,7 +72,15 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
                 {
                     // Handle cases like: @Awaitless(as: .publisher)
                     if memberAccess.declName.baseName.text == "publisher" {
+                        #if canImport(Combine)
                         outputType = .publisher
+                        #else
+                        let diagnostic = Diagnostic(
+                            node: Syntax(labeledExpr.expression),
+                            message: AwaitlessAttachedMacroDiagnostic.combineNotAvailable)
+                        context.diagnose(diagnostic)
+                        return []
+                        #endif
                     } else if memberAccess.declName.baseName.text == "sync" {
                         outputType = .sync
                     }
@@ -225,10 +235,19 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
                 prefix: prefix,
                 availability: availability))
         case .publisher:
+            #if canImport(Combine)
             return DeclSyntax(createPublisherFunction(
                 from: funcDecl,
                 prefix: prefix,
                 availability: availability))
+            #else
+            // This should never be reached due to earlier validation,
+            // but provide a fallback just in case
+            return DeclSyntax(createSyncFunction(
+                from: funcDecl,
+                prefix: prefix,
+                availability: availability))
+            #endif
         }
     }
     
@@ -286,6 +305,7 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
     }
     
     /// Creates a publisher version of the provided async function
+    #if canImport(Combine)
     private static func createPublisherFunction(
         from funcDecl: FunctionDeclSyntax,
         prefix: String,
@@ -351,6 +371,7 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
             genericWhereClause: funcDecl.genericWhereClause,
             body: newBody)
     }
+    #endif
 
     /// Creates a noasync attribute for the function
     private static func createNoasyncAttribute() -> AttributeSyntax {
@@ -464,6 +485,7 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
     }
     
     /// Creates the function body that creates a publisher from an async function
+    #if canImport(Combine)
     private static func createPublisherFunctionBody(
         originalFuncName: String,
         parameters: FunctionParameterListSyntax,
@@ -526,6 +548,7 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
                 CodeBlockItemSyntax(item: .expr(ExprSyntax(erasedPublisher)))
             })
     }
+    #endif
 
     /// Creates a Noasync.run function call with the provided closure
     private static func createTaskNoasyncCall(with closure: ExprSyntax, isThrowing: Bool) -> ExprSyntax {
@@ -665,6 +688,7 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
 enum AwaitlessAttachedMacroDiagnostic: String, DiagnosticMessage {
     case requiresFunction = "@Awaitless can only be applied to functions"
     case requiresAsync = "@Awaitless requires the function to be 'async'"
+    case combineNotAvailable = "@Awaitless publisher output requires Combine framework, which is not available on this platform"
 
     var severity: DiagnosticSeverity { .error }
     var message: String { rawValue }

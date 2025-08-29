@@ -2,6 +2,7 @@
 // Copyright (c) 2025 Daniel Bauke
 //
 
+#if canImport(Combine)
 @testable import AwaitlessKit
 import AwaitlessKitMacros
 import MacroTesting
@@ -89,3 +90,4 @@ struct AwaitlessCombineTests {
         }
     }
 }
+#endif
