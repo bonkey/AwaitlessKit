@@ -5,6 +5,7 @@
 public import AwaitlessCore
 
 @attached(peer, names: arbitrary)
+@attached(member, names: arbitrary)
 public macro Awaitless(
     prefix: String = "", 
     as outputType: AwaitlessOutputType = .sync,

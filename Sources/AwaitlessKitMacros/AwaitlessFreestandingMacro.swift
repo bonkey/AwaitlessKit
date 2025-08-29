@@ -70,22 +70,7 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
                 rightParen: .rightParenToken()))
     }
 
-    /// Check if an expression contains try by examining the syntax tree
-    private static func containsTry(expression: ExprSyntax) -> Bool {
-        // Create a visitor to look for try expressions
-        class TryExpressionFinder: SyntaxVisitor {
-            var foundTry = false
 
-            override func visit(_ node: TryExprSyntax) -> SyntaxVisitorContinueKind {
-                foundTry = true
-                return .skipChildren
-            }
-        }
-
-        let visitor = TryExpressionFinder(viewMode: .sourceAccurate)
-        visitor.walk(Syntax(expression))
-        return visitor.foundTry
-    }
 }
 
 // MARK: - AwaitlessFreestandingMacroDiagnostic

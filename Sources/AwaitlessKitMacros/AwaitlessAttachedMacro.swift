@@ -132,6 +132,7 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
     public static func expansion(
         of node: AttributeSyntax,
         providingMembersOf declaration: some DeclGroupSyntax,
+        conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
         // Handle protocol declarations
@@ -145,14 +146,16 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
         // Process all members to find async functions
         for member in protocolDecl.memberBlock.members {
             // If this is an async function, create its sync version as a member declaration
-            if let functionDecl = member.decl.as(FunctionDeclSyntax.self),
-               let effectSpecifiers = functionDecl.signature.effectSpecifiers,
-               effectSpecifiers.asyncSpecifier != nil
-            {
-                // Create a sync version of the async function
-                let syncFunction = createSyncFunctionSignature(
-                    from: functionDecl)
-                memberDeclarations.append(DeclSyntax(syncFunction))
+            if let functionDecl = member.decl.as(FunctionDeclSyntax.self) {
+                // Check if the function is async
+                let isAsync = functionDecl.signature.effectSpecifiers?.asyncSpecifier != nil
+                
+                if isAsync {
+                    // Create a sync version of the async function
+                    let syncFunction = createSyncFunctionSignature(
+                        from: functionDecl)
+                    memberDeclarations.append(DeclSyntax(syncFunction))
+                }
             }
         }
         
@@ -167,7 +170,8 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
         if isThrowing {
             return FunctionEffectSpecifiersSyntax(
                 asyncSpecifier: nil,
-                throwsSpecifier: .keyword(.throws))
+                throwsClause: ThrowsClauseSyntax(
+                    throwsSpecifier: .keyword(.throws)))
         } else {
             return nil
         }
@@ -184,7 +188,8 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
             if isThrowing {
                 FunctionEffectSpecifiersSyntax(
                     asyncSpecifier: nil,
-                    throwsSpecifier: .keyword(.throws))
+                    throwsClause: ThrowsClauseSyntax(
+                        throwsSpecifier: .keyword(.throws)))
             } else {
                 nil
             }
@@ -515,11 +520,11 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
             arguments: LabeledExprListSyntax(),
             rightParen: .rightParenToken())
 
-    // Create the return statement
-    return CodeBlockSyntax(
-        statements: CodeBlockItemListSyntax {
-            CodeBlockItemSyntax(item: .expr(ExprSyntax(publisherCall)))
-        })
+        // Create the return statement with erased publisher
+        return CodeBlockSyntax(
+            statements: CodeBlockItemListSyntax {
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(erasedPublisher)))
+            })
     }
 
     /// Creates a Noasync.run function call with the provided closure
@@ -602,7 +607,8 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
             if isThrowing {
                 FunctionEffectSpecifiersSyntax(
                     asyncSpecifier: nil,
-                    throwsSpecifier: .keyword(.throws))
+                    throwsClause: ThrowsClauseSyntax(
+                        throwsSpecifier: .keyword(.throws)))
             } else {
                 nil
             }

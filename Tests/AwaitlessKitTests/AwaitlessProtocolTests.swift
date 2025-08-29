@@ -7,7 +7,7 @@ import AwaitlessKitMacros
 import MacroTesting
 import Testing
 
-@Suite(.macros([AwaitlessAttachedMacro.self], record: .missing))
+@Suite(.macros(["Awaitless": AwaitlessAttachedMacro.self], record: .missing))
 struct AwaitlessProtocolTests {
     @Test("Expand Awaitless on protocol with async methods")
     func protocolWithAsyncMethods() {
@@ -21,11 +21,12 @@ struct AwaitlessProtocolTests {
             """
         } expansion: {
             """
-            @Awaitless
             protocol DataService {
                 func fetchUser(id: String) async throws -> User
-                func fetchUser(id: String) throws -> User
                 func fetchData() async -> Data
+
+                func fetchUser(id: String) throws -> User
+
                 func fetchData() -> Data
             }
             """
@@ -46,13 +47,13 @@ struct AwaitlessProtocolTests {
             """
         } expansion: {
             """
-            @Awaitless
             protocol Service {
                 func asyncMethod() async throws -> String
-                func asyncMethod() throws -> String
                 func syncMethod() -> Int
                 var readOnlyProperty: Bool { get }
                 var readWriteProperty: [String] { get set }
+
+                func asyncMethod() throws -> String
             }
             """
         }
