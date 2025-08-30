@@ -38,12 +38,33 @@ class DataService {
     //             try await fetchUser(id: id)
     //         })
     // }
+
+    // Generate Combine publishers instead
+    @Awaitless(as: .publisher)
+    func streamUserUpdates(id: String) async throws -> [UserUpdate] {
+        // Your async implementation
+        return []
+    }
+    // Generates: func streamUserUpdates(id: String) -> AnyPublisher<[UserUpdate], Error>
 }
 
 // Use both versions during migration
 let service = DataService()
 let user1 = try await service.fetchUser(id: "123")  // Async version
 let user2 = try service.fetchUser(id: "456")        // Generated sync version
+
+// Protocol-based approach with automatic implementations
+@Awaitlessable
+protocol UserRepository {
+    func findUser(id: String) async throws -> User
+}
+
+struct DatabaseUserRepository: UserRepository {
+    func findUser(id: String) async throws -> User {
+        // Your async implementation
+    }
+    // Sync version automatically available: try findUser(id:)
+}
 ```
 
 ## Why AwaitlessKit?
@@ -72,7 +93,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/bonkey/AwaitlessKit.git", from: "6.0.0")
+    .package(url: "https://github.com/bonkey/AwaitlessKit.git", from: "7.0.0")
 ],
 targets: [
     .target(
@@ -86,7 +107,11 @@ targets: [
 
 ### `@Awaitless` - automatic sync function generation
 
-Generates synchronous wrappers for `async` functions with built-in deprecation controls.
+Generates synchronous wrappers for `async` functions with built-in deprecation controls and optional Combine publisher output.
+
+### `@Awaitlessable` - protocol extension generation
+
+Automatically generates sync method signatures and optional default implementations for protocols with async methods.
 
 ### `#awaitless()` - inline async code execution
 
@@ -94,7 +119,7 @@ Execute async code blocks synchronously (Swift 6.0+ only).
 
 ### `@IsolatedSafe` - generate thread-safe properties
 
-Automatic runtime thread-safe wrappers for `nonisolated(unsafe)` properties.
+Automatic runtime thread-safe wrappers for `nonisolated(unsafe)` properties with configurable synchronization strategies.
 
 ### `Noasync.run()` - low-level bridge
 
@@ -158,43 +183,118 @@ class APIClient {
 }
 ```
 
-### Thread-Safe Properties
+### Combine Publisher Output
+
+```swift
+import Combine
+
+class AsyncService {
+    @Awaitless(as: .publisher)
+    func fetchData() async throws -> [String] {
+        // Async implementation
+        return ["data1", "data2"]
+    }
+
+    // Generates:
+    // func fetchData() -> AnyPublisher<[String], Error> {
+    //     Future({ promise in
+    //         Task() {
+    //             do {
+    //                 let result = try await self.fetchData()
+    //                 promise(.success(result))
+    //             } catch {
+    //                 promise(.failure(error))
+    //             }
+    //         }
+    //     }).eraseToAnyPublisher()
+    // }
+}
+```
+
+### Protocol Extensions with Default Implementations
+
+```swift
+@Awaitlessable
+protocol DataService {
+    func fetchUser(id: String) async throws -> User
+    func fetchData() async -> Data
+}
+
+// Automatically generates:
+// protocol DataService {
+//     func fetchUser(id: String) async throws -> User
+//     func fetchData() async -> Data
+//
+//     // Sync method signatures
+//     func fetchUser(id: String) throws -> User
+//     func fetchData() -> Data
+// }
+//
+// extension DataService {
+//     // Default implementations using Noasync.run
+//     public func fetchUser(id: String) throws -> User {
+//         return try Noasync.run { try await self.fetchUser(id: id) }
+//     }
+//
+//     public func fetchData() -> Data {
+//         return Noasync.run { await self.fetchData() }
+//     }
+// }
+
+// Usage - just implement the protocol
+struct MyService: DataService {
+    func fetchUser(id: String) async throws -> User {
+        // Your async implementation
+    }
+
+    func fetchData() async -> Data {
+        // Your async implementation
+    }
+
+    // Sync versions are automatically available!
+}
+
+let service = MyService()
+let user = try service.fetchUser(id: "123") // Uses generated sync version
+```
+
+### Configurable Protocol Extension Generation
+
+```swift
+// Default behavior - generates both protocol members and extensions
+@Awaitlessable
+protocol NetworkService {
+    func downloadFile(url: URL) async throws -> Data
+}
+
+// Explicitly enable extension generation
+@Awaitlessable(extensionGeneration: .enabled)
+protocol APIService {
+    func fetchUser(id: String) async throws -> User
+}
+
+// Disable extension generation - only protocol members
+@Awaitlessable(extensionGeneration: .disabled)
+protocol CustomService {
+    func processData() async -> Result
+    // Must implement sync version manually
+}
+```
+
+### Thread-Safe Properties with Synchronization Strategies
 
 ```swift
 class SharedState: Sendable {
     @IsolatedSafe
     private nonisolated(unsafe) var _unsafeCounter: Int = 0
 
-    // Generates:
-    //
-    // internal var counter: Int {
-    //    get {
-    //        accessQueueCounter.sync {
-    //            self._unsafeCounter
-    //        }
-    //    }
-    //}
-
-
-    @IsolatedSafe(writable: true)
+    @IsolatedSafe(writable: true, strategy: .concurrent)
     private nonisolated(unsafe) var _unsafeItems: [String] = []
 
-    // Generates:
-    //
-    // var counter: Int { get }
-    // internal var items: [String] {
-    //     get {
-    //         accessQueueItems.sync {
-    //             self._unsafeItems
-    //         }
-    //     }
-    //     set {
-    //         accessQueueItems.async(flags: .barrier) {
-    //             self._unsafeItems = newValue
-    //         }
-    //     }
-    // }
+    @IsolatedSafe(writable: true, strategy: .serial, queueName: "custom.queue")
+    private nonisolated(unsafe) var _criticalData: Data? = nil
 
+    // Generates thread-safe accessors with appropriate synchronization
 }
 ```
 
