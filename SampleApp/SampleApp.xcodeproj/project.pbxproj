@@ -3,15 +3,10 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 71;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		816A73312DBE45B8005B7E99 /* SampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 816A732E2DBE45AF005B7E99 /* SampleApp.swift */; };
-		818714712DE886BE007214CC /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 818714702DE886BE007214CC /* NetworkManager.swift */; };
-		818714732DE886C8007214CC /* LegacyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 818714722DE886C8007214CC /* LegacyService.swift */; };
-		818714752DE886CE007214CC /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 818714742DE886CE007214CC /* APIClient.swift */; };
-		818714772DE886D4007214CC /* SharedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 818714762DE886D4007214CC /* SharedState.swift */; };
 		81B2F7922DBB491F00581875 /* AwaitlessKit in Frameworks */ = {isa = PBXBuildFile; productRef = 81B2F7912DBB491F00581875 /* AwaitlessKit */; };
 /* End PBXBuildFile section */
 
@@ -28,13 +23,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		816A732E2DBE45AF005B7E99 /* SampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleApp.swift; sourceTree = "<group>"; };
-		818714702DE886BE007214CC /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
-		818714722DE886C8007214CC /* LegacyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyService.swift; sourceTree = "<group>"; };
-		818714742DE886CE007214CC /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
-		818714762DE886D4007214CC /* SharedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedState.swift; sourceTree = "<group>"; };
 		81B2F7842DBB48D000581875 /* SampleApp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SampleApp; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		8184A5672E62F1E200F27F06 /* SampleApp */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SampleApp; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		81B2F7812DBB48D000581875 /* Frameworks */ = {
@@ -48,22 +42,10 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		816A732F2DBE45AF005B7E99 /* SampleApp */ = {
-			isa = PBXGroup;
-			children = (
-				818714742DE886CE007214CC /* APIClient.swift */,
-				818714722DE886C8007214CC /* LegacyService.swift */,
-				818714702DE886BE007214CC /* NetworkManager.swift */,
-				816A732E2DBE45AF005B7E99 /* SampleApp.swift */,
-				818714762DE886D4007214CC /* SharedState.swift */,
-			);
-			path = SampleApp;
-			sourceTree = "<group>";
-		};
 		81B2F77B2DBB48D000581875 = {
 			isa = PBXGroup;
 			children = (
-				816A732F2DBE45AF005B7E99 /* SampleApp */,
+				8184A5672E62F1E200F27F06 /* SampleApp */,
 				81B2F7852DBB48D000581875 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +72,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				8184A5672E62F1E200F27F06 /* SampleApp */,
 			);
 			name = SampleApp;
 			packageProductDependencies = (
@@ -140,11 +125,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				818714772DE886D4007214CC /* SharedState.swift in Sources */,
-				818714712DE886BE007214CC /* NetworkManager.swift in Sources */,
-				816A73312DBE45B8005B7E99 /* SampleApp.swift in Sources */,
-				818714732DE886C8007214CC /* LegacyService.swift in Sources */,
-				818714752DE886CE007214CC /* APIClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

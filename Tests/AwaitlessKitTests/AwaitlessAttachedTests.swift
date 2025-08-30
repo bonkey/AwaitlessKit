@@ -189,6 +189,97 @@ struct AwaitlessAttachedTests {
             }
             """
         }
+
+    }
+
+    @Test("Expand macro on instance method")
+    func instanceMethod() {
+        assertMacro {
+            """
+            class NetworkManager {
+                @Awaitless
+                func downloadFile(url: URL) async throws -> Data {
+                    let (data, _) = try await URLSession.shared.data(from: url)
+                    return data
+                }
+            }
+            """
+        } expansion: {
+            """
+            class NetworkManager {
+                func downloadFile(url: URL) async throws -> Data {
+                    let (data, _) = try await URLSession.shared.data(from: url)
+                    return data
+                }
+
+                @available(*, noasync) func downloadFile(url: URL) throws -> Data {
+                    try Noasync.run({
+                            try await downloadFile(url: url)
+                        })
+                }
+            }
+            """
+        }
+    }
+
+    @Test("Expand macro on instance method with prefix")
+    func instanceMethodWithPrefix() {
+        assertMacro {
+            """
+            class APIClient {
+                @Awaitless(prefix: "sync_")
+                func authenticate() async throws -> String {
+                    try await Task.sleep(nanoseconds: 1_000_000)
+                    return "Authenticated"
+                }
+            }
+            """
+        } expansion: {
+            """
+            class APIClient {
+                func authenticate() async throws -> String {
+                    try await Task.sleep(nanoseconds: 1_000_000)
+                    return "Authenticated"
+                }
+
+                @available(*, noasync) func sync_authenticate() throws -> String {
+                    try Noasync.run({
+                            try await authenticate()
+                        })
+                }
+            }
+            """
+        }
+    }
+
+    @Test("Expand macro on instance method with deprecation")
+    func instanceMethodWithDeprecation() {
+        assertMacro {
+            """
+            class LegacyService {
+                @Awaitless(.deprecated("Use async version. Sync version will be removed in future releases."))
+                func processData() async throws -> String {
+                    try await Task.sleep(nanoseconds: 1_000_000)
+                    return "Processed"
+                }
+            }
+            """
+        } expansion: {
+            """
+            class LegacyService {
+                func processData() async throws -> String {
+                    try await Task.sleep(nanoseconds: 1_000_000)
+                    return "Processed"
+                }
+
+                @available(*, noasync) @available(*, deprecated, message: "Use async version. Sync version will be removed in future releases.", renamed: "processData") func processData() throws -> String {
+                    try Noasync.run({
+                            try await processData()
+                        })
+                }
+            }
+            """
+        }
     }
 
     @Test("Handle custom prefix")

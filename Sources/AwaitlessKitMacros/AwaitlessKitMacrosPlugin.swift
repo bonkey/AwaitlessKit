@@ -17,6 +17,7 @@ struct AwaitlessKitMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         AwaitlessAttachedMacro.self,
         AwaitlessFreestandingMacro.self,
+        AwaitlessableMacro.self,
         IsolatedSafeMacro.self,
     ]
 }

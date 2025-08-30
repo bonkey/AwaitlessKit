@@ -5,7 +5,6 @@
 public import AwaitlessCore
 
 @attached(peer, names: arbitrary)
-@attached(member, names: arbitrary)
 public macro Awaitless(
     prefix: String = "", 
     as outputType: AwaitlessOutputType = .sync,
@@ -19,6 +18,11 @@ public macro Awaitless(
         module: "AwaitlessKitMacros",
         type: "AwaitlessFreestandingMacro")
 #endif
+
+@attached(member, names: arbitrary)
+public macro Awaitlessable() = #externalMacro(
+    module: "AwaitlessKitMacros",
+    type: "AwaitlessableMacro")
 
 @attached(peer, names: arbitrary)
 public macro IsolatedSafe(

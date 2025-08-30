@@ -18,7 +18,7 @@ import Combine
 /// A macro that generates a synchronous version of an async function.
 /// This macro creates a twin function with specified prefix that wraps the original
 /// async function in a Noasync.run call, making it callable from synchronous contexts.
-public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
+public struct AwaitlessAttachedMacro: PeerMacro {
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -136,41 +136,8 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
             availability: availability)
         return [generatedDecl]
     }
-    
-    // MARK: - MemberMacro Implementation
-    
-    public static func expansion(
-        of node: AttributeSyntax,
-        providingMembersOf declaration: some DeclGroupSyntax,
-        conformingTo protocols: [TypeSyntax],
-        in context: some MacroExpansionContext
-    ) throws -> [DeclSyntax] {
-        // Handle protocol declarations
-        guard let protocolDecl = declaration.as(ProtocolDeclSyntax.self) else {
-            return []
-        }
-        
-        // For protocols, we create sync versions of async methods as member declarations
-        var memberDeclarations: [DeclSyntax] = []
-        
-        // Process all members to find async functions
-        for member in protocolDecl.memberBlock.members {
-            // If this is an async function, create its sync version as a member declaration
-            if let functionDecl = member.decl.as(FunctionDeclSyntax.self) {
-                // Check if the function is async
-                let isAsync = functionDecl.signature.effectSpecifiers?.asyncSpecifier != nil
-                
-                if isAsync {
-                    // Create a sync version of the async function
-                    let syncFunction = createSyncFunctionSignature(
-                        from: functionDecl)
-                    memberDeclarations.append(DeclSyntax(syncFunction))
-                }
-            }
-        }
-        
-        return memberDeclarations
-    }
+
+
     
     /// Create sync effect specifiers from async ones
     private static func createSyncEffectSpecifiers(from asyncSpecifiers: FunctionEffectSpecifiersSyntax) -> FunctionEffectSpecifiersSyntax? {
@@ -680,6 +647,8 @@ public struct AwaitlessAttachedMacro: PeerMacro, MemberMacro {
             return (nil, true)
         }
     }
+    
+
 }
 
 // MARK: - AwaitlessAttachedMacroDiagnostic

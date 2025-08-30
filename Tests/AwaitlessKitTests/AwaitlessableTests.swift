@@ -7,13 +7,13 @@ import AwaitlessKitMacros
 import MacroTesting
 import Testing
 
-@Suite(.macros(["Awaitless": AwaitlessAttachedMacro.self], record: .missing))
-struct AwaitlessProtocolTests {
-    @Test("Expand Awaitless on protocol with async methods")
+@Suite(.macros(["Awaitlessable": AwaitlessableMacro.self], record: .missing))
+struct AwaitlessableTests {
+    @Test("Expand Awaitlessable on protocol with async methods")
     func protocolWithAsyncMethods() {
         assertMacro {
             """
-            @Awaitless
+            @Awaitlessable
             protocol DataService {
                 func fetchUser(id: String) async throws -> User
                 func fetchData() async -> Data
@@ -33,11 +33,11 @@ struct AwaitlessProtocolTests {
         }
     }
 
-    @Test("Expand Awaitless on protocol with mixed methods")
+    @Test("Expand Awaitlessable on protocol with mixed methods")
     func protocolWithMixedMethods() {
         assertMacro {
             """
-            @Awaitless
+            @Awaitlessable
             protocol Service {
                 func asyncMethod() async throws -> String
                 func syncMethod() -> Int

@@ -9,9 +9,18 @@ struct User {
     let name: String
 }
 
-@Awaitless
+@Awaitlessable
 protocol DataService {
     func fetchUser(id: String) async throws -> User
+}
+
+extension DataService {
+    // Default sync implementation using Noasync.run
+    func fetchUser(id: String) throws -> User {
+        try Noasync.run {
+            try await fetchUser(id: id)
+        }
+    }
 }
 
 class MockDataService: DataService {
@@ -21,7 +30,5 @@ class MockDataService: DataService {
         return User(name: "Mock User")
     }
 
-    // The sync version is automatically synthesized in the protocol extension
-    // by @Awaitless on the protocol. We can call it directly on any
-    // type conforming to DataService.
+    // The sync version is provided by the protocol extension above
 }

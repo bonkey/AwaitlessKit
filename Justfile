@@ -14,7 +14,7 @@ package_scheme := "AwaitlessKit"
 xcode_derived_data := ".xcodeDerivedData"
 xcode_project := "SampleApp/SampleApp.xcodeproj"
 xcode_scheme := "SampleApp"
-xcode_formatter := `if command -v xcbeautify >/dev/null 2>&1; then echo "| xcbeautify"; elif command -v xcpretty >/dev/null 2>&1; then echo "| xcpretty"; else echo ""; fi`
+xcode_formatter := `if command -v xcbeautify >/dev/null 2>&1; then echo "| xcbeautify -q"; elif command -v xcpretty >/dev/null 2>&1; then echo "| xcpretty"; else echo ""; fi`
 
 kill-xcode:
     -pkill -9 Xcode
