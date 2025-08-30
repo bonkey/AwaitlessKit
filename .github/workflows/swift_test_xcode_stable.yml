@@ -1,4 +1,4 @@
-name: Tests on Xcode 16
+name: Tests on Xcode (stable)
 
 on:
   push:
@@ -18,8 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-xcode16:
-    name: Test on Xcode 16
+  test-xcode-stable:
+    name: Test on Xcode Stable
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -27,11 +27,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .build
-          key: ${{ runner.os }}-xcode16-${{ hashFiles('Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-xcode16-
-      - name: Use Xcode 16.3
-        run: xcodes select 16.3
+          key: ${{ runner.os }}-xcode-stable-${{ hashFiles('Package.resolved') }}
+      - name: Use Xcode Stable
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "latest-stable"
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
         with:

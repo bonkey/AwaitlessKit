@@ -1,4 +1,4 @@
-name: Tests on Xcode 26
+name: Tests on Xcode (latest)
 
 on:
   push:
@@ -18,22 +18,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-xcode26:
-    name: Test on Xcode 26
+  test-xcode-latest:
+    name: Test on Xcode Latest
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: Use Xcode 26
+      - name: Use Xcode Latest
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "26.0.0"
+          xcode-version: "latest"
       - name: Cache Swift PM dependencies
         uses: actions/cache@v4
         with:
           path: .build
-          key: ${{ runner.os }}-xcode26-${{ hashFiles('Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-xcode26-
+          key: ${{ runner.os }}-xcode-latest-${{ hashFiles('Package.resolved') }}
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
         with:
