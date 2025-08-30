@@ -20,8 +20,11 @@ public macro Awaitless(
 #endif
 
 @attached(member, names: arbitrary)
-public macro Awaitlessable() = #externalMacro(
-    module: "AwaitlessKitMacros",
+@attached(extension, names: arbitrary)
+public macro Awaitlessable(
+    extensionGeneration: AwaitlessableExtensionGeneration = .enabled
+) = #externalMacro(
+    module: "AwaitlessKitMacros", 
     type: "AwaitlessableMacro")
 
 @attached(peer, names: arbitrary)

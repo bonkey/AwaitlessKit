@@ -463,9 +463,13 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         // Map parameters from the original function to argument expressions
         let argumentList = createArgumentList(from: parameters)
 
-        // Create the function call to the original async function
+        // Create the function call to the original async function with self.
         let asyncCallExpr = FunctionCallExprSyntax(
-            calledExpression: DeclReferenceExprSyntax(baseName: .identifier(originalFuncName)),
+            calledExpression: MemberAccessExprSyntax(
+                base: DeclReferenceExprSyntax(baseName: .identifier("self")),
+                period: .periodToken(),
+                name: .identifier(originalFuncName)
+            ),
             leftParen: .leftParenToken(),
             arguments: argumentList,
             rightParen: .rightParenToken())
@@ -478,11 +482,149 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             ? ExprSyntax(TryExprSyntax(expression: awaitExpression))
             : ExprSyntax(awaitExpression)
 
-        // Create the closure to pass to Noasync.run
-        let innerClosure = ClosureExprSyntax(
+        // Build the Task body statements
+        let taskStatements = if isThrowing {
+            CodeBlockItemListSyntax {
+                // do {
+                CodeBlockItemSyntax(item: .stmt(StmtSyntax(
+                    DoStmtSyntax(
+                        body: CodeBlockSyntax(
+                            statements: CodeBlockItemListSyntax {
+                                // let result = try await originalFunc()
+                                CodeBlockItemSyntax(item: .decl(DeclSyntax(
+                                    VariableDeclSyntax(
+                                        bindingSpecifier: .keyword(.let),
+                                        bindings: PatternBindingListSyntax {
+                                            PatternBindingSyntax(
+                                                pattern: IdentifierPatternSyntax(identifier: .identifier("result")),
+                                                initializer: InitializerClauseSyntax(value: innerCallExpr)
+                                            )
+                                        }
+                                    )
+                                )))
+                                // promise(.success(result))
+                                CodeBlockItemSyntax(item: .expr(ExprSyntax(
+                                    FunctionCallExprSyntax(
+                                        calledExpression: DeclReferenceExprSyntax(baseName: .identifier("promise")),
+                                        leftParen: .leftParenToken(),
+                                        arguments: LabeledExprListSyntax {
+                                            LabeledExprSyntax(
+                                                expression: FunctionCallExprSyntax(
+                                                    calledExpression: MemberAccessExprSyntax(
+                                                        period: .periodToken(),
+                                                        name: .identifier("success")
+                                                    ),
+                                                    leftParen: .leftParenToken(),
+                                                    arguments: LabeledExprListSyntax {
+                                                        LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .identifier("result")))
+                                                    },
+                                                    rightParen: .rightParenToken()
+                                                )
+                                            )
+                                        },
+                                        rightParen: .rightParenToken()
+                                    )
+                                )))
+                            }
+                        ),
+                        catchClauses: CatchClauseListSyntax {
+                            CatchClauseSyntax(
+                                body: CodeBlockSyntax(
+                                    statements: CodeBlockItemListSyntax {
+                                        // promise(.failure(error))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(
+                                            FunctionCallExprSyntax(
+                                                calledExpression: DeclReferenceExprSyntax(baseName: .identifier("promise")),
+                                                leftParen: .leftParenToken(),
+                                                arguments: LabeledExprListSyntax {
+                                                    LabeledExprSyntax(
+                                                        expression: FunctionCallExprSyntax(
+                                                            calledExpression: MemberAccessExprSyntax(
+                                                                period: .periodToken(),
+                                                                name: .identifier("failure")
+                                                            ),
+                                                            leftParen: .leftParenToken(),
+                                                            arguments: LabeledExprListSyntax {
+                                                                LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .identifier("error")))
+                                                            },
+                                                            rightParen: .rightParenToken()
+                                                        )
+                                                    )
+                                                },
+                                                rightParen: .rightParenToken()
+                                            )
+                                        )))
+                                    }
+                                )
+                            )
+                        }
+                    )
+                )))
+            }
+        } else {
+            CodeBlockItemListSyntax {
+                // let result = await originalFunc()
+                CodeBlockItemSyntax(item: .decl(DeclSyntax(
+                    VariableDeclSyntax(
+                        bindingSpecifier: .keyword(.let),
+                        bindings: PatternBindingListSyntax {
+                            PatternBindingSyntax(
+                                pattern: IdentifierPatternSyntax(identifier: .identifier("result")),
+                                initializer: InitializerClauseSyntax(value: innerCallExpr)
+                            )
+                        }
+                    )
+                )))
+                // promise(.success(result))
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(
+                    FunctionCallExprSyntax(
+                        calledExpression: DeclReferenceExprSyntax(baseName: .identifier("promise")),
+                        leftParen: .leftParenToken(),
+                        arguments: LabeledExprListSyntax {
+                            LabeledExprSyntax(
+                                expression: FunctionCallExprSyntax(
+                                    calledExpression: MemberAccessExprSyntax(
+                                        period: .periodToken(),
+                                        name: .identifier("success")
+                                    ),
+                                    leftParen: .leftParenToken(),
+                                    arguments: LabeledExprListSyntax {
+                                        LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .identifier("result")))
+                                    },
+                                    rightParen: .rightParenToken()
+                                )
+                            )
+                        },
+                        rightParen: .rightParenToken()
+                    )
+                )))
+            }
+        }
+
+        // Create the Task call
+        let taskCall = FunctionCallExprSyntax(
+            calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Task")),
+            leftParen: .leftParenToken(),
+            arguments: LabeledExprListSyntax(),
+            rightParen: .rightParenToken(),
+            trailingClosure: ClosureExprSyntax(
+                statements: taskStatements
+            )
+        )
+
+        // Create the Future closure that takes a promise parameter
+        let futureClosure = ClosureExprSyntax(
+            signature: ClosureSignatureSyntax(
+                parameterClause: .simpleInput(
+                    ClosureShorthandParameterListSyntax {
+                        ClosureShorthandParameterSyntax(name: .identifier("promise"))
+                    }
+                )
+            ),
             statements: CodeBlockItemListSyntax {
-                CodeBlockItemSyntax(item: .expr(innerCallExpr))
-            })
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(taskCall)))
+            }
+        )
 
         // Create the Future publisher call
         let publisherCall = FunctionCallExprSyntax(
@@ -493,9 +635,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             leftParen: .leftParenToken(),
             arguments: LabeledExprListSyntax {
                 LabeledExprSyntax(
-                    label: .identifier("attemptToFulfill"),
-                    colon: .colonToken(),
-                    expression: innerClosure)
+                    expression: ExprSyntax(futureClosure))
             },
             rightParen: .rightParenToken())
         

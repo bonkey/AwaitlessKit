@@ -14,15 +14,6 @@ protocol DataService {
     func fetchUser(id: String) async throws -> User
 }
 
-extension DataService {
-    // Default sync implementation using Noasync.run
-    func fetchUser(id: String) throws -> User {
-        try Noasync.run {
-            try await fetchUser(id: id)
-        }
-    }
-}
-
 class MockDataService: DataService {
     // The async version required by the protocol
     func fetchUser(id: String) async throws -> User {

@@ -30,8 +30,15 @@ struct AwaitlessCombineTests {
             }
 
             func fetchData() -> AnyPublisher<[String], Error> {
-                Future.init(attemptToFulfill: {
-                        try await fetchData()
+                Future.init({ promise in
+                        Task() {
+                            do {
+                                let result = try await self.fetchData()
+                                promise(.success(result))
+                            } catch {
+                                promise(.failure(error))
+                            }
+                        }
                     }).eraseToAnyPublisher()
             }
             """
@@ -56,8 +63,11 @@ struct AwaitlessCombineTests {
             }
 
             func fetchData() -> AnyPublisher<[String], Never> {
-                Future.init(attemptToFulfill: {
-                        await fetchData()
+                Future.init({ promise in
+                        Task() {
+                            let result = await self.fetchData()
+                            promise(.success(result))
+                        }
                     }).eraseToAnyPublisher()
             }
             """
@@ -82,8 +92,15 @@ struct AwaitlessCombineTests {
             }
 
             func publisher_fetchData() -> AnyPublisher<[String], Error> {
-                Future.init(attemptToFulfill: {
-                        try await fetchData()
+                Future.init({ promise in
+                        Task() {
+                            do {
+                                let result = try await self.fetchData()
+                                promise(.success(result))
+                            } catch {
+                                promise(.failure(error))
+                            }
+                        }
                     }).eraseToAnyPublisher()
             }
             """

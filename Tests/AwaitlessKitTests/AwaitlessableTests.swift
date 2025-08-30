@@ -29,6 +29,13 @@ struct AwaitlessableTests {
 
                 func fetchData() -> Data
             }
+
+            extension DataService {
+                public func fetchUser(id: String) throws -> User {return try Noasync.run { try await self.fetchUser(id: id) }
+                }
+                public func fetchData() -> Data {return Noasync.run { await self.fetchData() }
+                }
+            }
             """
         }
     }
@@ -54,6 +61,60 @@ struct AwaitlessableTests {
                 var readWriteProperty: [String] { get set }
 
                 func asyncMethod() throws -> String
+            }
+
+            extension Service {
+                public func asyncMethod() throws -> String {return try Noasync.run { try await self.asyncMethod() }
+                }
+            }
+            """
+        }
+    }
+
+    @Test("Expand Awaitlessable with extensionGeneration disabled")
+    func protocolWithExtensionGenerationDisabled() {
+        assertMacro {
+            """
+            @Awaitlessable(extensionGeneration: .disabled)
+            protocol DataService {
+                func fetchUser(id: String) async throws -> User
+                func fetchData() async -> Data
+            }
+            """
+        } expansion: {
+            """
+            protocol DataService {
+                func fetchUser(id: String) async throws -> User
+                func fetchData() async -> Data
+
+                func fetchUser(id: String) throws -> User
+
+                func fetchData() -> Data
+            }
+            """
+        }
+    }
+
+    @Test("Expand Awaitlessable with extensionGeneration enabled explicitly")
+    func protocolWithExtensionGenerationEnabled() {
+        assertMacro {
+            """
+            @Awaitlessable(extensionGeneration: .enabled)
+            protocol DataService {
+                func fetchUser(id: String) async throws -> User
+            }
+            """
+        } expansion: {
+            """
+            protocol DataService {
+                func fetchUser(id: String) async throws -> User
+
+                func fetchUser(id: String) throws -> User
+            }
+
+            extension DataService {
+                public func fetchUser(id: String) throws -> User {return try Noasync.run { try await self.fetchUser(id: id) }
+                }
             }
             """
         }
