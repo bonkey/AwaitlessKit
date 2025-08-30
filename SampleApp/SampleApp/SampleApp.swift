@@ -5,6 +5,7 @@
 import AwaitlessKit
 import Darwin
 import Foundation
+import Combine
 
 @main
 final class SampleApp {
@@ -18,6 +19,9 @@ final class SampleApp {
         try migrationWithDeprecationExample()
         try customNamingExample()
         threadSafePropertiesExample()
+        try protocolExample()
+        combineExample()
+        freestandingMacroExample()
     }
 
     // MARK: - Basic Usage
@@ -52,5 +56,47 @@ final class SampleApp {
         print("Thread-Safe Properties - counter: \(state.counter)")
         state.items.append("Item1")
         print("Thread-Safe Properties - items: \(state.items)")
+    }
+
+    // MARK: - Protocol Example
+
+    private func protocolExample() throws {
+        let dataService: DataService = MockDataService()
+        // Call the synchronous version of the method, available via the @Awaitless macro on the protocol
+        let user = try dataService.fetchUser(id: "123")
+        print("Protocol Example - user: \(user.name)")
+    }
+
+    // MARK: - Combine Example
+
+    private func combineExample() {
+        let combineService = CombineService()
+        var cancellables = Set<AnyCancellable>()
+
+        print("Combine Example - Subscribing to fetchItems publisher...")
+        combineService.fetchItems()
+            .sink(receiveCompletion: { completion in
+                switch completion {
+                case .finished:
+                    print("Combine Example - Publisher finished.")
+                case .failure(let error):
+                    print("Combine Example - Publisher failed with error: \(error)")
+                }
+            }, receiveValue: { items in
+                print("Combine Example - Received items: \(items)")
+            })
+            .store(in: &cancellables)
+        
+        // In a real app, you'd manage the lifecycle of cancellables.
+        // Here we just let it run. A sleep is needed to see output in a simple command-line tool.
+        Thread.sleep(forTimeInterval: 0.1)
+    }
+
+    // MARK: - Freestanding Macro Example
+
+    private func freestandingMacroExample() {
+        let service = FreestandingMacroService()
+        let number = #awaitless(service.getNumber())
+        print("Freestanding Macro Example - number: \(number)")
     }
 }
