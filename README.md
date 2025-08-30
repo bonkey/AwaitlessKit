@@ -93,7 +93,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/bonkey/AwaitlessKit.git", from: "7.0.0")
+    .package(url: "https://github.com/bonkey/AwaitlessKit.git", from: "6.1.0")
 ],
 targets: [
     .target(
