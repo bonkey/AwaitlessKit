@@ -160,7 +160,8 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             from: funcDecl,
             prefix: prefix,
             outputType: outputType,
-            availability: availability)
+            availability: availability,
+            delivery: delivery)
         return [generatedDecl]
     }
 
@@ -219,7 +220,8 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         from funcDecl: FunctionDeclSyntax,
         prefix: String,
         outputType: AwaitlessOutputType,
-        availability: AwaitlessAvailability?)
+        availability: AwaitlessAvailability?,
+        delivery: AwaitlessDelivery)
         -> DeclSyntax
     {
         switch outputType {
