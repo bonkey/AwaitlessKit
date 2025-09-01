@@ -3,12 +3,7 @@
 //
 
 import SwiftCompilerPlugin
-
-#if compiler(>=6.0)
-    import SwiftSyntaxMacros
-#else
-    public import SwiftSyntaxMacros
-#endif
+import SwiftSyntaxMacros
 
 // MARK: - AwaitlessKitMacrosPlugin
 

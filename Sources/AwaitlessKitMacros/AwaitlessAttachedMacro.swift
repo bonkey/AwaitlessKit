@@ -25,6 +25,9 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         in context: some MacroExpansionContext) throws
         -> [DeclSyntax]
     {
+        // Determine which attribute name invoked this macro
+        let attrName = (node.attributeName.as(IdentifierTypeSyntax.self)?.name.text) ?? "Awaitless"
+
         // Handle protocol declarations
         if declaration.is(ProtocolDeclSyntax.self) {
             return [] // Protocols are handled by MemberMacro
@@ -39,19 +42,23 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             return []
         }
 
-        // Validate that the function is marked as async
-        guard funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil else {
-            let diagnosticNode = Syntax(funcDecl.name)
-            let diagnostic = Diagnostic(
-                node: diagnosticNode,
-                message: AwaitlessAttachedMacroDiagnostic.requiresAsync)
-            context.diagnose(diagnostic)
-            return []
+        // For @AwaitlessPublisher, we relax this check because publisher code can wrap both async and non-async functions.
+        // The generated publisher will call the original function, regardless of its async-ness.
+        if attrName != "AwaitlessPublisher" {
+            guard funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil else {
+                let diagnosticNode = Syntax(funcDecl.name)
+                let diagnostic = Diagnostic(
+                    node: diagnosticNode,
+                    message: AwaitlessAttachedMacroDiagnostic.requiresAsync)
+                context.diagnose(diagnostic)
+                return []
+            }
         }
 
         // Extract prefix, output type, and availability from the attribute
         var prefix = ""
-        var outputType: AwaitlessOutputType = .sync
+        // Default output type depends on attribute name: AwaitlessPublisher => .publisher, else .sync
+        var outputType: AwaitlessOutputType = (attrName == "AwaitlessPublisher") ? .publisher : .sync
         var availability: AwaitlessAvailability? = nil
 
         if case let .argumentList(arguments) = node.arguments {
@@ -74,6 +81,13 @@ public struct AwaitlessAttachedMacro: PeerMacro {
                     if memberAccess.declName.baseName.text == "publisher" {
                         #if canImport(Combine)
                         outputType = .publisher
+                        // If used via @Awaitless, emit deprecation warning suggesting @AwaitlessPublisher
+                        if attrName == "Awaitless" {
+                            let diagnostic = Diagnostic(
+                                node: Syntax(labeledExpr.expression),
+                                message: AwaitlessAttachedMacroDiagnostic.deprecatedPublisherArgument)
+                            context.diagnose(diagnostic)
+                        }
                         #else
                         let diagnostic = Diagnostic(
                             node: Syntax(labeledExpr.expression),
@@ -670,17 +684,12 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             },
             rightParen: .rightParenToken())
 
-        #if compiler(>=6.0)
-            // Add 'try' if the original function throws
-            if isThrowing {
-                return ExprSyntax(TryExprSyntax(expression: ExprSyntax(taskNoasyncCall)))
-            } else {
-                return ExprSyntax(taskNoasyncCall)
-            }
-        #else
-            // In Swift Syntax 5.10, always throw due to different Nosync.run() signature
+        // Add 'try' if the original function throws
+        if isThrowing {
             return ExprSyntax(TryExprSyntax(expression: ExprSyntax(taskNoasyncCall)))
-        #endif
+        } else {
+            return ExprSyntax(taskNoasyncCall)
+        }
     }
 
     /// Creates argument list from function parameters
@@ -727,11 +736,6 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         returnType: TypeSyntax?)
         -> FunctionSignatureSyntax
     {
-        #if compiler(<6.0)
-            /// In Swift 5.x, always throw due to different Nosync.run() signature
-            let isThrowing = true
-        #endif
-
         // Create new effect specifiers for the function
         let newEffectSpecifiers: FunctionEffectSpecifiersSyntax? =
             if isThrowing {
@@ -754,7 +758,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         attributes.filter { attr in
             if case let .attribute(actualAttr) = attr,
                let attrName = actualAttr.attributeName.as(IdentifierTypeSyntax.self),
-               attrName.name.text == "Awaitless"
+               (attrName.name.text == "Awaitless" || attrName.name.text == "AwaitlessPublisher")
             {
                 return false
             }
@@ -798,8 +802,16 @@ enum AwaitlessAttachedMacroDiagnostic: String, DiagnosticMessage {
     case requiresFunction = "@Awaitless can only be applied to functions"
     case requiresAsync = "@Awaitless requires the function to be 'async'"
     case combineNotAvailable = "@Awaitless publisher output requires Combine framework, which is not available on this platform"
+    case deprecatedPublisherArgument = "@Awaitless(as: .publisher) is deprecated; use @AwaitlessPublisher"
 
-    var severity: DiagnosticSeverity { .error }
+    var severity: DiagnosticSeverity {
+        switch self {
+        case .deprecatedPublisherArgument:
+            return .warning
+        default:
+            return .error
+        }
+    }
     var message: String { rawValue }
     var diagnosticID: MessageID {
         MessageID(domain: "AwaitlessMacros", id: rawValue)
