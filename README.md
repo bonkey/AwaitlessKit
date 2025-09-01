@@ -8,7 +8,7 @@
 
 # AwaitlessKit
 
-**Automatically generate legacy sync interfaces for your `async/await` code—enabling easy migration from Swift 5 to Swift 6 with both APIs available.**
+**Automatically generate legacy sync interfaces for your `async/await` code—enabling easy migration to Swift 6 Structured Concurrency with both APIs available.**
 
 `AwaitlessKit` provides Swift macros to automatically generate synchronous wrappers for your `async` functions, making it easy to call new async APIs from existing nonasync code. This helps you gradually adopt async/await without breaking old APIs or rewriting everything at once.
 
