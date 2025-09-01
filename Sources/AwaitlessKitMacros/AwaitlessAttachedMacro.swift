@@ -57,8 +57,17 @@ public struct AwaitlessAttachedMacro: PeerMacro {
 
         // Extract prefix, output type, and availability from the attribute
         var prefix = ""
-        // Default output type depends on attribute name: AwaitlessPublisher => .publisher, else .sync
-        var outputType: AwaitlessOutputType = (attrName == "AwaitlessPublisher") ? .publisher : .sync
+        // Default output type depends on attribute name
+        // - AwaitlessPublisher => .publisher
+        // - AwaitlessCompletion => .completion
+        // - else => .sync
+        var outputType: AwaitlessOutputType = {
+            switch attrName {
+            case "AwaitlessPublisher": return .publisher
+            case "AwaitlessCompletion": return .completion
+            default: return .sync
+            }
+        }()
         var availability: AwaitlessAvailability? = nil
         var delivery: AwaitlessDelivery = .current
 
@@ -230,6 +239,11 @@ public struct AwaitlessAttachedMacro: PeerMacro {
                 from: funcDecl,
                 prefix: prefix,
                 availability: availability))
+        case .completion:
+            return DeclSyntax(createCompletionFunction(
+                from: funcDecl,
+                prefix: prefix,
+                availability: availability))
         case .publisher:
             #if canImport(Combine)
             return DeclSyntax(createPublisherFunction(
@@ -246,6 +260,88 @@ public struct AwaitlessAttachedMacro: PeerMacro {
                 availability: availability))
             #endif
         }
+    }
+
+    /// Creates a completion-handler version of the provided async function
+    private static func createCompletionFunction(
+        from funcDecl: FunctionDeclSyntax,
+        prefix: String,
+        availability: AwaitlessAvailability?)
+        -> FunctionDeclSyntax
+    {
+        let originalFuncName = funcDecl.name.text
+        let newFuncName = prefix + originalFuncName
+
+        // Extract return type and determine if the function throws
+        let (returnTypeSyntax, isVoidReturn) = extractReturnType(funcDecl: funcDecl)
+        let isThrowing = funcDecl.signature.effectSpecifiers?.description.contains("throws") ?? false
+
+        // Build the completion parameter type: Result<Return, Error>
+        let resultInnerType: TypeSyntax = returnTypeSyntax ?? TypeSyntax(IdentifierTypeSyntax(name: .identifier("Void")))
+        let completionType = TypeSyntax("@escaping (Result<\(raw: resultInnerType.description), Error>) -> Void")
+
+        // Build parameter list: original parameters + trailing completion
+        var newParams = funcDecl.signature.parameterClause.parameters
+        let needsComma = !newParams.isEmpty
+        let completionParam = FunctionParameterSyntax(
+            firstName: .identifier("completion"),
+            colon: .colonToken(),
+            type: completionType,
+            trailingComma: nil
+        )
+        if needsComma {
+            // Ensure the previous parameter has a trailing comma
+            if let last = newParams.last {
+                newParams = FunctionParameterListSyntax(newParams.dropLast() + [
+                    FunctionParameterSyntax(
+                        attributes: last.attributes,
+                        firstName: last.firstName,
+                        secondName: last.secondName,
+                        colon: last.colon,
+                        type: last.type,
+                        ellipsis: last.ellipsis,
+                        defaultValue: last.defaultValue,
+                        trailingComma: .commaToken()
+                    )
+                ])
+            }
+        }
+        newParams = newParams + [completionParam]
+
+        let newParameterClause = FunctionParameterClauseSyntax(parameters: newParams)
+
+        // Create the function body that calls the original async function and completes
+        let newBody = createCompletionFunctionBody(
+            originalFuncName: originalFuncName,
+            parameters: funcDecl.signature.parameterClause.parameters,
+            isThrowing: isThrowing,
+            isVoidReturn: isVoidReturn)
+
+        // Signature: no async/throws and no return type
+        let newSignature = FunctionSignatureSyntax(
+            parameterClause: newParameterClause,
+            effectSpecifiers: nil,
+            returnClause: nil
+        )
+
+        // Create attributes for the new function (filter out macro attribute; do NOT add noasync)
+        var attributes = filterAttributes(funcDecl.attributes)
+        if let availability {
+            let availabilityAttr = createAvailabilityAttribute(
+                originalFuncName: originalFuncName,
+                availability: availability)
+            attributes = attributes + [AttributeListSyntax.Element(availabilityAttr)]
+        }
+
+        return FunctionDeclSyntax(
+            attributes: attributes,
+            modifiers: funcDecl.modifiers,
+            funcKeyword: .keyword(.func),
+            name: .identifier(newFuncName),
+            genericParameterClause: funcDecl.genericParameterClause,
+            signature: newSignature,
+            genericWhereClause: funcDecl.genericWhereClause,
+            body: newBody)
     }
     
     /// Creates a synchronous version of the provided async function
@@ -717,6 +813,180 @@ public struct AwaitlessAttachedMacro: PeerMacro {
     }
     #endif
 
+    /// Creates the function body that calls the async function and finishes via completion(Result)
+    private static func createCompletionFunctionBody(
+        originalFuncName: String,
+        parameters: FunctionParameterListSyntax,
+        isThrowing: Bool,
+        isVoidReturn: Bool)
+        -> CodeBlockSyntax
+    {
+        let argumentList = createArgumentList(from: parameters)
+
+        // self.original(args...)
+        let asyncCallExpr = FunctionCallExprSyntax(
+            calledExpression: MemberAccessExprSyntax(
+                base: DeclReferenceExprSyntax(baseName: .identifier("self")),
+                period: .periodToken(),
+                name: .identifier(originalFuncName)
+            ),
+            leftParen: .leftParenToken(),
+            arguments: argumentList,
+            rightParen: .rightParenToken()
+        )
+
+        let awaitExpr = AwaitExprSyntax(expression: ExprSyntax(asyncCallExpr))
+        let innerExpr: ExprSyntax = isThrowing
+            ? ExprSyntax(TryExprSyntax(expression: awaitExpr))
+            : ExprSyntax(awaitExpr)
+
+        let bodyStatements: CodeBlockItemListSyntax = if isThrowing {
+            CodeBlockItemListSyntax {
+                CodeBlockItemSyntax(item: .stmt(StmtSyntax(
+                    DoStmtSyntax(
+                        body: CodeBlockSyntax(
+                            statements: CodeBlockItemListSyntax {
+                                // let result = try await ... (only when not void)
+                                if !isVoidReturn {
+                                    CodeBlockItemSyntax(item: .decl(DeclSyntax(
+                                        VariableDeclSyntax(
+                                            bindingSpecifier: .keyword(.let),
+                                            bindings: PatternBindingListSyntax {
+                                                PatternBindingSyntax(
+                                                    pattern: IdentifierPatternSyntax(identifier: .identifier("result")),
+                                                    initializer: InitializerClauseSyntax(value: innerExpr)
+                                                )
+                                            }
+                                        )
+                                    )))
+                                } else {
+                                    CodeBlockItemSyntax(item: .expr(innerExpr))
+                                }
+                                // completion(.success(result|()))
+                                CodeBlockItemSyntax(item: .expr(ExprSyntax(
+                                    FunctionCallExprSyntax(
+                                        calledExpression: DeclReferenceExprSyntax(baseName: .identifier("completion")),
+                                        leftParen: .leftParenToken(),
+                                        arguments: LabeledExprListSyntax {
+                                            LabeledExprSyntax(
+                                                expression: FunctionCallExprSyntax(
+                                                    calledExpression: MemberAccessExprSyntax(
+                                                        period: .periodToken(),
+                                                        name: .identifier("success")
+                                                    ),
+                                                    leftParen: .leftParenToken(),
+                                                    arguments: LabeledExprListSyntax {
+                                                        if isVoidReturn {
+                                                            LabeledExprSyntax(expression: TupleExprSyntax(elements: LabeledExprListSyntax()))
+                                                        } else {
+                                                            LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .identifier("result")))
+                                                        }
+                                                    },
+                                                    rightParen: .rightParenToken()
+                                                )
+                                            )
+                                        },
+                                        rightParen: .rightParenToken()
+                                    )
+                                )))
+                            }
+                        ),
+                        catchClauses: CatchClauseListSyntax {
+                            CatchClauseSyntax(
+                                body: CodeBlockSyntax(
+                                    statements: CodeBlockItemListSyntax {
+                                        // completion(.failure(error))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(
+                                            FunctionCallExprSyntax(
+                                                calledExpression: DeclReferenceExprSyntax(baseName: .identifier("completion")),
+                                                leftParen: .leftParenToken(),
+                                                arguments: LabeledExprListSyntax {
+                                                    LabeledExprSyntax(
+                                                        expression: FunctionCallExprSyntax(
+                                                            calledExpression: MemberAccessExprSyntax(
+                                                                period: .periodToken(),
+                                                                name: .identifier("failure")
+                                                            ),
+                                                            leftParen: .leftParenToken(),
+                                                            arguments: LabeledExprListSyntax {
+                                                                LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .identifier("error")))
+                                                            },
+                                                            rightParen: .rightParenToken()
+                                                        )
+                                                    )
+                                                },
+                                                rightParen: .rightParenToken()
+                                            )
+                                        )))
+                                    }
+                                )
+                            )
+                        }
+                    )
+                )))
+            }
+        } else {
+            CodeBlockItemListSyntax {
+                if !isVoidReturn {
+                    CodeBlockItemSyntax(item: .decl(DeclSyntax(
+                        VariableDeclSyntax(
+                            bindingSpecifier: .keyword(.let),
+                            bindings: PatternBindingListSyntax {
+                                PatternBindingSyntax(
+                                    pattern: IdentifierPatternSyntax(identifier: .identifier("result")),
+                                    initializer: InitializerClauseSyntax(value: innerExpr)
+                                )
+                            }
+                        )
+                    )))
+                } else {
+                    CodeBlockItemSyntax(item: .expr(innerExpr))
+                }
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(
+                    FunctionCallExprSyntax(
+                        calledExpression: DeclReferenceExprSyntax(baseName: .identifier("completion")),
+                        leftParen: .leftParenToken(),
+                        arguments: LabeledExprListSyntax {
+                            LabeledExprSyntax(
+                                expression: FunctionCallExprSyntax(
+                                    calledExpression: MemberAccessExprSyntax(
+                                        period: .periodToken(),
+                                        name: .identifier("success")
+                                    ),
+                                    leftParen: .leftParenToken(),
+                                    arguments: LabeledExprListSyntax {
+                                        if isVoidReturn {
+                                            LabeledExprSyntax(expression: TupleExprSyntax(elements: LabeledExprListSyntax()))
+                                        } else {
+                                            LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .identifier("result")))
+                                        }
+                                    },
+                                    rightParen: .rightParenToken()
+                                )
+                            )
+                        },
+                        rightParen: .rightParenToken()
+                    )
+                )))
+            }
+        }
+
+        // Task() { ... }
+        let taskCall = FunctionCallExprSyntax(
+            calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Task")),
+            leftParen: .leftParenToken(),
+            arguments: LabeledExprListSyntax(),
+            rightParen: .rightParenToken(),
+            trailingClosure: ClosureExprSyntax(statements: bodyStatements)
+        )
+
+        return CodeBlockSyntax(
+            statements: CodeBlockItemListSyntax {
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(taskCall)))
+            }
+        )
+    }
+
     /// Creates a Noasync.run function call with the provided closure
     private static func createTaskNoasyncCall(with closure: ExprSyntax, isThrowing: Bool) -> ExprSyntax {
         let taskNoasyncCall = FunctionCallExprSyntax(
@@ -804,7 +1074,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         attributes.filter { attr in
             if case let .attribute(actualAttr) = attr,
                let attrName = actualAttr.attributeName.as(IdentifierTypeSyntax.self),
-               (attrName.name.text == "Awaitless" || attrName.name.text == "AwaitlessPublisher")
+               (attrName.name.text == "Awaitless" || attrName.name.text == "AwaitlessPublisher" || attrName.name.text == "AwaitlessCompletion")
             {
                 return false
             }
