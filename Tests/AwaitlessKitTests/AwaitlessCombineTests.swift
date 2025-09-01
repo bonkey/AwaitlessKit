@@ -74,6 +74,41 @@ struct AwaitlessCombineTests {
         }
     }
 
+    @Test("Expand macro with publisher output delivered on main")
+    func publisherDeliveryOnMain() {
+        assertMacro {
+            """
+            @AwaitlessPublisher(deliverOn: .main)
+            func fetchData() async throws -> [String] {
+                // simulate network request
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+                return ["Hello", "World"]
+            }
+            """
+        } expansion: {
+            """
+            func fetchData() async throws -> [String] {
+                // simulate network request
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+                return ["Hello", "World"]
+            }
+
+            func fetchData() -> AnyPublisher<[String], Error> {
+                Future.init({ promise in
+                        Task() {
+                            do {
+                                let result = try await self.fetchData()
+                                promise(.success(result))
+                            } catch {
+                                promise(.failure(error))
+                            }
+                        }
+                    }).receive(on: DispatchQueue.main).eraseToAnyPublisher()
+            }
+            """
+        }
+    }
+
     @Test("Expand macro with publisher output and prefix")
     func publisherWithPrefix() {
         assertMacro {
