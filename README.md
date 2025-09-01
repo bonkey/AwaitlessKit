@@ -111,7 +111,7 @@ targets: [
 
 ### `@Awaitless` - automatic sync function generation
 
-Generates synchronous wrappers for `async` functions with built-in deprecation controls. For Combine publisher wrappers, use `@AwaitlessPublisher`.
+Generates synchronous wrappers for `async` functions with built-in deprecation controls. For Combine publisher wrappers, use `@AwaitlessPublisher`. For completion-handler wrappers, use `@AwaitlessCompletion`.
 
 ### `@Awaitlessable` - protocol extension generation
 
@@ -234,6 +234,33 @@ class UIService {
     //     .eraseToAnyPublisher()
     // }
 }
+```
+
+### Completion-Based Output
+
+```swift
+class CompletionService {
+    @AwaitlessCompletion
+    func fetch() async throws -> String { "OK" }
+
+    // Generates:
+    // func fetch(completion: @escaping (Result<String, Error>) -> Void) {
+    //     Task() {
+    //         do {
+    //             let result = try await self.fetch()
+    //             completion(.success(result))
+    //         } catch {
+    //             completion(.failure(error))
+    //         }
+    //     }
+    // }
+}
+
+// Non-throwing and void-returning functions are supported as well:
+// func value(completion: @escaping (Result<Int, Error>) -> Void) { ...success(value) }
+// func ping(completion: @escaping (Result<Void, Error>) -> Void) { ...success(()) }
+// Custom naming:
+// @AwaitlessCompletion(prefix: "c_") -> func c_fetch(completion: ...) { ... }
 ```
 
 ### Protocol Extensions with Default Implementations
