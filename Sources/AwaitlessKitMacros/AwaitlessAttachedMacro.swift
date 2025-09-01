@@ -42,8 +42,8 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             return []
         }
 
-        // Validate that the function is marked as async for sync-generation entry.
-        // For @AwaitlessPublisher, we skip this strict check and let the compiler validate the generated 'await'.
+        // For @AwaitlessPublisher, we relax this check because publisher code can wrap both async and non-async functions.
+        // The generated publisher will call the original function, regardless of its async-ness.
         if attrName != "AwaitlessPublisher" {
             guard funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil else {
                 let diagnosticNode = Syntax(funcDecl.name)
