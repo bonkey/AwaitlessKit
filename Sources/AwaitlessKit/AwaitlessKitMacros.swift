@@ -20,12 +20,10 @@ public macro AwaitlessPublisher(
     module: "AwaitlessKitMacros",
     type: "AwaitlessAttachedMacro")
 
-#if compiler(>=6.0)
-    @freestanding(expression)
-    public macro awaitless<T>(_ expression: T) -> T = #externalMacro(
-        module: "AwaitlessKitMacros",
-        type: "AwaitlessFreestandingMacro")
-#endif
+@freestanding(expression)
+public macro awaitless<T>(_ expression: T) -> T = #externalMacro(
+    module: "AwaitlessKitMacros",
+    type: "AwaitlessFreestandingMacro")
 
 @attached(member, names: arbitrary)
 @attached(extension, names: arbitrary)

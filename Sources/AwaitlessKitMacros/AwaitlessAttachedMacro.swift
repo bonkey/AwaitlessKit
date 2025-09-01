@@ -684,17 +684,12 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             },
             rightParen: .rightParenToken())
 
-        #if compiler(>=6.0)
-            // Add 'try' if the original function throws
-            if isThrowing {
-                return ExprSyntax(TryExprSyntax(expression: ExprSyntax(taskNoasyncCall)))
-            } else {
-                return ExprSyntax(taskNoasyncCall)
-            }
-        #else
-            // In Swift Syntax 5.10, always throw due to different Nosync.run() signature
+        // Add 'try' if the original function throws
+        if isThrowing {
             return ExprSyntax(TryExprSyntax(expression: ExprSyntax(taskNoasyncCall)))
-        #endif
+        } else {
+            return ExprSyntax(taskNoasyncCall)
+        }
     }
 
     /// Creates argument list from function parameters
@@ -741,11 +736,6 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         returnType: TypeSyntax?)
         -> FunctionSignatureSyntax
     {
-        #if compiler(<6.0)
-            /// In Swift 5.x, always throw due to different Nosync.run() signature
-            let isThrowing = true
-        #endif
-
         // Create new effect specifiers for the function
         let newEffectSpecifiers: FunctionEffectSpecifiersSyntax? =
             if isThrowing {

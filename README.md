@@ -115,7 +115,7 @@ Automatically generates sync method signatures and optional default implementati
 
 ### `#awaitless()` - inline async code execution
 
-Execute async code blocks synchronously (Swift 6.0+ only).
+Execute async code blocks synchronously.
 
 ### `@IsolatedSafe` - generate thread-safe properties
 
