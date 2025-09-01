@@ -16,6 +16,7 @@ public macro Awaitless(
 @attached(peer, names: arbitrary)
 public macro AwaitlessPublisher(
     prefix: String = "",
+    deliverOn: AwaitlessDelivery = .current,
     _ availability: AwaitlessAvailability? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "AwaitlessAttachedMacro")

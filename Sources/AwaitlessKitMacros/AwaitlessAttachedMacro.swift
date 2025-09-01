@@ -60,6 +60,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         // Default output type depends on attribute name: AwaitlessPublisher => .publisher, else .sync
         var outputType: AwaitlessOutputType = (attrName == "AwaitlessPublisher") ? .publisher : .sync
         var availability: AwaitlessAvailability? = nil
+        var delivery: AwaitlessDelivery = .current
 
         if case let .argumentList(arguments) = node.arguments {
             // Check for prefix parameter
@@ -97,6 +98,18 @@ public struct AwaitlessAttachedMacro: PeerMacro {
                         #endif
                     } else if memberAccess.declName.baseName.text == "sync" {
                         outputType = .sync
+                    }
+                }
+
+                // Parse delivery option for @AwaitlessPublisher
+                if attrName == "AwaitlessPublisher",
+                   labeledExpr.label?.text == "deliverOn",
+                   let memberAccess = labeledExpr.expression.as(MemberAccessExprSyntax.self)
+                {
+                    if memberAccess.declName.baseName.text == "main" {
+                        delivery = .main
+                    } else {
+                        delivery = .current
                     }
                 }
             }
@@ -147,7 +160,8 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             from: funcDecl,
             prefix: prefix,
             outputType: outputType,
-            availability: availability)
+            availability: availability,
+            delivery: delivery)
         return [generatedDecl]
     }
 
@@ -206,7 +220,8 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         from funcDecl: FunctionDeclSyntax,
         prefix: String,
         outputType: AwaitlessOutputType,
-        availability: AwaitlessAvailability?)
+        availability: AwaitlessAvailability?,
+        delivery: AwaitlessDelivery)
         -> DeclSyntax
     {
         switch outputType {
@@ -220,7 +235,8 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             return DeclSyntax(createPublisherFunction(
                 from: funcDecl,
                 prefix: prefix,
-                availability: availability))
+                availability: availability,
+                delivery: delivery))
             #else
             // This should never be reached due to earlier validation,
             // but provide a fallback just in case
@@ -290,8 +306,8 @@ public struct AwaitlessAttachedMacro: PeerMacro {
     private static func createPublisherFunction(
         from funcDecl: FunctionDeclSyntax,
         prefix: String,
-
-        availability: AwaitlessAvailability?)
+        availability: AwaitlessAvailability?,
+        delivery: AwaitlessDelivery)
         -> FunctionDeclSyntax
     {
         let originalFuncName = funcDecl.name.text
@@ -322,7 +338,8 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             originalFuncName: originalFuncName,
             parameters: funcDecl.signature.parameterClause.parameters,
             isThrowing: isThrowing,
-            returnType: returnTypeSyntax)
+            returnType: returnTypeSyntax,
+            delivery: delivery)
 
         // Create the new function signature
         let newSignature = FunctionSignatureSyntax(
@@ -471,7 +488,8 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         originalFuncName: String,
         parameters: FunctionParameterListSyntax,
         isThrowing: Bool,
-        returnType: TypeSyntax?)
+        returnType: TypeSyntax?,
+        delivery: AwaitlessDelivery)
         -> CodeBlockSyntax
     {
         // Map parameters from the original function to argument expressions
@@ -653,10 +671,38 @@ public struct AwaitlessAttachedMacro: PeerMacro {
             },
             rightParen: .rightParenToken())
         
+        // Optionally add .receive(on: DispatchQueue.main)
+        let baseForErase: ExprSyntax = {
+            switch delivery {
+            case .main:
+                let receiveCall = FunctionCallExprSyntax(
+                    calledExpression: MemberAccessExprSyntax(
+                        base: ExprSyntax(publisherCall),
+                        period: .periodToken(),
+                        name: .identifier("receive")),
+                    leftParen: .leftParenToken(),
+                    arguments: LabeledExprListSyntax {
+                        LabeledExprSyntax(
+                            label: .identifier("on"),
+                            colon: .colonToken(),
+                            expression: ExprSyntax(
+                                MemberAccessExprSyntax(
+                                    base: DeclReferenceExprSyntax(baseName: .identifier("DispatchQueue")),
+                                    period: .periodToken(),
+                                    name: .identifier("main")))
+                        )
+                    },
+                    rightParen: .rightParenToken())
+                return ExprSyntax(receiveCall)
+            case .current:
+                return ExprSyntax(publisherCall)
+            }
+        }()
+
         // Add .eraseToAnyPublisher()
         let erasedPublisher = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
-                base: ExprSyntax(publisherCall),
+                base: baseForErase,
                 period: .periodToken(),
                 name: .identifier("eraseToAnyPublisher")),
             leftParen: .leftParenToken(),

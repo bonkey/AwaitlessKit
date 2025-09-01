@@ -213,6 +213,27 @@ class AsyncService {
     //     }).eraseToAnyPublisher()
     // }
 }
+
+// Delivery control for UI consumers
+class UIService {
+    // Deliver publisher events on the main queue
+    @AwaitlessPublisher(deliverOn: .main)
+    func loadUIData() async throws -> [Item] {
+        // Async implementation
+        return []
+    }
+    // Generates:
+    // func loadUIData() -> AnyPublisher<[Item], Error> {
+    //     Future({ promise in
+    //         Task() {
+    //             do { promise(.success(try await self.loadUIData())) }
+    //             catch { promise(.failure(error)) }
+    //         }
+    //     })
+    //     .receive(on: DispatchQueue.main) // delivery control
+    //     .eraseToAnyPublisher()
+    // }
+}
 ```
 
 ### Protocol Extensions with Default Implementations
