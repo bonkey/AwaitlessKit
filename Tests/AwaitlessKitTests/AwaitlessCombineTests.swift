@@ -8,13 +8,13 @@ import AwaitlessKitMacros
 import MacroTesting
 import Testing
 
-@Suite(.macros(["Awaitless": AwaitlessAttachedMacro.self], record: .missing))
+@Suite(.macros(["Awaitless": AwaitlessAttachedMacro.self, "AwaitlessPublisher": AwaitlessAttachedMacro.self], record: .missing))
 struct AwaitlessCombineTests {
     @Test("Expand macro with publisher output")
     func publisherOutput() {
         assertMacro {
             """
-            @Awaitless(as: .publisher)
+            @AwaitlessPublisher
             func fetchData() async throws -> [String] {
                 // simulate network request
                 try await Task.sleep(nanoseconds: 1_000_000_000)
@@ -49,7 +49,7 @@ struct AwaitlessCombineTests {
     func publisherOutputNonThrowing() {
         assertMacro {
             """
-            @Awaitless(as: .publisher)
+            @AwaitlessPublisher
             func fetchData() async -> [String] {
                 await Task.sleep(nanoseconds: 1_000_000_000)
                 return ["Hello", "World"]
@@ -78,7 +78,7 @@ struct AwaitlessCombineTests {
     func publisherWithPrefix() {
         assertMacro {
             """
-            @Awaitless(prefix: "publisher_", as: .publisher)
+            @AwaitlessPublisher(prefix: "publisher_")
             func fetchData() async throws -> [String] {
                 try await Task.sleep(nanoseconds: 1_000_000_000)
                 return ["Hello", "World"]

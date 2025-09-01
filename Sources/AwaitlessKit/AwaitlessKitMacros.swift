@@ -12,6 +12,14 @@ public macro Awaitless(
     module: "AwaitlessKitMacros",
     type: "AwaitlessAttachedMacro")
 
+// Publisher-only entry point for clearer API surface (SR-01)
+@attached(peer, names: arbitrary)
+public macro AwaitlessPublisher(
+    prefix: String = "",
+    _ availability: AwaitlessAvailability? = nil) = #externalMacro(
+    module: "AwaitlessKitMacros",
+    type: "AwaitlessAttachedMacro")
+
 #if compiler(>=6.0)
     @freestanding(expression)
     public macro awaitless<T>(_ expression: T) -> T = #externalMacro(

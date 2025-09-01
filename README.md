@@ -40,7 +40,7 @@ class DataService {
     // }
 
     // Generate Combine publishers instead
-    @Awaitless(as: .publisher)
+    @AwaitlessPublisher
     func streamUserUpdates(id: String) async throws -> [UserUpdate] {
         // Your async implementation
         return []
@@ -107,7 +107,7 @@ targets: [
 
 ### `@Awaitless` - automatic sync function generation
 
-Generates synchronous wrappers for `async` functions with built-in deprecation controls and optional Combine publisher output.
+Generates synchronous wrappers for `async` functions with built-in deprecation controls. For Combine publisher wrappers, use `@AwaitlessPublisher`.
 
 ### `@Awaitlessable` - protocol extension generation
 
@@ -189,7 +189,7 @@ class APIClient {
 import Combine
 
 class AsyncService {
-    @Awaitless(as: .publisher)
+    @AwaitlessPublisher
     func fetchData() async throws -> [String] {
         // Async implementation
         return ["data1", "data2"]
