@@ -840,9 +840,13 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         // Map parameters from the original function to argument expressions
         let argumentList = createArgumentList(from: parameters)
 
-        // Create the function call to the original async function
+        // Create the function call to the original async function with self.
         let asyncCallExpr = FunctionCallExprSyntax(
-            calledExpression: DeclReferenceExprSyntax(baseName: .identifier(originalFuncName)),
+            calledExpression: MemberAccessExprSyntax(
+                base: DeclReferenceExprSyntax(baseName: .identifier("self")),
+                period: .periodToken(),
+                name: .identifier(originalFuncName)
+            ),
             leftParen: .leftParenToken(),
             arguments: argumentList,
             rightParen: .rightParenToken())
