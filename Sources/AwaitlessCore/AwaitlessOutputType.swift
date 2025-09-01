@@ -11,4 +11,6 @@ public enum AwaitlessOutputType {
     /// Generates a Combine publisher instead of a synchronous function.
     /// Requires Combine framework to be available.
     case publisher
+    /// Generates a completion handler function with Result<T, Error>.
+    case completionHandler
 }
