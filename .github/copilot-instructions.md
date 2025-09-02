@@ -45,12 +45,6 @@ After making changes to macro code, always validate by:
 - Use test suite instead of SampleApp for validation on Linux systems
 - SampleApp demonstrates real-world usage patterns for documentation
 
-SampleApp examples in `SampleApp/SampleApp/` directory:
-
-- `NetworkManager.swift` - Shows @Awaitless usage on class methods
-- `DataService.swift` - Shows @Awaitlessable usage on protocols
-- `SampleApp.swift` - Shows complete usage patterns
-
 **Note**:
 
 - The @Awaitless macro only works on class/struct methods, not global functions
