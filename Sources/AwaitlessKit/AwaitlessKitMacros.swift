@@ -7,10 +7,9 @@ public import AwaitlessCore
 @attached(peer, names: arbitrary)
 public macro Awaitless(
     prefix: String = "", 
-    as outputType: AwaitlessOutputType = .sync,
     _ availability: AwaitlessAvailability? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",
-    type: "AwaitlessAttachedMacro")
+    type: "AwaitlessSyncMacro")
 
 // Publisher-only entry point for clearer API surface (SR-01)
 @attached(peer, names: arbitrary)
@@ -19,7 +18,7 @@ public macro AwaitlessPublisher(
     deliverOn: AwaitlessDelivery = .current,
     _ availability: AwaitlessAvailability? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",
-    type: "AwaitlessAttachedMacro")
+    type: "AwaitlessPublisherMacro")
 
 // Completion-only entry point (SR-03)
 @attached(peer, names: arbitrary)
@@ -27,7 +26,7 @@ public macro AwaitlessCompletion(
     prefix: String = "",
     _ availability: AwaitlessAvailability? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",
-    type: "AwaitlessAttachedMacro")
+    type: "AwaitlessCompletionMacro")
 
 @freestanding(expression)
 public macro awaitless<T>(_ expression: T) -> T = #externalMacro(

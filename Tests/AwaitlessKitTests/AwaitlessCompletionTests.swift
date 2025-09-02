@@ -7,7 +7,7 @@ import AwaitlessKitMacros
 import MacroTesting
 import Testing
 
-@Suite(.macros(["Awaitless": AwaitlessAttachedMacro.self, "AwaitlessCompletion": AwaitlessAttachedMacro.self], record: .missing))
+@Suite(.macros(["Awaitless": AwaitlessSyncMacro.self, "AwaitlessCompletion": AwaitlessCompletionMacro.self], record: .missing))
 struct AwaitlessCompletionTests {
     @Test("Expand completion wrapper for throwing function with return")
     func completionThrowing() {
