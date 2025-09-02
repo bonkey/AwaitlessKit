@@ -69,47 +69,46 @@ extension Noasync {
         let semaphore = DispatchSemaphore(value: 0)
         
         nonisolated(unsafe) var result: Result<Success, any Error>? = nil
-        nonisolated(unsafe) var coreTask: Task<Success, any Error>? = nil
         
         withoutActuallyEscaping(code) {
             nonisolated(unsafe) let sendableCode = $0
             
-            // Core task that executes the user's code
-            coreTask = Task<Success, any Error>.detached(priority: .userInitiated) { @Sendable () async throws in
-                return try await sendableCode()
-            }
-            
-            // Create a completion task that handles both timeout and normal completion
+            // Create single task that handles both timeout and execution
             Task<Void, Never>.detached(priority: .userInitiated) { @Sendable () async in
                 if let timeout = timeout {
-                    // Capture the core task in a sendable way
-                    let localCoreTask = coreTask!
-                    
-                    // Track if we timed out
-                    nonisolated(unsafe) var timedOut = false
-                    
-                    // Start timeout task that will cancel the core task after timeout
-                    Task {
-                        try? await Task.sleep(for: timeout)
-                        timedOut = true
-                        if enableLogging {
-                            print("[Noasync] Operation timed out after \(timeout)")
+                    do {
+                        // Execute with timeout using TaskGroup
+                        let taskResult: Success = try await withThrowingTaskGroup(of: Success.self) { group in
+                            // Add the main task 
+                            group.addTask { @Sendable in
+                                try await sendableCode()
+                            }
+                            
+                            // Add timeout task
+                            group.addTask { @Sendable in
+                                try await Task.sleep(for: timeout)
+                                if enableLogging {
+                                    print("[Noasync] Operation timed out after \(timeout)")
+                                }
+                                throw NoasyncError.timeout(timeout)
+                            }
+                            
+                            // Return first completing task result
+                            defer { group.cancelAll() }
+                            return try await group.next()!
                         }
-                        localCoreTask.cancel()
-                    }
-                    
-                    // Wait for the core task result
-                    let coreResult = await localCoreTask.result
-                    
-                    // If we timed out and the core task failed with cancellation, return timeout error
-                    if timedOut, case .failure(let error) = coreResult, error is CancellationError {
-                        result = .failure(NoasyncError.timeout(timeout))
-                    } else {
-                        result = coreResult
+                        result = .success(taskResult)
+                    } catch {
+                        result = .failure(error)
                     }
                 } else {
-                    // No timeout, just wait for completion
-                    result = await coreTask!.result
+                    // No timeout, just execute directly
+                    do {
+                        let taskResult = try await sendableCode()
+                        result = .success(taskResult)
+                    } catch {
+                        result = .failure(error)
+                    }
                 }
                 
                 let elapsed = ContinuousClock.now - startTime
