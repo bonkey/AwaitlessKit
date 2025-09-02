@@ -70,45 +70,17 @@ extension Noasync {
         
         nonisolated(unsafe) var result: Result<Success, any Error>? = nil
         
+        var timeoutOccurred = false
+        
         withoutActuallyEscaping(code) {
             nonisolated(unsafe) let sendableCode = $0
             
-            // Create single task that handles both timeout and execution
             Task<Void, Never>.detached(priority: .userInitiated) { @Sendable () async in
-                if let timeout = timeout {
-                    do {
-                        // Execute with timeout using TaskGroup
-                        let taskResult: Success = try await withThrowingTaskGroup(of: Success.self) { group in
-                            // Add the main task 
-                            group.addTask { @Sendable in
-                                try await sendableCode()
-                            }
-                            
-                            // Add timeout task
-                            group.addTask { @Sendable in
-                                try await Task.sleep(for: timeout)
-                                if enableLogging {
-                                    print("[Noasync] Operation timed out after \(timeout)")
-                                }
-                                throw NoasyncError.timeout(timeout)
-                            }
-                            
-                            // Return first completing task result
-                            defer { group.cancelAll() }
-                            return try await group.next()!
-                        }
-                        result = .success(taskResult)
-                    } catch {
-                        result = .failure(error)
-                    }
-                } else {
-                    // No timeout, just execute directly
-                    do {
-                        let taskResult = try await sendableCode()
-                        result = .success(taskResult)
-                    } catch {
-                        result = .failure(error)
-                    }
+                do {
+                    let taskResult = try await sendableCode()
+                    result = .success(taskResult)
+                } catch {
+                    result = .failure(error)
                 }
                 
                 let elapsed = ContinuousClock.now - startTime
@@ -119,7 +91,25 @@ extension Noasync {
                 semaphore.signal()
             }
             
-            semaphore.wait()
+            // Handle timeout by waiting on semaphore with timeout
+            if let timeout = timeout {
+                let timeoutNanoseconds = Int64(timeout.components.seconds) * 1_000_000_000 + 
+                                       Int64(timeout.components.attoseconds / 1_000_000_000)
+                let timeoutResult = semaphore.wait(timeout: .now() + .nanoseconds(Int(timeoutNanoseconds)))
+                
+                if timeoutResult == .timedOut {
+                    timeoutOccurred = true
+                    if enableLogging {
+                        print("[Noasync] Operation timed out after \(timeout)")
+                    }
+                }
+            } else {
+                semaphore.wait()
+            }
+        }
+        
+        if timeoutOccurred {
+            throw NoasyncError.timeout(timeout!)
         }
         
         return try result!.get()
