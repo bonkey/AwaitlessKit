@@ -7,7 +7,7 @@ import AwaitlessKitMacros
 import MacroTesting
 import Testing
 
-@Suite(.macros(["AwaitlessCompletion": AwaitlessAttachedMacro.self], record: .all))
+@Suite(.macros(["Awaitless": AwaitlessAttachedMacro.self], record: .all))
 struct AwaitlessCompletionTests {
     @Test("Test completion handler macro exists")
     func macroExists() {
@@ -15,18 +15,23 @@ struct AwaitlessCompletionTests {
         #expect(1 == 1)
     }
     
-    @Test("Expand basic completion handler macro")
-    func basic() {
+    @Test("Test deprecation warning for Awaitless(as: .completionHandler)")
+    func deprecationWarning() {
         assertMacro {
             """
-            @AwaitlessCompletion
+            @Awaitless(as: .completionHandler)
             func fetchData() async throws -> String {
                 return "Hello World"
             }
             """
-        } expansion: {
+        } diagnostics: {
             """
-            PLACEHOLDER TO SEE ACTUAL OUTPUT
+            @Awaitless(as: .completionHandler)
+                           ┬─────────────────
+                           ╰─ ⚠️ @Awaitless(as: .completionHandler) is deprecated; use @AwaitlessCompletion
+            func fetchData() async throws -> String {
+                return "Hello World"
+            }
             """
         }
     }

@@ -1038,9 +1038,9 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         // Create the Task call
         let taskCall = FunctionCallExprSyntax(
             calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Task")),
-            leftParen: .leftParenToken(),
+            leftParen: nil,
             arguments: LabeledExprListSyntax(),
-            rightParen: .rightParenToken(),
+            rightParen: nil,
             trailingClosure: ClosureExprSyntax(
                 statements: taskStatements
             )
