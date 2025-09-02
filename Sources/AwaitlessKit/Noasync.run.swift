@@ -69,8 +69,7 @@ extension Noasync {
         let semaphore = DispatchSemaphore(value: 0)
         
         nonisolated(unsafe) var result: Result<Success, any Error>? = nil
-        
-        var timeoutOccurred = false
+        nonisolated(unsafe) var timedOut = false
         
         withoutActuallyEscaping(code) {
             nonisolated(unsafe) let sendableCode = $0
@@ -78,38 +77,40 @@ extension Noasync {
             Task<Void, Never>.detached(priority: .userInitiated) { @Sendable () async in
                 do {
                     let taskResult = try await sendableCode()
-                    result = .success(taskResult)
+                    if !timedOut {
+                        result = .success(taskResult)
+                    }
                 } catch {
-                    result = .failure(error)
+                    if !timedOut {
+                        result = .failure(error)
+                    }
                 }
-                
-                let elapsed = ContinuousClock.now - startTime
-                if enableLogging {
-                    print("[Noasync] Operation completed in \(elapsed)")
-                }
-                
                 semaphore.signal()
             }
             
-            // Handle timeout by waiting on semaphore with timeout
+            // Set up timeout using DispatchQueue instead of complex concurrency
             if let timeout = timeout {
-                let timeoutNanoseconds = Int64(timeout.components.seconds) * 1_000_000_000 + 
-                                       Int64(timeout.components.attoseconds / 1_000_000_000)
-                let timeoutResult = semaphore.wait(timeout: .now() + .nanoseconds(Int(timeoutNanoseconds)))
+                let nanoseconds = timeout.components.seconds * 1_000_000_000 + 
+                                 Int64(timeout.components.attoseconds / 1_000_000_000)
                 
-                if timeoutResult == .timedOut {
-                    timeoutOccurred = true
-                    if enableLogging {
-                        print("[Noasync] Operation timed out after \(timeout)")
+                DispatchQueue.global().asyncAfter(deadline: .now() + .nanoseconds(Int(nanoseconds))) {
+                    if result == nil {
+                        timedOut = true
+                        result = .failure(NoasyncError.timeout(timeout))
+                        if enableLogging {
+                            print("[Noasync] Operation timed out after \(timeout)")
+                        }
+                        semaphore.signal()
                     }
                 }
-            } else {
-                semaphore.wait()
             }
+            
+            semaphore.wait()
         }
         
-        if timeoutOccurred {
-            throw NoasyncError.timeout(timeout!)
+        let elapsed = ContinuousClock.now - startTime
+        if enableLogging {
+            print("[Noasync] Operation completed in \(elapsed)")
         }
         
         return try result!.get()
