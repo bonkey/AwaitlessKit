@@ -189,7 +189,6 @@ struct AwaitlessAttachedTests {
             }
             """
         }
-
     }
 
     @Test("Expand macro on instance method")

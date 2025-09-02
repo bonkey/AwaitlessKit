@@ -29,7 +29,6 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
             return ExprSyntax(stringLiteral: "/* Error: Missing argument */")
         }
 
-        // Extract the actual expression if it's wrapped in a TryExpr
         var actualExpression = argument
         var hasTry = false
         if let tryExpr = argument.as(TryExprSyntax.self) {
@@ -45,7 +44,6 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
             ExprSyntax(TryExprSyntax(expression: awaitExpr)) :
             awaitExpr
 
-        // Create a closure that returns the result of the expression
         let closure = ExprSyntax(
             ClosureExprSyntax(
                 statements: CodeBlockItemListSyntax {
@@ -56,7 +54,6 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
                                 expression: finalExpr))))
                 }))
 
-        // Create the Noasync.run call with the closure and return the result directly
         return ExprSyntax(
             FunctionCallExprSyntax(
                 calledExpression: MemberAccessExprSyntax(
@@ -69,8 +66,6 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
                 },
                 rightParen: .rightParenToken()))
     }
-
-
 }
 
 // MARK: - AwaitlessFreestandingMacroDiagnostic

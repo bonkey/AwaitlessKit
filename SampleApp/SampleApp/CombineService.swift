@@ -3,8 +3,8 @@
 //
 
 import AwaitlessKit
-import Foundation
 import Combine
+import Foundation
 
 class CombineService {
     @AwaitlessPublisher
