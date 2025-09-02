@@ -7,7 +7,7 @@ import AwaitlessKitMacros
 import MacroTesting
 import Testing
 
-@Suite(.macros(["Awaitless": AwaitlessAttachedMacro.self], record: .missing))
+@Suite(.macros(["Awaitless": AwaitlessSyncMacro.self], record: .missing))
 struct AwaitlessArgumentVariantsTests {
     @Test("Function with unlabeled first parameter")
     func unlabeledFirstParameter() {

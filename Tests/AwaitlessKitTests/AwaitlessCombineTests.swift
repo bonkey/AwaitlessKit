@@ -8,7 +8,7 @@ import AwaitlessKitMacros
 import MacroTesting
 import Testing
 
-@Suite(.macros(["Awaitless": AwaitlessAttachedMacro.self, "AwaitlessPublisher": AwaitlessAttachedMacro.self], record: .missing))
+@Suite(.macros(["Awaitless": AwaitlessSyncMacro.self, "AwaitlessPublisher": AwaitlessPublisherMacro.self], record: .missing))
 struct AwaitlessCombineTests {
     @Test("Expand macro with publisher output")
     func publisherOutput() {

@@ -7,7 +7,7 @@ import AwaitlessKitMacros
 import MacroTesting
 import Testing
 
-@Suite(.macros(["Awaitless": AwaitlessAttachedMacro.self], record: .missing))
+@Suite(.macros(["Awaitless": AwaitlessSyncMacro.self], record: .missing))
 struct AwaitlessAttachedTests {
     @Test("Expand basic attached macro")
     func basic() {

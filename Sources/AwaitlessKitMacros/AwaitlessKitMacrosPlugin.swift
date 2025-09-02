@@ -10,7 +10,9 @@ import SwiftSyntaxMacros
 @main
 struct AwaitlessKitMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
-        AwaitlessAttachedMacro.self,
+        AwaitlessSyncMacro.self,
+        AwaitlessPublisherMacro.self,
+        AwaitlessCompletionMacro.self,
         AwaitlessFreestandingMacro.self,
         AwaitlessableMacro.self,
         IsolatedSafeMacro.self,
