@@ -46,6 +46,12 @@ reset:
 fmt:
     swiftformat .
 
+package-info:
+    swift package describe --type json | jq .
+
+package-deps:
+    swift package show-dependencies
+
 xcodebuild project_type project scheme *ARGS:
     @just swift-version
     xcodebuild \

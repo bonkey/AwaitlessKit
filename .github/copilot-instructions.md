@@ -9,36 +9,28 @@ Always reference these instructions first and fallback to search or bash command
 ### Prerequisites
 - Swift 6.0+ compiler required (uses Swift 6.1.2)
 - This package works on Linux and macOS
-- SwiftFormat is NOT installed but .swiftformat config exists
-- Just command runner is NOT available on Linux systems
+- Tools are installed via mise (swiftformat, just)
 
 ### Bootstrap and Build
 - `cd /path/to/AwaitlessKit` - always work from repository root
-- `swift build` - builds all targets including macros. Takes 3+ minutes initially. NEVER CANCEL. Set timeout to 10+ minutes.
+- `just build` - builds all targets including macros. Takes 3+ minutes initially. NEVER CANCEL. Set timeout to 10+ minutes.
 - `swift package resolve` - resolves dependencies if needed (normally automatic)
 
 ### Testing
-- `swift test` - runs full test suite. Takes 35-60 seconds. NEVER CANCEL. Set timeout to 5+ minutes.
-- `swift test --parallel` - runs tests in parallel (default behavior)
-- `swift test --filter "TestSuiteName"` - runs specific test suite (e.g., "AwaitlessAttachedTests")
+- `just test` - runs full test suite. Takes 35-60 seconds. NEVER CANCEL. Set timeout to 5+ minutes.
+- `just test TestSuiteName` - runs specific test suite
 - All tests should pass on Linux and macOS
 
 ### Code Validation
-- **NO automatic formatting available** - SwiftFormat not installed, configuration exists but tool missing
-- **NO automatic linting** - no linting tools available in environment
-- Always run `swift build` and `swift test` to validate changes
+- `just format` - formats code using SwiftFormat
 - CI runs on Linux and macOS with GitHub Actions
 
 ## Validation Scenarios
 
 ### Core Macro Functionality Testing
 After making changes to macro code, always validate by:
-1. `swift build` - ensure macros compile without errors
-2. `swift test --filter "AwaitlessAttachedTests"` - test @Awaitless macro generation
-3. `swift test --filter "AwaitlessableTests"` - test @Awaitlessable protocol extensions
-4. `swift test --filter "IsolatedSafeTests"` - test @IsolatedSafe property wrappers
-5. `swift test --filter "AwaitlessCombineTests"` - test Combine publisher generation
-6. `swift test --filter "AwaitlessFreestandingTests"` - test #awaitless() macro
+1. `just build` - ensure macros compile without errors
+2. `just test` - run full test suite (tests are fast, no need to filter)
 
 ### Integration Testing
 - SampleApp is an Xcode project located in `SampleApp/` directory
@@ -46,26 +38,13 @@ After making changes to macro code, always validate by:
 - Use test suite instead of SampleApp for validation on Linux systems
 - SampleApp demonstrates real-world usage patterns for documentation
 
-### Manual Validation
-The macro functionality can be tested via the main test suite, but if you need to create a custom validation package:
-
-**Important**: Due to Swift 6 strict concurrency and macro limitations, manual validation requires careful setup:
-
-```bash
-# Always validate via test suite first - this is the recommended approach
-cd /path/to/AwaitlessKit
-swift test --filter "AwaitlessAttachedTests"  # Validates @Awaitless macro generation
-swift test --filter "AwaitlessableTests"     # Validates @Awaitlessable protocol extensions
-```
-
-For integration testing, refer to SampleApp examples in `SampleApp/SampleApp/` directory:
+SampleApp examples in `SampleApp/SampleApp/` directory:
 - `NetworkManager.swift` - Shows @Awaitless usage on class methods
 - `DataService.swift` - Shows @Awaitlessable usage on protocols  
 - `SampleApp.swift` - Shows complete usage patterns
 
 **Note**: 
 - The @Awaitless macro only works on class/struct methods, not global functions
-- Manual validation packages may encounter Swift 6 strict concurrency warnings - this is expected behavior
 - The macro generates synchronous versions with same names but different availability attributes
 - Always use the comprehensive test suite for validation rather than manual test packages
 
@@ -94,8 +73,9 @@ SampleApp/                  # Xcode demo project (macOS only)
 ### Important Files
 - `Package.swift` - Swift Package Manager configuration with dependencies
 - `.swift-version` - Swift 6.0 toolchain requirement
-- `.swiftformat` - Code formatting rules (tool not installed)
-- `Justfile` - Build automation (just tool not available on Linux)
+- `.swiftformat` - Code formatting rules
+- `.tool-versions` - Tool version specifications for mise
+- `Justfile` - Build automation
 - `AGENTS.md` - Agent workflow guidelines
 
 ## Common Tasks
@@ -103,19 +83,14 @@ SampleApp/                  # Xcode demo project (macOS only)
 ### Package Information
 ```bash
 # View package structure
-swift package describe --type json | jq .
+just package-info
 
 # Show dependencies
-swift package show-dependencies
+just package-deps
 
 # Clean build artifacts
-swift package clean
+just clean
 ```
-
-### Dependency Management
-- **swift-syntax** (601.0.1+) - Required for macro implementation
-- **swift-macro-testing** (0.6.3+) - Required for macro testing
-- Dependencies resolve automatically during build
 
 ### Working with Macros
 - Macro implementations are in `Sources/AwaitlessKitMacros/`
@@ -126,39 +101,36 @@ swift package clean
 ### CI/CD Expectations
 - All PRs must pass Linux and macOS tests
 - Build and test times are consistent across platforms
-- No formatting or linting checks in CI (tools not available)
+- Formatting checks via SwiftFormat (installed via mise)
 
 ## Platform Limitations
 
 ### Linux Environment
 - ✅ Swift compilation and testing works fully
 - ✅ Package builds and all tests pass
+- ✅ Tools available via mise (swiftformat, just)
 - ❌ SampleApp cannot be built (requires Xcode)
-- ❌ SwiftFormat not installed (config exists)
-- ❌ Just command runner not available
-- ❌ No Xcode-specific tools
 
 ### macOS Environment (when available)
 - ✅ Full Swift toolchain with Xcode integration
 - ✅ SampleApp can be built and run
-- ✅ Justfile automation available
-- ✅ SwiftFormat available for code formatting
+- ✅ All tools available via mise
 
 ## Troubleshooting
 
 ### Build Issues
-- If build fails with dependency resolution errors: `swift package clean && swift build`
+- If build fails with dependency resolution errors: `just clean`
 - If macro compilation fails: check SwiftSyntax API compatibility
 - Long build times are normal for initial builds (3+ minutes)
 
 ### Test Issues
-- If tests fail to find modules: ensure `swift build` completed successfully
-- Use `--filter` to isolate failing test suites
+- If tests fail to find modules: ensure `just build` completed successfully
+- Use `<FILTER>` in `just test <FILTER>` to isolate failing test suites
 - Parallel testing is enabled by default and should work
 
 ### Environment Issues
 - SampleApp build errors on Linux are expected - this is normal
-- Missing tool errors (swiftformat, just) are expected on Linux
+- Missing tool errors (swiftformat, just) are not expected on Linux, `mise install` should resolve it
 - Use test suite instead of SampleApp for validation on Linux
 
 ## Performance Expectations
@@ -170,7 +142,6 @@ swift package clean
 
 ### Test Times
 - Full test suite: 35-60 seconds
-- Filtered test suites: 1-5 seconds each
 - Individual tests: Under 1 second
 
-NEVER CANCEL builds or tests - wait for completion even if they appear to hang.
+You can kill swift processes to cancel tests or builds after a few minutes and retry if needed.

@@ -23,6 +23,7 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
       - name: Cache Swift PM dependencies
         uses: actions/cache@v4
         with:
@@ -38,4 +39,4 @@ jobs:
           detached: true
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
       - name: Build and Test
-        run: swift test
+        run: just test
