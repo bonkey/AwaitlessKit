@@ -27,7 +27,7 @@ swift-version:
     @echo "{{ style('warning') }}$(swift -version){{ NORMAL }}"
 
 test *FILTER:
-    #!/usr/bin/env zsh
+    #!/usr/bin/env bash
     if [ -n "{{FILTER}}" ]; then
         swift test --parallel --filter "{{FILTER}}"
     else
@@ -45,6 +45,12 @@ reset:
 
 fmt:
     swiftformat .
+
+package-info:
+    swift package describe --type json | jq .
+
+package-deps:
+    swift package show-dependencies
 
 xcodebuild project_type project scheme *ARGS:
     @just swift-version
