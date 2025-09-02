@@ -61,7 +61,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
         // - AwaitlessPublisher => .publisher
         // - AwaitlessCompletion => .completion
         // - else => .sync
-        var outputType: AwaitlessOutputType = {
+        let outputType: AwaitlessOutputType = {
             switch attrName {
             case "AwaitlessPublisher": return .publisher
             case "AwaitlessCompletion": return .completion
@@ -83,32 +83,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
                         .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
                 }
                 
-                // Check for output type parameter
-                if labeledExpr.label?.text == "as",
-                   let memberAccess = labeledExpr.expression.as(MemberAccessExprSyntax.self)
-                {
-                    // Handle cases like: @Awaitless(as: .publisher)
-                    if memberAccess.declName.baseName.text == "publisher" {
-                        #if canImport(Combine)
-                        outputType = .publisher
-                        // If used via @Awaitless, emit deprecation warning suggesting @AwaitlessPublisher
-                        if attrName == "Awaitless" {
-                            let diagnostic = Diagnostic(
-                                node: Syntax(labeledExpr.expression),
-                                message: AwaitlessAttachedMacroDiagnostic.deprecatedPublisherArgument)
-                            context.diagnose(diagnostic)
-                        }
-                        #else
-                        let diagnostic = Diagnostic(
-                            node: Syntax(labeledExpr.expression),
-                            message: AwaitlessAttachedMacroDiagnostic.combineNotAvailable)
-                        context.diagnose(diagnostic)
-                        return []
-                        #endif
-                    } else if memberAccess.declName.baseName.text == "sync" {
-                        outputType = .sync
-                    }
-                }
+
 
                 // Parse delivery option for @AwaitlessPublisher
                 if attrName == "AwaitlessPublisher",
@@ -125,7 +100,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
 
             // Check for availability parameter (first unlabeled argument or argument without specific label)
             for argument in arguments {
-                if argument.label?.text != "prefix" && argument.label?.text != "as",
+                if argument.label?.text != "prefix",
                    let memberAccess = argument.expression.as(MemberAccessExprSyntax.self)
                 {
                     // Handle cases like: @Awaitless(.deprecated) or @Awaitless(.unavailable)
@@ -134,7 +109,7 @@ public struct AwaitlessAttachedMacro: PeerMacro {
                     } else if memberAccess.declName.baseName.text == "unavailable" {
                         availability = .unavailable()
                     }
-                } else if argument.label?.text != "prefix" && argument.label?.text != "as",
+                } else if argument.label?.text != "prefix",
                           let functionCall = argument.expression.as(FunctionCallExprSyntax.self),
                           let calledExpr = functionCall.calledExpression.as(MemberAccessExprSyntax.self)
                 {
@@ -1117,16 +1092,9 @@ public struct AwaitlessAttachedMacro: PeerMacro {
 enum AwaitlessAttachedMacroDiagnostic: String, DiagnosticMessage {
     case requiresFunction = "@Awaitless can only be applied to functions"
     case requiresAsync = "@Awaitless requires the function to be 'async'"
-    case combineNotAvailable = "@Awaitless publisher output requires Combine framework, which is not available on this platform"
-    case deprecatedPublisherArgument = "@Awaitless(as: .publisher) is deprecated; use @AwaitlessPublisher"
 
     var severity: DiagnosticSeverity {
-        switch self {
-        case .deprecatedPublisherArgument:
-            return .warning
-        default:
-            return .error
-        }
+        return .error
     }
     var message: String { rawValue }
     var diagnosticID: MessageID {

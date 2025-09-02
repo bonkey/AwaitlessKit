@@ -7,7 +7,6 @@ public import AwaitlessCore
 @attached(peer, names: arbitrary)
 public macro Awaitless(
     prefix: String = "", 
-    as outputType: AwaitlessOutputType = .sync,
     _ availability: AwaitlessAvailability? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "AwaitlessAttachedMacro")
