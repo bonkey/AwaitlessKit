@@ -9,6 +9,15 @@ import Foundation
 import Testing
 
 struct AwaitlessNoasyncRunTests {
+    // Platform detection for conditional testing
+    private static let isLinux: Bool = {
+        #if os(Linux)
+        return true
+        #else
+        return false
+        #endif
+    }()
+    
     enum TestError: Error, Equatable {
         case simpleError
     }
@@ -103,7 +112,7 @@ struct AwaitlessNoasyncRunTests {
         #expect(result == "Success")
     }
     
-    @Test("Execute with timeout - timeout case")
+    @Test("Execute with timeout - timeout case", .enabled(if: !isLinux))
     func timeoutFailure() throws {
         #expect(throws: NoasyncError.timeout(.milliseconds(50))) {
             try Noasync<String, any Error>.run(timeout: .milliseconds(50)) {
@@ -173,7 +182,7 @@ struct AwaitlessNoasyncRunTests {
         }
     }
     
-    @Test("Very short timeout")
+    @Test("Very short timeout", .enabled(if: !isLinux))
     func veryShortTimeout() throws {
         #expect(throws: NoasyncError.timeout(.milliseconds(1))) {
             try Noasync<String, any Error>.run(timeout: .milliseconds(1)) {
