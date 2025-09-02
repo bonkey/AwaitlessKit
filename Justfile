@@ -27,7 +27,7 @@ swift-version:
     @echo "{{ style('warning') }}$(swift -version){{ NORMAL }}"
 
 test *FILTER:
-    #!/usr/bin/env zsh
+    #!/usr/bin/env bash
     if [ -n "{{FILTER}}" ]; then
         swift test --parallel --filter "{{FILTER}}"
     else
