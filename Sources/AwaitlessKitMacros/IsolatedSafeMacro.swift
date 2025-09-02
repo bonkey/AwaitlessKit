@@ -23,8 +23,6 @@ public enum AccessLevel: String, ExpressibleByStringLiteral, Codable {
     }
 }
 
-
-
 // MARK: - IsolatedSafeMacro
 
 /// A macro that generates a thread-safe accessor for a nonisolated(unsafe) property.
@@ -106,7 +104,7 @@ public struct IsolatedSafeMacro: PeerMacro {
 
         // Parse writable flag from macro arguments
         let isWritable = parseWritable(from: node)
-        
+
         // Parse synchronization strategy from macro arguments
         let strategy = parseSynchronizationStrategy(from: node)
 
@@ -188,7 +186,7 @@ public struct IsolatedSafeMacro: PeerMacro {
 
         return false
     }
-    
+
     /// Parse synchronization strategy from macro arguments
     private static func parseSynchronizationStrategy(from node: AttributeSyntax) -> AwaitlessSynchronizationStrategy {
         guard let labeledArguments = node.arguments?.as(LabeledExprListSyntax.self) else {
@@ -264,7 +262,8 @@ public struct IsolatedSafeMacro: PeerMacro {
                 accessorSpecifier: .keyword(.get),
                 body: CodeBlockSyntax {
                     switch strategy {
-                    case .concurrent, .serial:
+                    case .concurrent,
+                         .serial:
                         ExprSyntax("""
                         \(raw: queueName).sync { self.\(raw: unsafePropertyName) }
                         """)
@@ -283,6 +282,7 @@ public struct IsolatedSafeMacro: PeerMacro {
                             ExprSyntax("""
                             \(raw: queueName).async(flags: .barrier) { self.\(raw: unsafePropertyName) = newValue }
                             """)
+
                         case .serial:
                             ExprSyntax("""
                             \(raw: queueName).sync { self.\(raw: unsafePropertyName) = newValue }
@@ -308,18 +308,19 @@ public struct IsolatedSafeMacro: PeerMacro {
 
     /// Generate the queue(s) based on the synchronization strategy
     private static func generateQueues(
-        name: String, 
-        accessLevel: AccessLevel, 
-        strategy: AwaitlessSynchronizationStrategy) -> [VariableDeclSyntax]
+        name: String,
+        accessLevel: AccessLevel,
+        strategy: AwaitlessSynchronizationStrategy)
+        -> [VariableDeclSyntax]
     {
         switch strategy {
         case .concurrent:
-            return [generateConcurrentQueue(name: name, accessLevel: accessLevel)]
+            [generateConcurrentQueue(name: name, accessLevel: accessLevel)]
         case .serial:
-            return [generateSerialQueue(name: name, accessLevel: accessLevel)]
+            [generateSerialQueue(name: name, accessLevel: accessLevel)]
         }
     }
-    
+
     /// Generate a concurrent queue
     private static func generateConcurrentQueue(name: String, accessLevel: AccessLevel) -> VariableDeclSyntax {
         VariableDeclSyntax(
@@ -336,7 +337,7 @@ public struct IsolatedSafeMacro: PeerMacro {
                         """)))
             })
     }
-    
+
     /// Generate a serial queue
     private static func generateSerialQueue(name: String, accessLevel: AccessLevel) -> VariableDeclSyntax {
         VariableDeclSyntax(

@@ -37,7 +37,7 @@ struct IsolatedSafeEnhancedTests {
             """
         }
     }
-    
+
     @Test("Expand IsolatedSafe with custom queue name and strategy")
     func customQueueNameWithStrategy() {
         assertMacro {

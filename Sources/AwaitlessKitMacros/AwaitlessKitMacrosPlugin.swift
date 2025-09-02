@@ -5,8 +5,6 @@
 import SwiftCompilerPlugin
 import SwiftSyntaxMacros
 
-// MARK: - AwaitlessKitMacrosPlugin
-
 @main
 struct AwaitlessKitMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [

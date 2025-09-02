@@ -26,7 +26,7 @@ public struct AwaitlessSyncMacro: PeerMacro {
         if declaration.is(ProtocolDeclSyntax.self) {
             return [] // Protocols are handled by MemberMacro
         }
-        
+
         // Handle function declarations (existing behavior)
         guard let funcDecl = declaration.as(FunctionDeclSyntax.self) else {
             let diagnostic = Diagnostic(
@@ -104,13 +104,13 @@ public struct AwaitlessSyncMacro: PeerMacro {
         }
 
         // Create the sync function
-        let generatedDecl: DeclSyntax = DeclSyntax(Self.createSyncFunction(
+        let generatedDecl = DeclSyntax(Self.createSyncFunction(
             from: funcDecl,
             prefix: prefix,
             availability: availability))
         return [generatedDecl]
     }
-    
+
     /// Creates a synchronous version of the provided async function
     private static func createSyncFunction(
         from funcDecl: FunctionDeclSyntax,
@@ -163,7 +163,7 @@ public struct AwaitlessSyncMacro: PeerMacro {
             genericWhereClause: funcDecl.genericWhereClause,
             body: newBody)
     }
-    
+
     /// Creates a noasync attribute for the function
     private static func createNoasyncAttribute() -> AttributeSyntax {
         AttributeSyntax(
@@ -274,7 +274,7 @@ public struct AwaitlessSyncMacro: PeerMacro {
                 CodeBlockItemSyntax(item: .expr(taskNoasyncCall))
             })
     }
-    
+
     /// Creates a Noasync.run function call with the provided closure
     private static func createTaskNoasyncCall(with closure: ExprSyntax, isThrowing: Bool) -> ExprSyntax {
         let taskNoasyncCall = FunctionCallExprSyntax(
@@ -295,8 +295,6 @@ public struct AwaitlessSyncMacro: PeerMacro {
             return ExprSyntax(taskNoasyncCall)
         }
     }
-
-
 
     /// Creates a function signature for the sync version of the function
     private static func createSyncFunctionSignature(
@@ -321,10 +319,6 @@ public struct AwaitlessSyncMacro: PeerMacro {
             effectSpecifiers: newEffectSpecifiers,
             returnClause: returnType.map { ReturnClauseSyntax(type: $0) })
     }
-
-
-
-
 }
 
 // MARK: - AwaitlessSyncMacroDiagnostic
@@ -335,8 +329,9 @@ enum AwaitlessSyncMacroDiagnostic: String, DiagnosticMessage {
     case requiresAsync = "@Awaitless requires the function to be 'async'"
 
     var severity: DiagnosticSeverity {
-        return .error
+        .error
     }
+
     var message: String { rawValue }
     var diagnosticID: MessageID {
         MessageID(domain: "AwaitlessMacros", id: rawValue)

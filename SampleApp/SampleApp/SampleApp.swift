@@ -3,9 +3,9 @@
 //
 
 import AwaitlessKit
+import Combine
 import Darwin
 import Foundation
-import Combine
 
 @main
 final class SampleApp {
@@ -24,7 +24,7 @@ final class SampleApp {
         freestandingMacroExample()
     }
 
-    // MARK: - Basic Usage
+    // MARK: - Basic Sync Wrapper Generation
 
     private func basicUsageExample() throws {
         let fileURL = URL(string: "https://example.com")!
@@ -32,7 +32,7 @@ final class SampleApp {
         print("Basic Usage - downloaded data size: \(data.count)")
     }
 
-    // MARK: - Migration with Deprecation
+    // MARK: - Deprecation Strategy for Legacy Code
 
     private func migrationWithDeprecationExample() throws {
         let service = LegacyService()
@@ -40,14 +40,14 @@ final class SampleApp {
         print("Migration with Deprecation - result: \(result)")
     }
 
-    // MARK: - Custom Naming
+    // MARK: - Custom Function Prefixes
 
     private func customNamingExample() throws {
         let token = try APIClient().sync_authenticate()
         print("Custom Naming - token: \(token)")
     }
 
-    // MARK: - Thread-Safe Properties
+    // MARK: - Actor-Safe Property Access
 
     private func threadSafePropertiesExample() {
         let state = SharedState()
@@ -58,7 +58,7 @@ final class SampleApp {
         print("Thread-Safe Properties - items: \(state.items)")
     }
 
-    // MARK: - Protocol Example
+    // MARK: - Protocol Extension Generation
 
     private func protocolExample() throws {
         let dataService: DataService = MockDataService()
@@ -67,7 +67,7 @@ final class SampleApp {
         print("Protocol Example - user: \(user.name)")
     }
 
-    // MARK: - Combine Example
+    // MARK: - Publisher Generation from Async Functions
 
     private func combineExample() {
         let combineService = CombineService()
@@ -79,20 +79,20 @@ final class SampleApp {
                 switch completion {
                 case .finished:
                     print("Combine Example - Publisher finished.")
-                case .failure(let error):
+                case let .failure(error):
                     print("Combine Example - Publisher failed with error: \(error)")
                 }
             }, receiveValue: { items in
                 print("Combine Example - Received items: \(items)")
             })
             .store(in: &cancellables)
-        
+
         // In a real app, you'd manage the lifecycle of cancellables.
         // Here we just let it run. A sleep is needed to see output in a simple command-line tool.
         Thread.sleep(forTimeInterval: 0.1)
     }
 
-    // MARK: - Freestanding Macro Example
+    // MARK: - Expression-Level Sync Conversion
 
     private func freestandingMacroExample() {
         let service = FreestandingMacroService()

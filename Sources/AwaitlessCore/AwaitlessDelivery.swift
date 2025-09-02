@@ -11,4 +11,3 @@ public enum AwaitlessDelivery {
     /// Deliver on the main queue (UI‑friendly).
     case main
 }
-
