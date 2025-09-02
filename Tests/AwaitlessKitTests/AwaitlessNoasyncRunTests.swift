@@ -3,6 +3,7 @@
 //
 
 import AwaitlessKit
+import AwaitlessCore
 import Dispatch
 import Foundation
 import Testing
@@ -88,5 +89,116 @@ struct AwaitlessNoasyncRunTests {
         let expectedResults = Array(0 ..< count)
 
         #expect(results == expectedResults)
+    }
+    
+    // MARK: - Safety Features Tests
+    
+    @Test("Execute with timeout - success case")
+    func timeoutSuccess() throws {
+        let result: String = try Noasync<String, any Error>.run(timeout: .milliseconds(100)) {
+            try await Task.sleep(for: .milliseconds(10))
+            return "Success"
+        }
+
+        #expect(result == "Success")
+    }
+    
+    @Test("Execute with timeout - timeout case")
+    func timeoutFailure() throws {
+        #expect(throws: NoasyncError.timeout(.milliseconds(50))) {
+            try Noasync<String, any Error>.run(timeout: .milliseconds(50)) {
+                try await Task.sleep(for: .milliseconds(200))
+                return "Should not reach here"
+            }
+        }
+    }
+    
+    @Test("Execute with timeout disabled (nil)")
+    func timeoutDisabled() throws {
+        let result: String = try Noasync<String, any Error>.run(timeout: nil) {
+            try await Task.sleep(for: .milliseconds(10))
+            return "Success"
+        }
+
+        #expect(result == "Success")
+    }
+    
+    @Test("Execute with logging enabled")
+    func loggingEnabled() throws {
+        // Capture stdout/print output would be complex, so we just test it doesn't crash
+        let result: String = try Noasync<String, any Error>.run(enableLogging: true) {
+            try await Task.sleep(for: .milliseconds(10))
+            return "Success"
+        }
+
+        #expect(result == "Success")
+    }
+    
+    @Test("Execute with timeout and logging enabled")
+    func timeoutAndLoggingEnabled() throws {
+        let result: String = try Noasync<String, any Error>.run(timeout: .seconds(2), enableLogging: true) {
+            try await Task.sleep(for: .milliseconds(10))
+            return "Success"
+        }
+
+        #expect(result == "Success")
+    }
+    
+    @Test("Timeout with void return type")
+    func timeoutVoidReturn() throws {
+        try Noasync<Void, any Error>.run(timeout: .milliseconds(100)) {
+            try await Task.sleep(for: .milliseconds(10))
+            #expect(Bool(true))
+        }
+    }
+    
+    @Test("Timeout with error propagation")
+    func timeoutErrorPropagation() throws {
+        #expect(throws: TestError.simpleError) {
+            try Noasync<String, any Error>.run(timeout: .milliseconds(100)) {
+                try await Task.sleep(for: .milliseconds(10))
+                throw TestError.simpleError
+            }
+        }
+    }
+    
+    @Test("Multiple timeout operations in sequence")
+    func multipleTimeoutOperations() throws {
+        for i in 0..<10 {
+            let result: Int = try Noasync<Int, any Error>.run(timeout: .milliseconds(50)) {
+                try await Task.sleep(for: .milliseconds(5))
+                return i
+            }
+            #expect(result == i)
+        }
+    }
+    
+    @Test("Very short timeout")
+    func veryShortTimeout() throws {
+        #expect(throws: NoasyncError.timeout(.milliseconds(1))) {
+            try Noasync<String, any Error>.run(timeout: .milliseconds(1)) {
+                try await Task.sleep(for: .milliseconds(100))
+                return "Should not reach here"
+            }
+        }
+    }
+    
+    @Test("Different return types with timeout")
+    func differentReturnTypesWithTimeout() throws {
+        let intResult: Int = try Noasync<Int, any Error>.run(timeout: .milliseconds(100)) {
+            try await Task.sleep(for: .milliseconds(10))
+            return 42
+        }
+        #expect(intResult == 42)
+
+        struct TestData {
+            let value: String
+        }
+
+        let structResult: TestData = try Noasync<TestData, any Error>.run(timeout: .milliseconds(100)) {
+            try await Task.sleep(for: .milliseconds(10))
+            return TestData(value: "test")
+        }
+        #expect(structResult.value == "test")
     }
 }

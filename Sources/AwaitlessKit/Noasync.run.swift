@@ -6,6 +6,8 @@
 // Source: https://wadetregaskis.com/calling-swift-concurrency-async-code-synchronously-in-swift/
 
 import Dispatch
+import AwaitlessCore
+import Foundation
 
 extension Noasync {
     // Executes the given async closure synchronously, waiting for it to finish before returning.
@@ -43,5 +45,80 @@ extension Noasync {
         }
 
         return try result!.get() // 7
+    }
+    
+    /// Executes an async closure synchronously with optional safety features.
+    ///
+    /// - Parameters:
+    ///   - timeout: Optional timeout duration. If exceeded, throws `NoasyncError.timeout`.
+    ///   - enableLogging: Whether to enable debug logging for long waits.
+    ///   - code: The async closure to execute synchronously.
+    /// - Returns: The result of the async closure.
+    /// - Throws: The error from the closure, or `NoasyncError.timeout` if the timeout is exceeded.
+    ///
+    /// **Warning**: Do not call this from a thread used by Swift Concurrency (e.g. an actor, including global actors
+    /// like MainActor) if the closure - or anything it calls transitively via `await` - might be bound to that same
+    /// isolation context.  Doing so may result in deadlock.
+    @available(*, noasync)
+    public static func run(
+        timeout: Duration? = nil,
+        enableLogging: Bool = false,
+        _ code: sending () async throws -> Success
+    ) throws -> Success {
+        let startTime = ContinuousClock.now
+        let semaphore = DispatchSemaphore(value: 0)
+        
+        nonisolated(unsafe) var result: Result<Success, any Error>? = nil
+        nonisolated(unsafe) var coreTask: Task<Success, any Error>? = nil
+        
+        withoutActuallyEscaping(code) {
+            nonisolated(unsafe) let sendableCode = $0
+            
+            // Core task that executes the user's code
+            coreTask = Task<Success, any Error>.detached(priority: .userInitiated) { @Sendable () async in
+                return try await sendableCode()
+            }
+            
+            // Create a completion task that handles both timeout and normal completion
+            Task<Void, Never>.detached(priority: .userInitiated) { @Sendable () async in
+                if let timeout = timeout {
+                    // Use async-let to race between completion and timeout
+                    async let coreCompletion = coreTask!.result
+                    async let timeoutCompletion: Result<Success, any Error> = {
+                        try? await Task.sleep(for: timeout)
+                        if enableLogging {
+                            print("[Noasync] Operation timed out after \(timeout)")
+                        }
+                        coreTask?.cancel()
+                        return .failure(NoasyncError.timeout(timeout))
+                    }()
+                    
+                    // Wait for either to complete and take the first result
+                    result = await coreCompletion
+                    if await coreCompletion == timeoutCompletion {
+                        // Both completed at same time, prefer the core result if it succeeded
+                        if case .success = result {
+                            // Keep the core result
+                        } else {
+                            result = await timeoutCompletion
+                        }
+                    }
+                } else {
+                    // No timeout, just wait for completion
+                    result = await coreTask!.result
+                }
+                
+                let elapsed = ContinuousClock.now - startTime
+                if enableLogging {
+                    print("[Noasync] Operation completed in \(elapsed)")
+                }
+                
+                semaphore.signal()
+            }
+            
+            semaphore.wait()
+        }
+        
+        return try result!.get()
     }
 }
