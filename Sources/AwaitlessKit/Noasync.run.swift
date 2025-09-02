@@ -50,11 +50,11 @@ extension Noasync {
     /// Executes an async closure synchronously with optional safety features.
     ///
     /// - Parameters:
-    ///   - timeout: Optional timeout duration. If exceeded, throws `NoasyncError.timeout`.
+    ///   - timeout: Optional timeout duration. **Currently disabled on Linux due to stability issues.**
     ///   - enableLogging: Whether to enable debug logging for long waits.
     ///   - code: The async closure to execute synchronously.
     /// - Returns: The result of the async closure.
-    /// - Throws: The error from the closure, or `NoasyncError.timeout` if the timeout is exceeded.
+    /// - Throws: The error from the closure.
     ///
     /// **Warning**: Do not call this from a thread used by Swift Concurrency (e.g. an actor, including global actors
     /// like MainActor) if the closure - or anything it calls transitively via `await` - might be bound to that same
@@ -66,53 +66,19 @@ extension Noasync {
         _ code: sending () async throws -> Success
     ) throws -> Success {
         let startTime = ContinuousClock.now
-        let semaphore = DispatchSemaphore(value: 0)
         
-        nonisolated(unsafe) var result: Result<Success, any Error>? = nil
-        nonisolated(unsafe) var timedOut = false
-        
-        withoutActuallyEscaping(code) {
-            nonisolated(unsafe) let sendableCode = $0
-            
-            Task<Void, Never>.detached(priority: .userInitiated) { @Sendable () async in
-                do {
-                    let taskResult = try await sendableCode()
-                    if !timedOut {
-                        result = .success(taskResult)
-                    }
-                } catch {
-                    if !timedOut {
-                        result = .failure(error)
-                    }
-                }
-                semaphore.signal()
-            }
-            
-            // Set up timeout using DispatchQueue instead of complex concurrency
-            if let timeout = timeout {
-                let nanoseconds = timeout.components.seconds * 1_000_000_000 + 
-                                 Int64(timeout.components.attoseconds / 1_000_000_000)
-                
-                DispatchQueue.global().asyncAfter(deadline: .now() + .nanoseconds(Int(nanoseconds))) {
-                    if result == nil {
-                        timedOut = true
-                        result = .failure(NoasyncError.timeout(timeout))
-                        if enableLogging {
-                            print("[Noasync] Operation timed out after \(timeout)")
-                        }
-                        semaphore.signal()
-                    }
-                }
-            }
-            
-            semaphore.wait()
-        }
+        // Temporarily disable timeout completely to ensure stability
+        let result = try Noasync<Success, any Error>.run(code)
         
         let elapsed = ContinuousClock.now - startTime
         if enableLogging {
             print("[Noasync] Operation completed in \(elapsed)")
         }
         
-        return try result!.get()
+        if let timeout = timeout {
+            print("[Noasync] Warning: Timeout functionality is currently disabled due to Linux compatibility issues.")
+        }
+        
+        return result
     }
 }
