@@ -45,3 +45,12 @@ public macro IsolatedSafe(
     strategy: AwaitlessSynchronizationStrategy = .concurrent) = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "IsolatedSafeMacro")
+
+@attached(member, names: named(__awaitlessConfig))
+public macro AwaitlessConfig(
+    prefix: String? = nil,
+    availability: AwaitlessAvailability? = nil,
+    delivery: AwaitlessDelivery? = nil,
+    strategy: AwaitlessSynchronizationStrategy? = nil) = #externalMacro(
+    module: "AwaitlessKitMacros",
+    type: "AwaitlessConfigMacro")
