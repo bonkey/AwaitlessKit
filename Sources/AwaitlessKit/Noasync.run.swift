@@ -5,7 +5,9 @@
 // Copyright Wade Tregaskis
 // Source: https://wadetregaskis.com/calling-swift-concurrency-async-code-synchronously-in-swift/
 
+import AwaitlessCore
 import Dispatch
+import Foundation
 
 extension Noasync {
     // Executes the given async closure synchronously, waiting for it to finish before returning.
@@ -18,15 +20,14 @@ extension Noasync {
     @available(*, noasync)
     public static func run(_ code: sending () async throws(Failure) -> Success) throws(Failure)
         -> Success
-    { // 1
+    {
         let semaphore = DispatchSemaphore(value: 0)
+        nonisolated(unsafe) var result: Result<Success, Failure>? = nil
 
-        nonisolated(unsafe) var result: Result<Success, Failure>? = nil // 2
+        withoutActuallyEscaping(code) {
+            nonisolated(unsafe) let sendableCode = $0
 
-        withoutActuallyEscaping(code) { // 3
-            nonisolated(unsafe) let sendableCode = $0 // 4
-
-            let coreTask = Task<Void, Never>.detached(priority: .userInitiated) { @Sendable () async in // 5
+            let coreTask = Task<Void, Never>.detached(priority: .userInitiated) { @Sendable () async in
                 do {
                     result = try await .success(sendableCode())
                 } catch {
@@ -34,7 +35,7 @@ extension Noasync {
                 }
             }
 
-            Task<Void, Never>.detached(priority: .userInitiated) { // 6
+            Task<Void, Never>.detached(priority: .userInitiated) {
                 await coreTask.value
                 semaphore.signal()
             }
@@ -42,6 +43,61 @@ extension Noasync {
             semaphore.wait()
         }
 
-        return try result!.get() // 7
+        return try result!.get()
+    }
+
+    /// Executes an async closure synchronously with optional timeout.
+    ///
+    /// - Parameters:
+    ///   - timeout: Optional timeout duration. Ignored on Linux due to stability issues.
+    ///   - code: The async closure to execute synchronously.
+    /// - Returns: The result of the async closure.
+    /// - Throws: The error from the closure, or `NoasyncError.timeout` if timeout exceeded.
+    @available(*, noasync)
+    public static func run(
+        timeout: Duration? = nil,
+        _ code: sending () async throws -> Success) throws
+        -> Success
+    {
+        #if os(Linux)
+            // Timeout disabled on Linux for stability
+            return try Noasync<Success, any Error>.run(code)
+        #else
+            guard let timeout else {
+                return try Noasync<Success, any Error>.run(code)
+            }
+
+            let semaphore = DispatchSemaphore(value: 0)
+            nonisolated(unsafe) var result: Result<Success, any Error>? = nil
+
+            withoutActuallyEscaping(code) {
+                nonisolated(unsafe) let sendableCode = $0
+
+                let task = Task<Void, Never>.detached(priority: .userInitiated) { @Sendable () async in
+                    do {
+                        let value = try await withTaskCancellationHandler {
+                            try await sendableCode()
+                        } onCancel: {
+                            // Task was cancelled by timeout
+                        }
+                        result = .success(value)
+                    } catch is CancellationError {
+                        result = .failure(NoasyncError.timeout(timeout))
+                    } catch {
+                        result = .failure(error)
+                    }
+                    semaphore.signal()
+                }
+
+                Task.detached(priority: .utility) { @Sendable () async in
+                    try? await Task.sleep(for: timeout)
+                    task.cancel()
+                }
+
+                semaphore.wait()
+            }
+
+            return try result!.get()
+        #endif
     }
 }
