@@ -160,3 +160,79 @@ just clean
 - Individual tests: Under 1 second
 
 You can kill swift processes to cancel tests or builds after a few minutes and retry if needed.
+
+## RFC Writing Guidelines
+
+When creating or updating RFCs (Request for Comments) in the `/RFC` directory, follow this structure based on the comprehensive SR-05 example:
+
+### RFC Document Structure
+
+1. **Header Section**
+   - RFC number and title
+   - Status (Draft, Review, Approved, Rejected)
+   - Author and date
+   - Brief summary paragraph
+
+2. **Problem Statement**
+   - Clear description of the problem being solved
+   - Current pain points with concrete examples
+   - Impact metrics (e.g., "90% configuration boilerplate")
+
+3. **Solution Overview** 
+   - High-level description of the recommended approach
+   - Key benefits and impact
+   - Simple before/after examples
+
+4. **Approaches Evaluated**
+   - Document 3-4 different approaches considered
+   - Each approach should include:
+     - Design description with code examples
+     - Detailed pros and cons analysis
+     - Technical feasibility assessment
+     - Implementation complexity notes
+
+5. **Recommended Solution**
+   - Clear rationale for the chosen approach
+   - Address why other approaches were not selected
+   - Technical implementation strategy
+   - Migration path for existing code
+
+6. **API Surface Design**
+   - Complete API definitions with types and signatures
+   - Usage examples covering common scenarios
+   - Edge cases and error handling
+
+7. **Implementation Strategy**
+   - Phased implementation plan
+   - Technical challenges and solutions
+   - Integration with existing systems
+
+8. **Comparison Matrix**
+   - Table comparing all evaluated approaches
+   - Objective criteria for evaluation
+   - Clear winner identification
+
+9. **Decision and Next Steps**
+   - Formal decision statement
+   - Implementation phases
+   - Success criteria
+
+### RFC Best Practices
+
+- **Single File**: Consolidate all related content into one comprehensive document
+- **Concrete Examples**: Use realistic code examples throughout
+- **Quantified Benefits**: Include metrics like "90% reduction in boilerplate"
+- **Technical Honesty**: Document limitations and challenges honestly
+- **Migration Focus**: Always include migration strategy for existing users
+- **Comparison Driven**: Evaluate multiple approaches objectively
+- **Implementation Ready**: Include enough detail for implementers to proceed
+
+### RFC Process
+
+1. Create RFC document in `/RFC` directory with descriptive filename
+2. Update `/RFC/README.md` index with new RFC entry
+3. Use the RFC for design discussions before implementation
+4. Keep RFC updated as decisions evolve
+5. Mark status as "Approved" when ready for implementation
+
+RFCs should be design-only documents. Implementation work should be tracked separately in issues after RFC approval.

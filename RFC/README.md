@@ -4,4 +4,4 @@ This directory contains Request for Comments (RFC) documents for major design de
 
 ## Index
 
-- [SR-05: Configuration Defaults](./SR-05-Config-Defaults.md) - Design for opt-in configuration mechanism
+- [SR-05: Configuration Defaults](./SR-05-Configuration-Defaults.md) - Design for opt-in configuration mechanism
