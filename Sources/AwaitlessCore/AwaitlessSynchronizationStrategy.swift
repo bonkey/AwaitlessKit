@@ -5,7 +5,7 @@
 import Foundation
 
 /// Defines the synchronization strategy for the generated property.
-public enum AwaitlessSynchronizationStrategy {
+public enum AwaitlessSynchronizationStrategy: Sendable {
     /// Uses a concurrent queue with sync/async barrier for read/write operations
     case concurrent
     /// Uses a serial queue for all operations

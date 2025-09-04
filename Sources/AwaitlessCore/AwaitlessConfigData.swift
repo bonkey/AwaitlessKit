@@ -6,7 +6,7 @@ import Foundation
 
 /// Configuration data for AwaitlessKit defaults.
 /// This type will be generated as a static property by @AwaitlessConfig.
-public struct AwaitlessConfigData {
+public struct AwaitlessConfigData: Sendable {
     public let prefix: String?
     public let availability: AwaitlessAvailability?
     public let delivery: AwaitlessDelivery?
