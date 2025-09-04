@@ -28,7 +28,6 @@ let package = Package(
             name: "AwaitlessKitMacros",
             dependencies: [
                 "AwaitlessCore",
-                .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
             ],
