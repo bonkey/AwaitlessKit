@@ -38,7 +38,7 @@ This results in:
 This RFC proposes a **Combined Approach** that merges instance-based configuration for broad defaults with type-scoped configuration for granular control:
 
 ```swift
-// One-time module setup
+// One-time process setup
 AwaitlessConfig.setDefaults(
     prefix: "sync",
     availability: .deprecated("Use async version"),
@@ -169,7 +169,7 @@ class DataService {
 A hybrid approach that combines instance-based configuration for broad defaults with type-scoped configuration for granular control.
 
 ```swift
-// Module/process-level setup (once per module or app startup)
+// Module/process-level setup (once per app startup)
 AwaitlessConfig.setDefaults(
     prefix: "sync",
     availability: .deprecated("Use async version"),
@@ -216,7 +216,7 @@ class DataProcessor {
 
 After evaluating all approaches, the **Combined Approach** emerges as the optimal solution:
 
-1. **Superior User Experience**: Teams set defaults once per module/application with broad application
+1. **Superior User Experience**: Teams set defaults once per application with broad application
 2. **Flexible Granularity**: Four-level precedence hierarchy supports both simplicity and precision
 3. **Natural Migration Path**: Start with global configuration, add type-level overrides only where needed
 4. **Addresses Core Problem**: Eliminates repetitive configuration overhead
@@ -247,53 +247,35 @@ class DataService {
 }
 ```
 
-### Module Isolation Strategy
+### Process Isolation Strategy
 
-**Important Note**: The initial design incorrectly suggested `AwaitlessConfig.setCurrent()` for module isolation. However, this approach has a critical flaw: it's just another global singleton per process, not truly per-module.
+**Important Note**: The initial design incorrectly suggested `AwaitlessConfig.setCurrent()` for process isolation. However, this approach has a critical flaw: it's just another global singleton per process.
 
-**Revised Module Isolation Approach**:
+**Revised Process Isolation Approach**:
 
-Instead of a global `current` instance, module isolation should be achieved through:
+Instead of a global `current` instance, process isolation should be achieved through:
 
-1. **Build-Time Configuration Generation**: Each SPM module generates its own configuration constants
-2. **Module-Scoped Extensions**: Configuration defined per module through extensions
-3. **Namespace Isolation**: Each module has its own configuration namespace
+1. **Build-Time Configuration Generation**: Generate configuration constants at build time
+2. **Process-Scoped Configuration**: Configuration defined per application process
+3. **Compile-Time Constants**: Use static properties accessible during macro expansion
 
 ```swift
-// Generated per-module (build-time or module initialization)
-extension AwaitlessConfig {
-    enum NetworkingModule {
-        static let prefix: String? = "net"
-        static let availability: AwaitlessAvailability? = .deprecated()
-        static let delivery: AwaitlessDelivery? = .current
-    }
-    
-    enum DataModule {
-        static let prefix: String? = "sync"
-        static let delivery: AwaitlessDelivery? = .main
-    }
+// Generated at build-time or application startup
+public enum AwaitlessGlobalConfig {
+    public static let prefix: String? = "sync" // From AwaitlessConfig.setDefaults()
+    public static let availability: AwaitlessAvailability? = .deprecated()
+    public static let delivery: AwaitlessDelivery? = .main
 }
 
-// Alternative simpler approach: Module-specific config types
-// Macros would generate code that checks for MODULE_NAMEAwaitlessConfig
-internal enum NetworkingAwaitlessConfig {
-    static let prefix: String? = "net"
+// Alternative approach: MODULE_NAMEAwaitlessConfig pattern
+// (Note: This approach is feasible but complex - see proof of concept)
+internal enum MyAppAwaitlessConfig {
+    static let prefix: String? = "sync"
     static let availability: AwaitlessAvailability? = .deprecated()
 }
-
-internal enum DataAwaitlessConfig {
-    static let prefix: String? = "sync"  
-    static let delivery: AwaitlessDelivery? = .main
-}
-
-// Macros access module-specific configuration by checking if the type exists:
-// if let prefix = NetworkingAwaitlessConfig.prefix ?? AwaitlessConfig.current.prefix
-
-// Macros access module-specific configuration
-// Implementation would determine which module namespace to use based on source location
 ```
 
-This approach provides true process-level isolation without global state issues.
+This approach provides true process isolation without global state issues.
 
 ## API Surface Design
 
@@ -344,14 +326,46 @@ public macro AwaitlessConfig(
 ) = #externalMacro(module: "AwaitlessKitMacros", type: "AwaitlessConfigMacro")
 ```
 
+### Alternative: MODULE_NAMEAwaitlessConfig Pattern
+
+As an alternative to the combined approach, a simpler implementation could use module-specific configuration types that macros check for automatically:
+
+```swift
+// Each module optionally defines its own configuration
+internal enum NetworkingAwaitlessConfig {
+    static let prefix: String? = "net"
+    static let availability: AwaitlessAvailability? = .deprecated("Use async networking")
+}
+
+internal enum DataProcessingAwaitlessConfig {
+    static let prefix: String? = "sync"
+    static let delivery: AwaitlessDelivery? = .main
+}
+
+// Macros would generate code that checks:
+// MODULE_NAMEAwaitlessConfig.prefix ?? AwaitlessConfig.currentDefaults.prefix ?? "awaitless"
+
+// Benefits:
+// ✅ No global singleton pattern needed
+// ✅ True module isolation through type namespacing  
+// ✅ Compile-time constants work with macro constraints
+// ✅ Optional per-module setup
+
+// Challenges:
+// ⚠️ Requires Swift conditional compilation features
+// ⚠️ Module name detection complexity in macros
+```
+
+This approach is **viable** and provides cleaner module separation without global state issues.
+
 ## Implementation Strategy
 
 ### Two-Phase Approach
 
 1. **Instance Configuration Phase**: 
-   - Teams set up module/global defaults using `AwaitlessConfig.setDefaults()`
+   - Teams set up process defaults using `AwaitlessConfig.setDefaults()`
    - Configuration is converted to compile-time constants for macro access
-   - Module isolation supported through build-time configuration generation
+   - Process isolation supported through build-time configuration generation
 
 2. **Macro Resolution Phase**:
    - Macros check for method-level parameters first
@@ -384,7 +398,7 @@ class DataService {
 ### Basic Global Configuration
 
 ```swift
-// One-time module setup
+// One-time process setup
 AwaitlessConfig.setDefaults(
     prefix: "sync",
     availability: .deprecated("Use async version")
@@ -432,9 +446,7 @@ class DataProcessor {
 | Aspect | Type-Scoped | Instance-Based | **Combined Approach** |
 |--------|-------------|----------------|-----------------------|
 | **User Experience** | ❌ Repetitive per-type | ✅ One-time setup | ✅ Setup once, override as needed |
-| **Swift Idioms** | ✅ Natural type-based | ✅ Familiar singleton | ✅ Best of both worlds |
-| **Granularity** | ✅ Per-type | ⚠️ Global/process | ✅ Four-level hierarchy |
-| **Implementation** | ❌ Complex AST traversal | ❌ Macro limitations | ⚠️ Two-phase system |
+| **Implementation Complexity** | ❌ Complex AST traversal | ❌ Macro limitations | ⚠️ Two-phase system |
 | **Configuration Overhead** | ❌ Required per type | ✅ Optional global | ✅ Optional at all levels |
 
 ## Implementation Challenges
@@ -465,10 +477,10 @@ Swift macros execute during compilation and have limited access to runtime state
 2. Implement four-level precedence resolution
 3. Add comprehensive tests for all configuration scenarios
 
-### Phase 3: Module Isolation
-1. Design and implement build-time module configuration generation
-2. Create module namespace isolation system
-3. Add documentation and migration guides
+### Phase 3: Process Isolation
+1. Design and implement build-time process configuration generation
+2. Create process namespace isolation system
+3. Add comprehensive documentation
 
 ### Phase 4: Optimization
 1. Optimize macro performance for configuration discovery
