@@ -28,7 +28,7 @@ class APIClient {
 ```
 
 This results in:
-- **90% configuration boilerplate** across large codebases
+- **Extensive configuration boilerplate** across large codebases
 - **Inconsistency risk** when teams forget to apply common patterns
 - **Poor maintainability** when configuration patterns need to change
 - **Slow adoption** due to verbose setup requirements
@@ -161,7 +161,6 @@ class DataService {
 **Cons:**
 - **Global State**: Introduces shared mutable state
 - **Macro Limitations**: Swift macros have limited access to runtime state during compilation
-- **Module Isolation Challenge**: True per-module configuration is technically difficult
 
 ### Approach 4: Combined Configuration (Recommended)
 
@@ -193,6 +192,17 @@ class LegacyDataService {
     func fetchOldData() async throws -> OldData { ... }
 }
 
+// Example with both attributes on the class
+@AwaitlessConfig(prefix: "legacy", availability: .deprecated("Legacy API"))
+@Awaitless  // Applies config to all methods in this class
+class LegacyService {
+    // Creates: @deprecated("Legacy API") func legacy_processData() -> ProcessResult
+    func processData() async throws -> ProcessResult { ... }
+    
+    // Creates: @deprecated("Legacy API") func legacy_validateInput() -> Bool  
+    func validateInput() async throws -> Bool { ... }
+}
+
 // Method-level overrides still work
 class DataProcessor {
     @Awaitless(prefix: "blocking")  // Overrides both global and type-level defaults
@@ -209,7 +219,7 @@ After evaluating all approaches, the **Combined Approach** emerges as the optima
 1. **Superior User Experience**: Teams set defaults once per module/application with broad application
 2. **Flexible Granularity**: Four-level precedence hierarchy supports both simplicity and precision
 3. **Natural Migration Path**: Start with global configuration, add type-level overrides only where needed
-4. **Addresses Core Problem**: Eliminates 90% of repetitive configuration
+4. **Addresses Core Problem**: Eliminates repetitive configuration overhead
 5. **Familiar Patterns**: Combines well-known singleton pattern with Swift's attribute system
 
 ### Four-Level Precedence Hierarchy
@@ -264,11 +274,26 @@ extension AwaitlessConfig {
     }
 }
 
+// Alternative simpler approach: Module-specific config types
+// Macros would generate code that checks for MODULE_NAMEAwaitlessConfig
+internal enum NetworkingAwaitlessConfig {
+    static let prefix: String? = "net"
+    static let availability: AwaitlessAvailability? = .deprecated()
+}
+
+internal enum DataAwaitlessConfig {
+    static let prefix: String? = "sync"  
+    static let delivery: AwaitlessDelivery? = .main
+}
+
+// Macros access module-specific configuration by checking if the type exists:
+// if let prefix = NetworkingAwaitlessConfig.prefix ?? AwaitlessConfig.current.prefix
+
 // Macros access module-specific configuration
 // Implementation would determine which module namespace to use based on source location
 ```
 
-This approach provides true module isolation without global state issues.
+This approach provides true process-level isolation without global state issues.
 
 ## API Surface Design
 
@@ -402,71 +427,15 @@ class DataProcessor {
 }
 ```
 
-### Migration Example
-
-**Before (current repetitive approach):**
-```swift
-class APIClient {
-    @Awaitless(prefix: "sync", .deprecated("Use async version"))
-    func fetchUsers() async throws -> [User] { ... }
-    
-    @AwaitlessPublisher(prefix: "sync", deliverOn: .main, .deprecated("Use async version"))
-    func userStream() async -> AsyncStream<User> { ... }
-    
-    @AwaitlessCompletion(prefix: "sync", .deprecated("Use async version"))
-    func updateUser(_ user: User) async throws { ... }
-}
-
-// ... 20 more classes with identical repetitive configuration
-```
-
-**After (with combined approach):**
-```swift
-// One-time setup for entire module/app
-AwaitlessConfig.setDefaults(
-    prefix: "sync",
-    availability: .deprecated("Use async version"),
-    delivery: .main
-)
-
-// All classes automatically use defaults - zero configuration needed
-class APIClient {
-    @Awaitless
-    func fetchUsers() async throws -> [User] { ... }
-    
-    @AwaitlessPublisher
-    func userStream() async -> AsyncStream<User> { ... }
-    
-    @AwaitlessCompletion
-    func updateUser(_ user: User) async throws { ... }
-}
-
-// Special cases can still override
-@AwaitlessConfig(prefix: "legacy")
-class LegacyAPIClient {
-    @Awaitless  // Uses prefix="legacy", keeps other global defaults
-    func fetchLegacyData() async throws -> LegacyData { ... }
-}
-```
-
-**Migration Impact:**
-- **Before**: 40+ lines of repetitive configuration across 20 classes
-- **After**: 4 lines of global setup + optional type-level overrides
-- **Result**: 90% reduction in configuration boilerplate
-
 ## Comparison Matrix
 
-| Aspect | Type-Scoped | File-Scoped | Instance-Based | **Combined Approach** |
-|--------|-------------|-------------|----------------|-----------------------|
-| **Swift Idioms** | ✅ Natural type-based | ❌ Unusual file-level | ✅ Familiar singleton | ✅ Best of both worlds |
-| **Implementation** | ❌ Complex AST traversal | ⚠️ Source text parsing | ❌ Macro limitations | ⚠️ Two-phase system |
-| **Granularity** | ✅ Per-type | ❌ Per-file | ⚠️ Global/module | ✅ Four-level hierarchy |
-| **User Experience** | ❌ Repetitive per-type | ⚠️ Per-file setup | ✅ One-time setup | ✅ Setup once, override as needed |
-| **Discovery** | ❌ Requires parent lookup | ✅ File-level scan | ✅ Direct global access | ✅ Clear precedence chain |
-| **Performance** | ❌ AST traversal | ✅ One-time file scan | ✅ Direct access | ✅ Compile-time constants |
-| **Migration** | ❌ All-or-nothing per type | ⚠️ Per-file | ✅ Global opt-in | ✅ Gradual: global → type → method |
-| **Module Isolation** | ✅ Natural boundaries | ⚠️ File boundaries | ❌ Global singleton issue | ✅ Build-time module namespaces |
-| **Configuration Overhead** | ❌ Required per type | ❌ Required per file | ✅ Optional global | ✅ Optional at all levels |
+| Aspect | Type-Scoped | Instance-Based | **Combined Approach** |
+|--------|-------------|----------------|-----------------------|
+| **User Experience** | ❌ Repetitive per-type | ✅ One-time setup | ✅ Setup once, override as needed |
+| **Swift Idioms** | ✅ Natural type-based | ✅ Familiar singleton | ✅ Best of both worlds |
+| **Granularity** | ✅ Per-type | ⚠️ Global/process | ✅ Four-level hierarchy |
+| **Implementation** | ❌ Complex AST traversal | ❌ Macro limitations | ⚠️ Two-phase system |
+| **Configuration Overhead** | ❌ Required per type | ✅ Optional global | ✅ Optional at all levels |
 
 ## Implementation Challenges
 
@@ -513,12 +482,7 @@ Swift macros execute during compilation and have limited access to runtime state
 - **Instance-based global defaults** for broad application with minimal setup
 - **Type-scoped overrides** through `@AwaitlessConfig` macro for granular control
 - **Four-level precedence hierarchy** for predictable behavior
-- **Future module isolation** through build-time configuration generation
+- **Process-level isolation** through build-time configuration generation
 
-This design eliminates 90% of configuration boilerplate while maintaining the flexibility and precision that Swift developers expect, providing the optimal balance of user experience, implementation feasibility, and Swift idioms.
-
-## References
-
-- **Issue**: #6 - Configuration Defaults for AwaitlessKit
-- **Implementation**: Deferred to separate issue after RFC approval
+This design eliminates repetitive configuration overhead while maintaining the flexibility and precision that Swift developers expect, providing the optimal balance of user experience, implementation feasibility, and Swift idioms.
 - **Related**: Swift Macros Documentation, SwiftSyntax API Reference
