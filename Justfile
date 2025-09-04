@@ -29,7 +29,7 @@ package-build:
     swift build
 
 swift-version:
-    @echo "{{ style('warning') }}$(swift -version){{ NORMAL }}"
+    @echo "$(swift -version)"
 
 package-test *FILTER:
     #!/usr/bin/env bash
