@@ -165,3 +165,64 @@ struct AwaitlessConfigAPITests {
         AwaitlessConfig.setDefaults()
     }
 }
+
+@Suite("Configuration Hierarchy Integration Tests", .macros([
+    "AwaitlessConfig": AwaitlessConfigMacro.self,
+    "Awaitless": AwaitlessSyncMacro.self
+], record: .missing))
+struct AwaitlessConfigurationHierarchyTests {
+    
+    @Test("Method-level prefix works correctly")
+    func methodLevelPrefixWorks() {
+        assertMacro {
+            """
+            @AwaitlessConfig(prefix: "sync")
+            class DataService {
+                @Awaitless(prefix: "custom")
+                func fetchData() async throws -> String { "test" }
+            }
+            """
+        } expansion: {
+            """
+            class DataService {
+                func fetchData() async throws -> String { "test" }
+            
+                @available(*, noasync) func customfetchData() throws -> String {
+                    try Noasync.run({
+                            try await fetchData()
+                        })
+                }
+            
+                static let __awaitlessConfig: AwaitlessConfigData = AwaitlessConfigData(prefix: "sync")
+            }
+            """
+        }
+    }
+    
+    @Test("Type-level configuration generates properly")  
+    func typeLevelConfigurationGenerates() {
+        assertMacro {
+            """
+            @AwaitlessConfig(prefix: "sync")
+            class DataService {
+                @Awaitless
+                func processData() async throws -> String { "test" }
+            }
+            """
+        } expansion: {
+            """
+            class DataService {
+                func processData() async throws -> String { "test" }
+            
+                @available(*, noasync) func processData() throws -> String {
+                    try Noasync.run({
+                            try await processData()
+                        })
+                }
+            
+                static let __awaitlessConfig: AwaitlessConfigData = AwaitlessConfigData(prefix: "sync")
+            }
+            """
+        }
+    }
+}

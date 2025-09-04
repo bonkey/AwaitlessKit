@@ -46,8 +46,8 @@ public struct AwaitlessSyncMacro: PeerMacro {
         }
 
         // Extract prefix and availability from the attribute
-        var prefix = ""
-        var availability: AwaitlessAvailability? = nil
+        var methodPrefix: String? = nil
+        var methodAvailability: AwaitlessAvailability? = nil
 
         if case let .argumentList(arguments) = node.arguments {
             // Check for prefix parameter
@@ -57,8 +57,9 @@ public struct AwaitlessSyncMacro: PeerMacro {
                    let stringLiteral = labeledExpr.expression.as(StringLiteralExprSyntax.self)
                 {
                     // Extract prefix from the string literal
-                    prefix = stringLiteral.segments.description
+                    let prefixValue = stringLiteral.segments.description
                         .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+                    methodPrefix = prefixValue.isEmpty ? nil : prefixValue
                 }
             }
 
@@ -69,9 +70,9 @@ public struct AwaitlessSyncMacro: PeerMacro {
                 {
                     // Handle cases like: @Awaitless(.deprecated) or @Awaitless(.unavailable)
                     if memberAccess.declName.baseName.text == "deprecated" {
-                        availability = .deprecated()
+                        methodAvailability = .deprecated()
                     } else if memberAccess.declName.baseName.text == "unavailable" {
-                        availability = .unavailable()
+                        methodAvailability = .unavailable()
                     }
                 } else if argument.label?.text != "prefix",
                           let functionCall = argument.expression.as(FunctionCallExprSyntax.self),
@@ -84,9 +85,9 @@ public struct AwaitlessSyncMacro: PeerMacro {
                         {
                             let message = firstArgument.segments.description
                                 .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
-                            availability = .deprecated(message)
+                            methodAvailability = .deprecated(message)
                         } else {
-                            availability = .deprecated()
+                            methodAvailability = .deprecated()
                         }
                     } else if calledExpr.declName.baseName.text == "unavailable" {
                         if let firstArgument = functionCall.arguments.first?.expression
@@ -94,20 +95,31 @@ public struct AwaitlessSyncMacro: PeerMacro {
                         {
                             let message = firstArgument.segments.description
                                 .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
-                            availability = .unavailable(message)
+                            methodAvailability = .unavailable(message)
                         } else {
-                            availability = .unavailable()
+                            methodAvailability = .unavailable()
                         }
                     }
                 }
             }
         }
+        
+        // Resolve configuration using the hierarchy
+        // For now, we can't easily access the parent type, so we'll use basic resolution
+        let resolvedConfig = resolveConfiguration(
+            methodPrefix: methodPrefix,
+            methodAvailability: methodAvailability,
+            methodDelivery: nil,  // @Awaitless doesn't use delivery
+            methodStrategy: nil,  // @Awaitless doesn't use strategy
+            typeDeclaration: nil, // TODO: Get parent type declaration
+            builtInPrefix: ""     // @Awaitless uses empty string as default
+        )
 
         // Create the sync function
         let generatedDecl = DeclSyntax(Self.createSyncFunction(
             from: funcDecl,
-            prefix: prefix,
-            availability: availability))
+            prefix: resolvedConfig.prefix ?? "",
+            availability: resolvedConfig.availability))
         return [generatedDecl]
     }
 

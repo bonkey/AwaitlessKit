@@ -10,6 +10,63 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
+// MARK: - Configuration Resolution
+
+/// Resolves configuration using the four-level precedence hierarchy:
+/// 1. Method parameters (highest priority)
+/// 2. Type-level @AwaitlessConfig 
+/// 3. Process-level AwaitlessConfig.currentDefaults
+/// 4. Built-in defaults (lowest priority)
+func resolveConfiguration(
+    methodPrefix: String?,
+    methodAvailability: AwaitlessAvailability?,
+    methodDelivery: AwaitlessDelivery?,
+    methodStrategy: AwaitlessSynchronizationStrategy?,
+    typeDeclaration: (any DeclGroupSyntax)?,
+    builtInPrefix: String = "awaitless",
+    builtInAvailability: AwaitlessAvailability? = nil,
+    builtInDelivery: AwaitlessDelivery = .current,
+    builtInStrategy: AwaitlessSynchronizationStrategy = .concurrent
+) -> AwaitlessConfigData {
+    
+    // Step 1: Check for type-level configuration
+    var typeConfig: AwaitlessConfigData? = nil
+    if let typeDecl = typeDeclaration {
+        typeConfig = extractTypeConfiguration(from: typeDecl)
+    }
+    
+    // Step 2: Get process-level configuration (this would normally access AwaitlessConfig.currentDefaults)
+    // For now, we'll create an empty one since macros can't access runtime state during compilation
+    let processConfig = AwaitlessConfigData()
+    
+    // Step 3: Resolve with precedence hierarchy
+    return AwaitlessConfigData(
+        prefix: methodPrefix ?? typeConfig?.prefix ?? processConfig.prefix ?? builtInPrefix,
+        availability: methodAvailability ?? typeConfig?.availability ?? processConfig.availability ?? builtInAvailability,
+        delivery: methodDelivery ?? typeConfig?.delivery ?? processConfig.delivery ?? builtInDelivery,
+        strategy: methodStrategy ?? typeConfig?.strategy ?? processConfig.strategy ?? builtInStrategy
+    )
+}
+
+/// Extracts configuration from a type's __awaitlessConfig property if it exists
+private func extractTypeConfiguration(from typeDecl: any DeclGroupSyntax) -> AwaitlessConfigData? {
+    // Look for a static property named __awaitlessConfig
+    for member in typeDecl.memberBlock.members {
+        if let varDecl = member.decl.as(VariableDeclSyntax.self),
+           varDecl.modifiers.contains(where: { $0.name.tokenKind == .keyword(.static) }),
+           let binding = varDecl.bindings.first,
+           let pattern = binding.pattern.as(IdentifierPatternSyntax.self),
+           pattern.identifier.text == "__awaitlessConfig" {
+            
+            // We found the config property, but extracting the actual values from
+            // the AST is complex. For the MVP, we'll return a basic config.
+            // In a full implementation, we'd parse the initializer expression.
+            return AwaitlessConfigData()
+        }
+    }
+    return nil
+}
+
 // MARK: - Shared Helper Functions
 
 /// Creates argument list from function parameters
