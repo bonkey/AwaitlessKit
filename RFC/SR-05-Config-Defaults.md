@@ -202,18 +202,163 @@ public static func expansion(
 
 **Challenges**: Fragile text parsing, source file access limitations.
 
+### Approach 3: Instance-Based Configuration
+
+#### Design
+
+A global or module-scoped configuration instance that provides defaults for all AwaitlessKit macros. Configuration can be set through a singleton or multiple instances per module.
+
+```swift
+// Global singleton approach
+AwaitlessConfig.shared.setDefaults(
+    prefix: "sync",
+    availability: .deprecated("Use async version"),
+    delivery: .main
+)
+
+class DataService {
+    @Awaitless  // Uses AwaitlessConfig.shared defaults
+    func fetchUser(id: String) async throws -> User { ... }
+    
+    @AwaitlessPublisher  // Uses AwaitlessConfig.shared defaults
+    func streamData() async throws -> [Data] { ... }
+    
+    @Awaitless(prefix: "legacy")  // Override: prefix="legacy", keeps other global defaults
+    func oldMethod() async throws -> String { ... }
+}
+```
+
+Alternative module-scoped approach:
+```swift
+// Per-module configuration
+extension AwaitlessConfig {
+    static let dataModule = AwaitlessConfig(
+        prefix: "sync",
+        availability: .deprecated("Use async version")
+    )
+}
+
+// Set as current for this module/file
+AwaitlessConfig.setCurrent(.dataModule)
+
+class DataService {
+    @Awaitless  // Uses AwaitlessConfig.dataModule defaults
+    func fetchUser(id: String) async throws -> User { ... }
+}
+```
+
+#### API Surface
+
+```swift
+public class AwaitlessConfig {
+    public static let shared = AwaitlessConfig()
+    public private(set) static var current: AwaitlessConfig = shared
+    
+    public var prefix: String?
+    public var availability: AwaitlessAvailability?
+    public var delivery: AwaitlessDelivery?
+    public var strategy: AwaitlessSynchronizationStrategy?
+    
+    public init(
+        prefix: String? = nil,
+        availability: AwaitlessAvailability? = nil,
+        delivery: AwaitlessDelivery? = nil,
+        strategy: AwaitlessSynchronizationStrategy? = nil
+    )
+    
+    public func setDefaults(
+        prefix: String? = nil,
+        availability: AwaitlessAvailability? = nil,
+        delivery: AwaitlessDelivery? = nil,
+        strategy: AwaitlessSynchronizationStrategy? = nil
+    )
+    
+    public static func setCurrent(_ config: AwaitlessConfig)
+    public static func withConfig<T>(_ config: AwaitlessConfig, _ block: () throws -> T) rethrows -> T
+}
+```
+
+#### Precedence Rules
+
+1. **Method-level explicit parameters** override all defaults
+2. **Type-level @AwaitlessConfig** (if present) overrides instance defaults
+3. **Instance configuration** (`AwaitlessConfig.current`) provides base defaults
+4. **Built-in defaults** are used when no configuration specifies a value
+
+#### Macro Implementation Challenges
+
+**Pros:**
+- **Simplest Integration**: Macros can directly access global state for defaults
+- **Runtime Flexibility**: Configuration can be changed at runtime
+- **Module Scoping**: Can support different configs per module via `setCurrent()`
+- **No AST Traversal**: No complex syntax tree navigation required
+- **Familiar Pattern**: Similar to other Swift configuration systems
+
+**Cons:**
+- **Global State**: Introduces shared mutable state, potential for unexpected behavior
+- **Macro Limitations**: Swift macros have limited access to runtime state during compilation
+- **Thread Safety**: Requires careful synchronization in multi-threaded environments
+- **Testing Complexity**: Global state can make tests harder to isolate
+- **Compile-Time Only**: Configuration must be deterministic at macro expansion time
+
+#### Technical Feasibility Concerns
+
+**Critical Challenge**: Swift macros execute during compilation, not runtime. They cannot access mutable global state that changes during program execution. Any instance-based approach would need to:
+
+1. **Compile-Time Configuration**: The configuration must be statically determinable at macro expansion time
+2. **Source Generation**: Use compile-time constants or generate configuration code
+3. **Build System Integration**: Potentially require build-time configuration injection
+
+**Possible Implementation Strategies:**
+
+**Strategy A: Compile-Time Constants**
+```swift
+// Must be compile-time constant
+public enum AwaitlessConfig {
+    public static let prefix: String = "sync"  // Set at compile time
+    public static let availability: AwaitlessAvailability = .deprecated("Use async version")
+}
+```
+
+**Strategy B: Build Configuration**
+```swift
+// Generated during build from external config
+// awaitless.config.swift (generated)
+extension AwaitlessConfig {
+    static let buildTimeDefaults = AwaitlessConfigData(
+        prefix: "sync",
+        availability: .deprecated("Use async version")
+    )
+}
+```
+
+**Strategy C: Module-Level Constants**
+```swift
+// Each module defines its own constants
+public enum DataServiceConfig {
+    public static let awaitlessPrefix = "sync"
+    public static let awaitlessAvailability = AwaitlessAvailability.deprecated("Use async version")
+}
+
+// Macros use these constants as defaults
+@Awaitless  // Automatically uses DataServiceConfig values if available
+func fetchUser() async throws -> User { ... }
+```
+
 ## Comparison Matrix
 
-| Aspect | Type-Scoped (@AwaitlessConfig) | File-Scoped (#awaitlessConfig) |
-|--------|-------------------------------|--------------------------------|
-| **Swift Idioms** | ✅ Natural type-based scoping | ❌ Unusual file-level directive |
-| **Implementation** | ❌ Complex AST traversal | ⚠️ Source text parsing |
-| **Granularity** | ✅ Per-type configuration | ❌ Entire file affected |
-| **Discovery** | ❌ Requires parent lookup | ✅ File-level scan |
-| **Performance** | ❌ AST traversal per macro | ✅ One-time file scan |
-| **Migration** | ✅ Gradual per-type adoption | ⚠️ All-or-nothing per file |
-| **Debugging** | ✅ Clear type association | ❌ Hidden file-level effect |
-| **Precedence** | ⚠️ Complex with inheritance | ✅ Simple hierarchy |
+| Aspect | Type-Scoped (@AwaitlessConfig) | File-Scoped (#awaitlessConfig) | Instance-Based (AwaitlessConfig) |
+|--------|-------------------------------|--------------------------------|----------------------------------|
+| **Swift Idioms** | ✅ Natural type-based scoping | ❌ Unusual file-level directive | ✅ Familiar singleton pattern |
+| **Implementation** | ❌ Complex AST traversal | ⚠️ Source text parsing | ❌ Limited by macro compile-time constraints |
+| **Granularity** | ✅ Per-type configuration | ❌ Entire file affected | ⚠️ Global or per-module |
+| **Discovery** | ❌ Requires parent lookup | ✅ File-level scan | ✅ Direct global access |
+| **Performance** | ❌ AST traversal per macro | ✅ One-time file scan | ✅ Direct property access |
+| **Migration** | ✅ Gradual per-type adoption | ⚠️ All-or-nothing per file | ✅ Global opt-in |
+| **Debugging** | ✅ Clear type association | ❌ Hidden file-level effect | ❌ Hidden global effect |
+| **Precedence** | ⚠️ Complex with inheritance | ✅ Simple hierarchy | ✅ Clear override hierarchy |
+| **Runtime Flexibility** | ❌ Compile-time only | ❌ Compile-time only | ❌ Compile-time only (macro limitation) |
+| **Module Isolation** | ✅ Natural type boundaries | ⚠️ File boundaries | ⚠️ Requires explicit module config |
 
 ## Recommendation
 
@@ -221,10 +366,24 @@ public static func expansion(
 
 ### Rationale
 
-1. **Swift Consistency**: Aligns with Swift's type-based attribute system
-2. **Better Granularity**: Teams can configure different types differently 
-3. **Clear Ownership**: Configuration is visibly associated with types
-4. **Migration Path**: Can be adopted incrementally per type
+While the **Instance-Based Configuration** approach offers appealing simplicity, it faces fundamental limitations with Swift's macro system:
+
+**Why Not Instance-Based:**
+1. **Macro Compile-Time Constraint**: Swift macros cannot access mutable runtime state during compilation, severely limiting the flexibility of instance-based configuration
+2. **Hidden Global Effects**: Configuration changes affect code behavior in non-obvious ways, making debugging harder
+3. **Build Complexity**: Truly dynamic instance configuration would require complex build system integration
+
+**Why Not File-Scoped:**
+1. **Non-Swift-like**: File-scoped directives are uncommon in Swift ecosystem
+2. **Limited Granularity**: Cannot configure different types differently within the same file
+3. **Hidden Effects**: File-level configuration can be surprising and hard to discover
+
+**Why Type-Scoped:**
+1. **Swift Consistency**: Aligns with Swift's type-based attribute system and follows established patterns
+2. **Better Granularity**: Teams can configure different types differently, providing precise control
+3. **Clear Ownership**: Configuration is visibly associated with types, making behavior explicit
+4. **Migration Path**: Can be adopted incrementally per type without breaking existing code
+5. **Future-Proof**: Doesn't rely on global state or build system extensions
 
 ### Implementation Strategy
 
@@ -233,6 +392,15 @@ Use **Generated Configuration Storage** approach:
 1. `@AwaitlessConfig` generates a static property storing configuration
 2. Other macros look for this property on the containing type
 3. Fall back to built-in defaults if not found
+
+### Acknowledgment of Instance-Based Benefits
+
+The instance-based approach does offer compelling advantages:
+- **Simplicity**: Direct parameter passing to macros would be straightforward
+- **Familiarity**: Singleton patterns are well-understood by Swift developers
+- **Module Isolation**: Could support different configurations per SPM module
+
+However, these benefits are outweighed by the fundamental compile-time limitations of Swift macros and the potential for hidden behavioral changes through global state.
 
 ## Initial API Surface
 
@@ -266,6 +434,7 @@ public macro AwaitlessConfig(
 
 ### Basic Configuration
 
+**Type-Scoped:**
 ```swift
 @AwaitlessConfig(prefix: "sync", availability: .deprecated())
 class UserService {
@@ -277,8 +446,26 @@ class UserService {
 }
 ```
 
+**Instance-Based (Conceptual):**
+```swift
+// Module setup (would need to be compile-time deterministic)
+AwaitlessConfig.shared.setDefaults(
+    prefix: "sync",
+    availability: .deprecated()
+)
+
+class UserService {
+    @Awaitless  // Generates: syncFetchUser() with @available(*, deprecated)
+    func fetchUser(id: String) async throws -> User { ... }
+    
+    @AwaitlessPublisher  // Generates: syncStreamUserUpdates() with @available(*, deprecated)  
+    func streamUserUpdates() async -> AsyncStream<User> { ... }
+}
+```
+
 ### Overriding Defaults
 
+**Type-Scoped:**
 ```swift
 @AwaitlessConfig(prefix: "sync", delivery: .main)
 class DataProcessor {
@@ -290,6 +477,24 @@ class DataProcessor {
     
     @AwaitlessPublisher(deliverOn: .current)  // Override: uses deliverOn=.current, keeps prefix="sync"
     func lightweightStream() async -> AsyncStream<String> { ... }
+}
+```
+
+**Instance-Based with Module Scoping (Conceptual):**
+```swift
+// Per-module configuration
+extension AwaitlessConfig {
+    static let dataProcessing = AwaitlessConfig(prefix: "sync", delivery: .main)
+}
+
+AwaitlessConfig.setCurrent(.dataProcessing)
+
+class DataProcessor {
+    @Awaitless  // Uses global prefix="sync", delivery=.main
+    func processData() async throws -> Result { ... }
+    
+    @Awaitless(prefix: "blocking")  // Override: uses prefix="blocking", keeps global delivery=.main
+    func heavyComputation() async throws -> BigResult { ... }
 }
 ```
 
@@ -330,6 +535,49 @@ class APIClient {
 2. **Extensions**: Should extensions inherit configuration from the original type?
 3. **Protocols**: Can configuration be applied to protocol definitions?
 4. **Module-Level**: Could configuration be expanded to module scope in the future?
+
+### Instance-Based Configuration Exploration
+
+While not recommended for the initial implementation, the instance-based approach raises interesting questions for future exploration:
+
+**Multiple Instances Per SPM Module:**
+```swift
+// Different configurations for different areas within a module
+extension AwaitlessConfig {
+    static let networking = AwaitlessConfig(prefix: "sync", availability: .deprecated())
+    static let dataProcessing = AwaitlessConfig(prefix: "blocking", delivery: .main)
+    static let userInterface = AwaitlessConfig(prefix: "sync", delivery: .main)
+}
+
+// Usage could be file-scoped or type-scoped
+#awaitlessConfig(.networking)  // File-scoped
+
+@AwaitlessConfig(.dataProcessing)  // Type-scoped with instance
+class DataProcessor { ... }
+```
+
+**Build-Time Configuration:**
+```swift
+// awaitless.config in SPM module
+{
+  "defaultPrefix": "sync",
+  "defaultAvailability": "deprecated",
+  "environments": {
+    "testing": { "prefix": "test" },
+    "production": { "prefix": "sync" }
+  }
+}
+
+// Generated at build time:
+extension AwaitlessConfig {
+    static let buildDefaults = AwaitlessConfigData(
+        prefix: "sync",
+        availability: .deprecated()
+    )
+}
+```
+
+These approaches could be explored in future iterations once the foundational type-scoped approach is established.
 
 ## Conclusion
 
