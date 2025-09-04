@@ -249,7 +249,7 @@ class DataService {
 
 ### Process Isolation Strategy
 
-**Important Note**: The initial design incorrectly suggested `AwaitlessConfig.setCurrent()` for process isolation. However, this approach has a critical flaw: it's just another global singleton per process.
+**Important Note**: Using `AwaitlessConfig.setCurrent()` for process isolation has a critical flaw: it's just another global singleton per process.
 
 **Revised Process Isolation Approach**:
 
