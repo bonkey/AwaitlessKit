@@ -38,4 +38,4 @@ jobs:
           detached: true
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
       - name: Build and Test
-        run: just test
+        run: just package-test
