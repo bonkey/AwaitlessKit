@@ -8,9 +8,9 @@ Always reference these instructions first and fallback to search or bash command
 
 ### Prerequisites
 
-- Swift 6.0+ compiler required (uses Swift 6.1.2)
+- Swift 6.0+ compiler required
 - This package works on Linux and macOS
-- Tools are installed via mise (swiftformat, just)
+- Do NOT install mise or just tools, but do use Justfile CONTENTS to identify commands to run, so if instructions say "just test", check the contents of Justfile for "test" command contents and run it without just.
 
 ### Bootstrap and Build
 

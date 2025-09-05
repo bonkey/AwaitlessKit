@@ -1,10 +1,15 @@
-alias b := build
-alias t := test
-alias f := fmt
-alias c := clean
+alias b := package-build
+alias t := package-test
 
-alias r := run-sample-app
-alias rb := run-and-build-sample-app
+alias f := fmt
+alias c := all-clean
+alias clean := all-clean
+
+alias reset := all-reset
+
+alias r := sample-app-run
+alias br := sample-app-build-and-run
+alias o := sample-app-open
 
 swift_build_dir := ".build"
 
@@ -19,14 +24,14 @@ xcode_formatter := `if command -v xcbeautify >/dev/null 2>&1; then echo "| xcbea
 kill-xcode:
     -pkill -9 Xcode
 
-build:
+package-build:
     @just swift-version
     swift build
 
 swift-version:
     @echo "{{ style('warning') }}$(swift -version){{ NORMAL }}"
 
-test *FILTER:
+package-test *FILTER:
     #!/usr/bin/env bash
     if [ -n "{{FILTER}}" ]; then
         swift test --parallel --filter "{{FILTER}}"
@@ -34,17 +39,18 @@ test *FILTER:
         swift test --parallel
     fi
 
-clean: kill-xcode
+all-clean: kill-xcode
     swift package clean
-    @just resolve-package
-    @just resolve-sample-app
-
-reset:
-    swift package reset
-    rm -rf "{{xcode_derived_data}}"
+    @just package-resolve
+    @just sample-app-resolve
 
 fmt:
     swiftformat .
+
+package-reset:
+    swift package reset
+
+all-reset: package-reset sample-app-reset
 
 package-info:
     swift package describe --type json | jq .
@@ -52,7 +58,29 @@ package-info:
 package-deps:
     swift package show-dependencies
 
-xcodebuild project_type project scheme *ARGS:
+package-resolve:
+    swift package resolve
+
+sample-app-reset:
+    rm -rf "{{xcode_derived_data}}"
+
+sample-app-resolve:
+    @just _xcodebuild-sample-app -resolvePackageDependencies clean
+
+sample-app-build:
+    @just _xcodebuild-sample-app build
+
+sample-app-run:
+    "{{xcode_derived_data}}/Build/Products/Debug/SampleApp"
+
+sample-app-build-and-run: sample-app-build sample-app-run
+
+sample-app-open:
+    open "{{xcode_project}}"
+
+# ---------------------
+
+_xcodebuild project_type project scheme *ARGS:
     @just swift-version
     xcodebuild \
         -derivedDataPath "{{xcode_derived_data}}" \
@@ -62,22 +90,5 @@ xcodebuild project_type project scheme *ARGS:
         {{ARGS}} \
         {{xcode_formatter}}
 
-xcodebuild-sample-app *ARGS:
-    @just xcodebuild "project" "{{xcode_project}}" "{{xcode_scheme}}" {{ARGS}}
-
-xcodebuild-package *ARGS:
-    @just xcodebuild "workspace" "{{package_workspace}}" "{{package_scheme}}" {{ARGS}}
-
-resolve-sample-app:
-    @just xcodebuild-sample-app -resolvePackageDependencies clean
-
-resolve-package:
-    @just xcodebuild-package -resolvePackageDependencies clean
-
-build-sample-app:
-    @just xcodebuild-sample-app build
-
-run-sample-app:
-    "{{xcode_derived_data}}/Build/Products/Debug/SampleApp"
-
-run-and-build-sample-app: build-sample-app run-sample-app
+_xcodebuild-sample-app *ARGS:
+    @just _xcodebuild "project" "{{xcode_project}}" "{{xcode_scheme}}" {{ARGS}}
