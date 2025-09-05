@@ -24,6 +24,12 @@ Always reference these instructions first and fallback to search or bash command
 - `just test TestSuiteName` - runs specific test suite
 - All tests should pass on Linux and macOS
 
+### Documentation
+
+- The `README.md` file must always be up to date with the code. However, it should not cover all cases to prevent it from becoming too large.
+- Do always update DocC packages (e.g. `Sources/AwaitlessKit/Documentation.docc` and )
+- Do always create and update articles in DocC packages (e.g. `Sources/AwaitlessKitMacros/AwaitlessKitMacros.docc` and `Sources/AwaitlessKit/AwaitlessKit.docc`). They must be very comprehensive and include high-level information as well.
+
 ### Code Validation
 
 - `just fmt` - formats code using SwiftFormat
@@ -178,7 +184,7 @@ When creating or updating RFCs (Request for Comments) in the `/RFC` directory, f
    - Current pain points with concrete examples
    - Impact metrics (e.g., "90% configuration boilerplate")
 
-3. **Solution Overview** 
+3. **Solution Overview**
    - High-level description of the recommended approach
    - Key benefits and impact
    - Simple before/after examples
