@@ -1,7 +1,5 @@
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bonkey/AwaitlessKit)
-[![Tests on Xcode (stable)](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_xcode_latest.yml/badge.svg)](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_xcode_latest.yml)
-[![Tests on Xcode (stable)](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_xcode_stable.yml/badge.svg)](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_xcode_stable.yml)
-[![Tests on Linux](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_linux.yml/badge.svg)](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_linux.yml)
+[![Tests on Xcode](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_xcode.yml/badge.svg)](https://github.com/bonkey/AwaitlessKit/actions/workflows/swift_test_xcode.yml)
 
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fbonkey%2FAwaitlessKit%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/bonkey/AwaitlessKit)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fbonkey%2FAwaitlessKit%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/bonkey/AwaitlessKit)
@@ -119,7 +117,7 @@ AwaitlessKit provides a flexible configuration system with multiple levels of pr
 
 1. **Process-Level Defaults** via `AwaitlessConfig.setDefaults()`
 2. **Type-Scoped Configuration** via `@AwaitlessConfig` member macro
-3. **Method-Level Configuration** via `@Awaitless` parameters  
+3. **Method-Level Configuration** via `@Awaitless` parameters
 4. **Built-in Defaults** as fallback
 
 ### `@Awaitlessable` - protocol extension generation
@@ -232,10 +230,10 @@ class APIClient {
     }
     // Generates: @available(*, deprecated: "Use async version")
     //            func blocking_fetchUser(id: String) throws -> User
-    
+
     @Awaitless(prefix: "immediate_")  // Method-level override
     func quickCheck() async -> Bool {
-        // Implementation  
+        // Implementation
     }
     // Generates: func immediate_quickCheck() -> Bool (overrides type prefix)
 }
@@ -247,17 +245,17 @@ class APIClient {
 // 1. Process-level defaults
 AwaitlessConfig.setDefaults(prefix: "app_", availability: .deprecated("Global migration"))
 
-// 2. Type-scoped configuration  
+// 2. Type-scoped configuration
 @AwaitlessConfig(prefix: "api_")
 class ServiceManager {
-    
+
     // 3. Method uses type prefix, process availability
     @Awaitless
-    func loadData() async throws -> Data { 
+    func loadData() async throws -> Data {
         // Generates: @available(*, deprecated: "Global migration")
         //            func api_loadData() throws -> Data
     }
-    
+
     // 4. Method-level override of both
     @Awaitless(prefix: "urgent_", .noasync)
     func urgentOperation() async throws -> Result {

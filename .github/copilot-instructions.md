@@ -30,6 +30,14 @@ Always reference these instructions first and fallback to search or bash command
 - Do always update DocC packages (e.g. `Sources/AwaitlessKit/Documentation.docc` and )
 - Do always create and update articles in DocC packages (e.g. `Sources/AwaitlessKitMacros/AwaitlessKitMacros.docc` and `Sources/AwaitlessKit/AwaitlessKit.docc`). They must be very comprehensive and include high-level information as well.
 
+### Versioning
+
+- Use semantic versioning (major.minor.patch) for releases.
+  - Increment major version for breaking changes.
+  - Increment minor version for new features.
+  - Increment patch version for bug fixes.
+- Always suggest proper version in each PR, depending on the scale of changes
+
 ### Code Validation
 
 - `just fmt` - formats code using SwiftFormat
