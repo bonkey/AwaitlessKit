@@ -34,15 +34,20 @@ swift-version:
 package-test *FILTER:
     #!/usr/bin/env bash
     coverage_flag=""
-    if [ "${COVERAGE:-false}" = "true" ]; then
-        coverage_flag="--enable-code-coverage"
+    if [ "${REPORT_TESTING:-false}" = "true" ]; then
+        coverage_flag="--enable-code-coverage --xunit-output awaitlesskit.junit"
     fi
 
     if [ -n "{{FILTER}}" ]; then
+        set -x
         swift test --parallel $coverage_flag --filter "{{FILTER}}"
+        set +x
     else
+        set -x
         swift test --parallel $coverage_flag
+        set +x
     fi
+
 
 all-clean: kill-xcode
     swift package clean

@@ -74,7 +74,7 @@ jobs:
           cache-suffix: ${{ matrix.xcode-version }}
 
       - name: Build and Test
-        run: COVERAGE=${{ matrix.upload-coverage }} just package-test
+        run: REPORT_TESTING=${{ matrix.upload-coverage }} just package-test
 
       - name: Generate LCOV Coverage Report
         if: ${{ matrix.upload-coverage && !cancelled() }}
@@ -85,13 +85,11 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          verbose: true
-          files: coverage.lcov
+          file: coverage.lcov
 
       - name: Upload test results to Codecov
         if: ${{ matrix.upload-coverage && !cancelled() }}
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          verbose: true
-          files: coverage.lcov
+          files: awaitlesskit*.junit

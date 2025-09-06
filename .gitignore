@@ -6,4 +6,6 @@ xcuserdata/
 # RFC prototype files (not for implementation)
 RFC/prototype-examples.swift
 RFC/AwaitlessConfigMacro-prototype.swift
+
 *.lcov
+*.junit
