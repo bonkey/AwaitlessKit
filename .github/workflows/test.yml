@@ -41,15 +41,15 @@ jobs:
         run: just package-test
 
   test-macos:
-    name: Test on macOS (${{ matrix.name }})
+    name: Test Xcode (${{ matrix.name }})
     runs-on: macos-15
     strategy:
       matrix:
         include:
-          - name: "Xcode (Latest)"
+          - name: "Latest"
             xcode-version: "latest"
             upload-coverage: false
-          - name: "Xcode (Stable)"
+          - name: "Stable"
             xcode-version: "latest-stable"
             upload-coverage: true
     steps:
@@ -78,7 +78,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
-          swift_project: AwaitlessKit
+          files: .build/arm64-apple-macosx/debug/codecov/AwaitlessKit.json
 
       - name: Upload test results to Codecov
         if: ${{ matrix.upload-coverage && !cancelled() }}
@@ -86,3 +86,4 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
+          files: .build/arm64-apple-macosx/debug/codecov/AwaitlessKit.json
