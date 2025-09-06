@@ -74,7 +74,7 @@ jobs:
           cache-suffix: ${{ matrix.xcode-version }}
 
       - name: Build and Test
-        run: just package-test coverage=${{ matrix.upload-coverage }}
+        run: COVERAGE=${{ matrix.upload-coverage }} just package-test
 
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.upload-coverage && !cancelled() }}

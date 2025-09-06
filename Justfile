@@ -31,10 +31,10 @@ package-build:
 swift-version:
     @echo "$(swift -version)"
 
-package-test coverage="false" *FILTER:
+package-test *FILTER:
     #!/usr/bin/env bash
     coverage_flag=""
-    if [ "{{coverage}}" = "true" ]; then
+    if [ "${COVERAGE:-false}" = "true" ]; then
         coverage_flag="--enable-code-coverage"
     fi
 
