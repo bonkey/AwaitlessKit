@@ -97,3 +97,15 @@ _xcodebuild project_type project scheme *ARGS:
 
 _xcodebuild-sample-app *ARGS:
     @just _xcodebuild "project" "{{xcode_project}}" "{{xcode_scheme}}" {{ARGS}}
+
+coverage-lcov OUTPUT_FILE="coverage.lcov":
+    #!/usr/bin/env bash
+    PROFDATA="$(find .build -name 'default.profdata' | head -n 1)"
+    XCTEST_PATH="$(find .build -name '*.xctest' | head -n 1)"
+    COV_BIN="${XCTEST_PATH}/Contents/MacOS/$(basename "$XCTEST_PATH" .xctest)"
+
+    xcrun llvm-cov export \
+        "${COV_BIN}" \
+        -instr-profile="$PROFDATA" \
+        -ignore-filename-regex=".build|Tests" \
+        -format=lcov > "{{OUTPUT_FILE}}"

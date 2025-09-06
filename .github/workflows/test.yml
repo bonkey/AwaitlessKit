@@ -76,11 +76,9 @@ jobs:
       - name: Build and Test
         run: COVERAGE=${{ matrix.upload-coverage }} just package-test
 
-      - name: Swift Coverage Report
+      - name: Generate LCOV Coverage Report
         if: ${{ matrix.upload-coverage && !cancelled() }}
-        uses: maxep/spm-lcov-action@0.3.1
-        with:
-          output-file: coverage.lcov
+        run: just coverage-lcov coverage.lcov
 
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.upload-coverage && !cancelled() }}
