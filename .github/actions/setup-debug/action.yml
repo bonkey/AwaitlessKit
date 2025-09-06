@@ -1,5 +1,10 @@
 name: "Setup Debug Session"
 description: "Set up tmate debugging session if enabled"
+inputs:
+  debug_enabled:
+    description: "Enable debug session"
+    required: false
+    default: "false"
 runs:
   using: "composite"
   steps:
@@ -7,4 +12,4 @@ runs:
       uses: mxschmitt/action-tmate@v3
       with:
         detached: true
-      if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+      if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled == 'true' }}

@@ -26,6 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: ./.github/actions/setup-debug
+        with:
+          debug_enabled: ${{ github.event.inputs.debug_enabled }}
+
       - name: Install curl
         run: apt-get update && apt-get install -y curl
 
@@ -34,8 +38,6 @@ jobs:
       - uses: ./.github/actions/cache-swift-deps
         with:
           platform: linux
-
-      - uses: ./.github/actions/setup-debug
 
       - name: Build and Test
         run: just package-test
@@ -55,6 +57,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: ./.github/actions/setup-debug
+        with:
+          debug_enabled: ${{ github.event.inputs.debug_enabled }}
+
       - uses: jdx/mise-action@v2
 
       - name: Use Xcode ${{ matrix.xcode-version }}
@@ -66,8 +72,6 @@ jobs:
         with:
           platform: macos
           cache-suffix: ${{ matrix.xcode-version }}
-
-      - uses: ./.github/actions/setup-debug
 
       - name: Build and Test
         run: just package-test
