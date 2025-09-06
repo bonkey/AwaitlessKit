@@ -93,3 +93,13 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: "*.junit"
+
+      - name: Upload coverage and test artifacts
+        if: ${{ matrix.upload-coverage && !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-and-test-reports-${{ matrix.name }}
+          path: |
+            coverage.lcov
+            *.junit
+          retention-days: 30
