@@ -46,10 +46,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: "Xcode Latest"
+          - name: "Xcode (Latest)"
             xcode-version: "latest"
             upload-coverage: false
-          - name: "Xcode Latest Stable"
+          - name: "Xcode (Stable)"
             xcode-version: "latest-stable"
             upload-coverage: true
     steps:
