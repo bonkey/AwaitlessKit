@@ -76,13 +76,19 @@ jobs:
       - name: Build and Test
         run: COVERAGE=${{ matrix.upload-coverage }} just package-test
 
+      - name: Swift Coverage Report
+        if: ${{ matrix.upload-coverage && !cancelled() }}
+        uses: maxep/spm-lcov-action@0.3.1
+        with:
+          output-file: coverage.lcov
+
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.upload-coverage && !cancelled() }}
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
-          files: .build/arm64-apple-macosx/debug/codecov/AwaitlessKit.json
+          files: coverage.lcov
 
       - name: Upload test results to Codecov
         if: ${{ matrix.upload-coverage && !cancelled() }}
@@ -90,4 +96,4 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
-          files: .build/arm64-apple-macosx/debug/codecov/AwaitlessKit.json
+          files: coverage.lcov
