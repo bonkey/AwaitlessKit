@@ -113,6 +113,15 @@ targets: [
 
 Generates synchronous wrappers for `async` functions with built-in deprecation controls. For Combine publisher wrappers, use `@AwaitlessPublisher`. For completion-handler wrappers, use `@AwaitlessCompletion`.
 
+### Configuration System - four-level configuration hierarchy
+
+AwaitlessKit provides a flexible configuration system with multiple levels of precedence:
+
+1. **Process-Level Defaults** via `AwaitlessConfig.setDefaults()`
+2. **Type-Scoped Configuration** via `@AwaitlessConfig` member macro
+3. **Method-Level Configuration** via `@Awaitless` parameters  
+4. **Built-in Defaults** as fallback
+
 ### `@Awaitlessable` - protocol extension generation
 
 Automatically generates sync method signatures and optional default implementations for protocols with async methods.
@@ -184,6 +193,77 @@ class APIClient {
     //             try await authenticate()
     //         })
     // }
+}
+```
+
+### Process-Level Configuration
+
+Set application-wide defaults for all AwaitlessKit macros:
+
+```swift
+// Set defaults at application startup
+AwaitlessConfig.setDefaults(
+    prefix: "sync_",
+    availability: .deprecated("Migrate to async APIs by 2025"),
+    delivery: .main,
+    strategy: .concurrent
+)
+
+class NetworkService {
+    @Awaitless  // Uses process defaults: prefix "sync_" and deprecated availability
+    func fetchData() async throws -> Data {
+        // Implementation
+    }
+    // Generates: @available(*, deprecated: "Migrate to async APIs by 2025")
+    //            func sync_fetchData() throws -> Data
+}
+```
+
+### Type-Scoped Configuration
+
+Configure defaults for all methods within a type:
+
+```swift
+@AwaitlessConfig(prefix: "blocking_", availability: .deprecated("Use async version"))
+class APIClient {
+    @Awaitless  // Inherits type configuration
+    func fetchUser(id: String) async throws -> User {
+        // Implementation
+    }
+    // Generates: @available(*, deprecated: "Use async version")
+    //            func blocking_fetchUser(id: String) throws -> User
+    
+    @Awaitless(prefix: "immediate_")  // Method-level override
+    func quickCheck() async -> Bool {
+        // Implementation  
+    }
+    // Generates: func immediate_quickCheck() -> Bool (overrides type prefix)
+}
+```
+
+### Configuration Hierarchy Example
+
+```swift
+// 1. Process-level defaults
+AwaitlessConfig.setDefaults(prefix: "app_", availability: .deprecated("Global migration"))
+
+// 2. Type-scoped configuration  
+@AwaitlessConfig(prefix: "api_")
+class ServiceManager {
+    
+    // 3. Method uses type prefix, process availability
+    @Awaitless
+    func loadData() async throws -> Data { 
+        // Generates: @available(*, deprecated: "Global migration")
+        //            func api_loadData() throws -> Data
+    }
+    
+    // 4. Method-level override of both
+    @Awaitless(prefix: "urgent_", .noasync)
+    func urgentOperation() async throws -> Result {
+        // Generates: @available(*, noasync)
+        //            func urgent_urgentOperation() throws -> Result
+    }
 }
 ```
 
