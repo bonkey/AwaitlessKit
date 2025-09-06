@@ -1,4 +1,4 @@
-name: Tests on Xcode
+name: Tests
 
 on:
   push:
@@ -18,20 +18,43 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-xcode:
-    name: Test on Xcode ${{ matrix.name }}
+  test-linux:
+    name: Test on Linux
+    runs-on: ubuntu-latest
+    container:
+      image: swift:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install curl
+        run: apt-get update && apt-get install -y curl
+
+      - uses: jdx/mise-action@v2
+
+      - uses: ./.github/actions/cache-swift-deps
+        with:
+          platform: linux
+
+      - uses: ./.github/actions/setup-debug
+
+      - name: Build and Test
+        run: just package-test
+
+  test-macos:
+    name: Test on macOS (${{ matrix.name }})
     runs-on: macos-15
     strategy:
       matrix:
         include:
-          - name: "Latest"
+          - name: "Xcode Latest"
             xcode-version: "latest"
             upload-coverage: false
-          - name: "Latest Stable"
+          - name: "Xcode Latest Stable"
             xcode-version: "latest-stable"
             upload-coverage: true
     steps:
       - uses: actions/checkout@v4
+
       - uses: jdx/mise-action@v2
 
       - name: Use Xcode ${{ matrix.xcode-version }}
@@ -39,20 +62,12 @@ jobs:
         with:
           xcode-version: ${{ matrix.xcode-version }}
 
-      - name: Cache Swift PM dependencies
-        uses: actions/cache@v4
+      - uses: ./.github/actions/cache-swift-deps
         with:
-          path: |
-            .build/prebuilts
-            .build/repositories
-            .build/checkouts
-          key: ${{ runner.os }}-xcode-${{ matrix.xcode-version }}-${{ hashFiles('Package.resolved') }}
+          platform: macos
+          cache-suffix: ${{ matrix.xcode-version }}
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          detached: true
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+      - uses: ./.github/actions/setup-debug
 
       - name: Build and Test
         run: just package-test
