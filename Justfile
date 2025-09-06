@@ -31,12 +31,17 @@ package-build:
 swift-version:
     @echo "$(swift -version)"
 
-package-test *FILTER:
+package-test coverage="false" *FILTER:
     #!/usr/bin/env bash
+    coverage_flag=""
+    if [ "{{coverage}}" = "true" ]; then
+        coverage_flag="--enable-code-coverage"
+    fi
+
     if [ -n "{{FILTER}}" ]; then
-        swift test --parallel --filter "{{FILTER}}"
+        swift test --parallel $coverage_flag --filter "{{FILTER}}"
     else
-        swift test --parallel
+        swift test --parallel $coverage_flag
     fi
 
 all-clean: kill-xcode
