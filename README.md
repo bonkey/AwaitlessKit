@@ -25,6 +25,8 @@
 
 ## Quick Start
 
+This example demonstrates the core functionality of AwaitlessKit - automatically generating synchronous wrappers for async functions to enable gradual migration to Swift 6 Structured Concurrency:
+
 ```swift
 import AwaitlessKit
 
@@ -141,6 +143,8 @@ Direct function for running async code in sync contexts.
 
 ### Basic Usage
 
+This example shows the simplest use case - adding the `@Awaitless` macro to an async function to automatically generate a synchronous counterpart:
+
 ```swift
 import AwaitlessKit
 
@@ -165,6 +169,8 @@ let data = try NetowrkManager().downloadFile(url: fileURL) // Sync call
 
 ### Migration with Deprecation
 
+During migration, you can mark the generated synchronous functions as deprecated to encourage adoption of the async versions while maintaining backward compatibility:
+
 ```swift
 class LegacyService {
     @Awaitless(.deprecated("Use async version. Non-async version will be removed in v2.0"))
@@ -179,6 +185,8 @@ let result = try service.processData() // ⚠️ Deprecated warning
 ```
 
 ### Custom Naming
+
+When you need to avoid naming conflicts or follow specific conventions, you can customize the prefix for generated synchronous functions:
 
 ```swift
 class APIClient {
@@ -197,7 +205,7 @@ class APIClient {
 
 ### Process-Level Configuration
 
-Set application-wide defaults for all AwaitlessKit macros:
+Configure default behavior for all AwaitlessKit macros across your entire application by setting process-level defaults at startup:
 
 ```swift
 // Set defaults at application startup
@@ -218,55 +226,37 @@ class NetworkService {
 }
 ```
 
-### Type-Scoped Configuration
-
-Configure defaults for all methods within a type:
-
-```swift
-@AwaitlessConfig(prefix: "blocking_", availability: .deprecated("Use async version"))
-class APIClient {
-    @Awaitless  // Inherits type configuration
-    func fetchUser(id: String) async throws -> User {
-        // Implementation
-    }
-    // Generates: @available(*, deprecated: "Use async version")
-    //            func blocking_fetchUser(id: String) throws -> User
-
-    @Awaitless(prefix: "immediate_")  // Method-level override
-    func quickCheck() async -> Bool {
-        // Implementation
-    }
-    // Generates: func immediate_quickCheck() -> Bool (overrides type prefix)
-}
-```
-
 ### Configuration Hierarchy Example
 
+This example demonstrates how AwaitlessKit's four-level configuration system works, with method-level overrides taking precedence over type-scoped, which overrides process-level defaults:
+
 ```swift
-// 1. Process-level defaults
-AwaitlessConfig.setDefaults(prefix: "app_", availability: .deprecated("Global migration"))
+// 1. Process-level defaults (global configuration)
+AwaitlessConfig.setDefaults(prefix: "global_", availability: .deprecated("Global migration"))
 
 // 2. Type-scoped configuration
-@AwaitlessConfig(prefix: "api_")
+@AwaitlessConfig(prefix: "type_")
 class ServiceManager {
 
-    // 3. Method uses type prefix, process availability
+    // 3. Method uses type prefix, global availability
     @Awaitless
     func loadData() async throws -> Data {
         // Generates: @available(*, deprecated: "Global migration")
-        //            func api_loadData() throws -> Data
+        //            func type_loadData() throws -> Data
     }
 
-    // 4. Method-level override of both
-    @Awaitless(prefix: "urgent_", .noasync)
+    // 4. Method-level override of both (local configuration)
+    @Awaitless(prefix: "local_", .noasync)
     func urgentOperation() async throws -> Result {
         // Generates: @available(*, noasync)
-        //            func urgent_urgentOperation() throws -> Result
+        //            func local_urgentOperation() throws -> Result
     }
 }
 ```
 
 ### Combine Publisher Output
+
+Instead of generating synchronous functions, you can generate Combine publishers for reactive programming patterns, with optional delivery queue control:
 
 ```swift
 import Combine
@@ -317,6 +307,8 @@ class UIService {
 
 ### Completion-Based Output
 
+For compatibility with completion-handler based APIs, generate functions that use `Result` completion handlers instead of throwing:
+
 ```swift
 class CompletionService {
     @AwaitlessCompletion
@@ -334,15 +326,11 @@ class CompletionService {
     //     }
     // }
 }
-
-// Non-throwing and void-returning functions are supported as well:
-// func value(completion: @escaping (Result<Int, Error>) -> Void) { ...success(value) }
-// func ping(completion: @escaping (Result<Void, Error>) -> Void) { ...success(()) }
-// Custom naming:
-// @AwaitlessCompletion(prefix: "c_") -> func c_fetch(completion: ...) { ... }
 ```
 
 ### Protocol Extensions with Default Implementations
+
+The `@Awaitlessable` macro automatically generates synchronous method signatures and default implementations for protocols, eliminating boilerplate code:
 
 ```swift
 @Awaitlessable
@@ -389,30 +377,9 @@ let service = MyService()
 let user = try service.fetchUser(id: "123") // Uses generated sync version
 ```
 
-### Configurable Protocol Extension Generation
-
-```swift
-// Default behavior - generates both protocol members and extensions
-@Awaitlessable
-protocol NetworkService {
-    func downloadFile(url: URL) async throws -> Data
-}
-
-// Explicitly enable extension generation
-@Awaitlessable(extensionGeneration: .enabled)
-protocol APIService {
-    func fetchUser(id: String) async throws -> User
-}
-
-// Disable extension generation - only protocol members
-@Awaitlessable(extensionGeneration: .disabled)
-protocol CustomService {
-    func processData() async -> Result
-    // Must implement sync version manually
-}
-```
-
 ### Thread-Safe Properties with Synchronization Strategies
+
+The `@IsolatedSafe` macro generates thread-safe property accessors for `nonisolated(unsafe)` properties with configurable synchronization strategies:
 
 ```swift
 class SharedState: Sendable {
@@ -431,11 +398,13 @@ class SharedState: Sendable {
 
 ## Migration Guide
 
-### Phase 1: Add Async Code
+### Phase 1: Add Async Code with autogenerated sync function
+
+Start migration by implementing new async functions while automatically maintaining synchronous compatibility for existing callers:
 
 ```swift
 class DataManager {
-    // Autogenetate noasync version alongside new async function
+    // Autogenerate noasync version alongside new async function
     @Awaitless
     func loadData() async throws -> [String] {
         // New async implementation
@@ -443,18 +412,22 @@ class DataManager {
 }
 ```
 
-### Phase 2: Deprecate Generated Sync
+### Phase 2: Deprecate generated sync function
+
+Add deprecation warnings to encourage migration to async versions while still providing the synchronous fallback:
 
 ```swift
 class DataManager {
-    @Awaitless(.deprecated("Migrate to async version by Q2 2024"))
+    @Awaitless(.deprecated("Migrate to async version by Q2 2026"))
     func loadData() async throws -> [String] {
         // Implementation
     }
 }
 ```
 
-### Phase 3: Remove Sync Support
+### Phase 3: Make sync function unavailable
+
+Force migration by making the synchronous version unavailable, providing clear error messages about required changes:
 
 ```swift
 class DataManager {
@@ -465,7 +438,9 @@ class DataManager {
 }
 ```
 
-### Phase 4: Remove Macro
+### Phase 4: Remove macro and autogenerated function
+
+Complete the migration by removing the AwaitlessKit macro entirely, leaving only the pure async implementation:
 
 ```swift
 class DataManager {
@@ -487,4 +462,4 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-**\*Remember:** AwaitlessKit is a migration tool, not a permanent solution. Plan your async/await adoption strategy and use this library to smooth the transition.\*
+**Remember:** AwaitlessKit is a migration tool, not a permanent solution. Plan your async/await adoption strategy and use this library to smooth the transition.
