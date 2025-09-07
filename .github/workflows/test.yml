@@ -93,7 +93,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: coverage.lcov
+          files: coverage.lcov
 
       - name: Upload test results to Codecov
         if: ${{ matrix.upload-coverage && !cancelled() }}
