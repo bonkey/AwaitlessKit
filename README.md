@@ -87,10 +87,7 @@ struct DatabaseUserRepository: UserRepository {
 
 ## Requirements
 
-| Swift Compiler Version | Xcode Version | Support Level    |
-| ---------------------- | ------------- | ---------------- |
-| Swift 6.0+             | Xcode 16+     | ✅ Full support  |
-| Swift 5.x              | Xcode 15-     | ❌ Not supported |
+**Swift 6.0+ compiler required** (available in Xcode 16 and above).
 
 ## Installation
 
