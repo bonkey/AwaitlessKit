@@ -47,7 +47,7 @@ jobs:
         run: just package-test
 
   test-macos:
-    name: Test Xcode (${{ matrix.name }})
+    name: Test on Xcode (${{ matrix.name }})
     runs-on: macos-15
     strategy:
       matrix:
