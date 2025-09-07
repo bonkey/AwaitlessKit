@@ -9,7 +9,7 @@ public import AwaitlessCore
 ///
 /// AwaitlessKit uses a four-level configuration hierarchy:
 /// 1. Process-level defaults (this API)
-/// 2. Type-scoped configuration via `@AwaitlessConfig` 
+/// 2. Type-scoped configuration via `@AwaitlessConfig`
 /// 3. Method-level configuration via macro parameters
 /// 4. Built-in defaults as fallback
 ///
@@ -30,14 +30,21 @@ public import AwaitlessCore
 /// These defaults will be used by all AwaitlessKit macros unless overridden by more specific configuration.
 @MainActor
 public enum AwaitlessConfig {
-    /// Internal storage for the current defaults
-    private static var _currentDefaults: AwaitlessConfigData = AwaitlessConfigData()
-    
+    /// Access the current process-level defaults.
+    ///
+    /// This property is used internally by macros during compilation to access
+    /// the current configuration state. You typically don't need to call this directly.
+    ///
+    /// - Returns: The current process-level configuration data
+    public static var currentDefaults: AwaitlessConfigData {
+        _currentDefaults
+    }
+
     /// Sets process-level defaults for AwaitlessKit macros.
-    /// 
+    ///
     /// These defaults provide fallback values when no more specific configuration
     /// is provided via `@AwaitlessConfig` member macro or macro parameters.
-    /// 
+    ///
     /// - Parameters:
     ///   - prefix: Default prefix for generated synchronous function names.
     ///     Example: `"sync_"` generates `sync_originalName()` functions.
@@ -71,23 +78,15 @@ public enum AwaitlessConfig {
         prefix: String? = nil,
         availability: AwaitlessAvailability? = nil,
         delivery: AwaitlessDelivery? = nil,
-        strategy: AwaitlessSynchronizationStrategy? = nil
-    ) {
+        strategy: AwaitlessSynchronizationStrategy? = nil)
+    {
         _currentDefaults = AwaitlessConfigData(
             prefix: prefix,
             availability: availability,
             delivery: delivery,
-            strategy: strategy
-        )
+            strategy: strategy)
     }
-    
-    /// Access the current process-level defaults.
-    /// 
-    /// This property is used internally by macros during compilation to access
-    /// the current configuration state. You typically don't need to call this directly.
-    ///
-    /// - Returns: The current process-level configuration data
-    public static var currentDefaults: AwaitlessConfigData {
-        return _currentDefaults
-    }
+
+    /// Internal storage for the current defaults
+    private static var _currentDefaults: AwaitlessConfigData = .init()
 }

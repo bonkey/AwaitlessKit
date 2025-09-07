@@ -57,7 +57,7 @@ extension Noasync {
     ///         async let users = fetchUsers()
     ///         async let posts = fetchPosts()
     ///         async let notifications = fetchNotifications()
-    ///         
+    ///
     ///         return try await DashboardData(
     ///             users: users,
     ///             posts: posts,
@@ -99,80 +99,77 @@ extension Noasync {
         return try result!.get()
     }
 
-    /// Executes an async closure synchronously with optional timeout.
-    ///
-    /// This variant allows you to specify a timeout for the async operation, helping prevent
-    /// indefinite blocking in synchronous contexts. The timeout is ignored on Linux due to
-    /// platform stability considerations.
-    ///
-    /// ## Basic Usage with Timeout
-    ///
-    /// ```swift
-    /// func fetchDataWithTimeout() -> Data? {
-    ///     do {
-    ///         let data = try Noasync.run(timeout: 5.0) {
-    ///             try await URLSession.shared.data(from: slowEndpoint)
-    ///         }
-    ///         return data.0
-    ///     } catch NoasyncError.timeout(let duration) {
-    ///         print("Operation timed out after \(duration) seconds")
-    ///         return nil
-    ///     } catch {
-    ///         print("Operation failed: \(error)")
-    ///         return nil
-    ///     }
-    /// }
-    /// ```
-    ///
-    /// ## Long-Running Operations
-    ///
-    /// ```swift
-    /// func processLargeDataset() -> ProcessingResult? {
-    ///     do {
-    ///         let result = try Noasync.run(timeout: 60.0) {
-    ///             try await heavyProcessingTask()
-    ///         }
-    ///         return result
-    ///     } catch NoasyncError.timeout {
-    ///         print("Processing took too long, cancelling...")
-    ///         return nil
-    ///     }
-    /// }
-    /// ```
-    ///
-    /// ## Network Requests with Fallback
-    ///
-    /// ```swift
-    /// func fetchWithFallback() -> APIResponse {
-    ///     // Try primary endpoint with short timeout
-    ///     if let response = try? Noasync.run(timeout: 2.0) {
-    ///         try await primaryAPI.fetchData()
-    ///     } {
-    ///         return response
-    ///     }
-    ///     
-    ///     // Fallback to secondary endpoint with longer timeout
-    ///     return try! Noasync.run(timeout: 10.0) {
-    ///         try await fallbackAPI.fetchData()
-    ///     }
-    /// }
-    /// ```
-    ///
-    /// - Parameters:
-    ///   - timeout: Optional timeout duration in seconds. Ignored on Linux due to stability issues.
-    ///   - code: The async closure to execute synchronously.
-    /// - Returns: The result of the async closure.
-    /// - Throws: The error from the closure, or `NoasyncError.timeout` if timeout exceeded.
-    @available(*, noasync)
-    public static func run(
-        timeout: TimeInterval? = nil,
-        _ code: sending () async throws -> Success) throws
-        -> Success
-    {
-        #if os(Linux)
-            // Timeout disabled on Linux for stability
-            return try Noasync<Success, any Error>.run(code)
-        #else
+    // Executes an async closure synchronously with optional timeout.
+    //
+    // This variant allows you to specify a timeout for the async operation, helping prevent
+    // indefinite blocking in synchronous contexts. The timeout is ignored on Linux due to
+    // platform stability considerations.
+    //
+    // ## Basic Usage with Timeout
+    //
+    // ```swift
+    // func fetchDataWithTimeout() -> Data? {
+    //     do {
+    //         let data = try Noasync.run(timeout: 5.0) {
+    //             try await URLSession.shared.data(from: slowEndpoint)
+    //         }
+    //         return data.0
+    //     } catch NoasyncError.timeout(let duration) {
+    //         print("Operation timed out after \(duration) seconds")
+    //         return nil
+    //     } catch {
+    //         print("Operation failed: \(error)")
+    //         return nil
+    //     }
+    // }
+    // ```
+    //
+    // ## Long-Running Operations
+    //
+    // ```swift
+    // func processLargeDataset() -> ProcessingResult? {
+    //     do {
+    //         let result = try Noasync.run(timeout: 60.0) {
+    //             try await heavyProcessingTask()
+    //         }
+    //         return result
+    //     } catch NoasyncError.timeout {
+    //         print("Processing took too long, cancelling...")
+    //         return nil
+    //     }
+    // }
+    // ```
+    //
+    // ## Network Requests with Fallback
+    //
+    // ```swift
+    // func fetchWithFallback() -> APIResponse {
+    //     // Try primary endpoint with short timeout
+    //     if let response = try? Noasync.run(timeout: 2.0) {
+    //         try await primaryAPI.fetchData()
+    //     } {
+    //         return response
+    //     }
+    //
+    //     // Fallback to secondary endpoint with longer timeout
+    //     return try! Noasync.run(timeout: 10.0) {
+    //         try await fallbackAPI.fetchData()
+    //     }
+    // }
+    // ```
+    //
+    // - Parameters:
+    //   - timeout: Optional timeout duration in seconds. Ignored on Linux due to stability issues.
+    //   - code: The async closure to execute synchronously.
+    // - Returns: The result of the async closure.
+    // - Throws: The error from the closure, or `NoasyncError.timeout` if timeout exceeded.
+    #if !os(Linux)
+        @available(*, noasync)
+        public static func run(
+            timeout: TimeInterval? = nil,
+            _ code: sending () async throws -> Success) throws
+            -> Success
+        {
             guard let timeout else {
                 return try Noasync<Success, any Error>.run(code)
             }
@@ -183,7 +180,7 @@ extension Noasync {
             withoutActuallyEscaping(code) {
                 nonisolated(unsafe) let sendableCode = $0
 
-                let task = Task<Void, Never>.detached(priority: .userInitiated) { @Sendable () async in
+                let coreTask = Task<Void, Never>.detached(priority: .userInitiated) { @Sendable () async in
                     do {
                         let value = try await withTaskCancellationHandler {
                             try await sendableCode()
@@ -196,18 +193,22 @@ extension Noasync {
                     } catch {
                         result = .failure(error)
                     }
+                }
+
+                Task<Void, Never>.detached(priority: .userInitiated) {
+                    await coreTask.value
                     semaphore.signal()
                 }
 
                 Task.detached(priority: .utility) { @Sendable () async in
                     try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-                    task.cancel()
+                    coreTask.cancel()
                 }
 
                 semaphore.wait()
             }
 
             return try result!.get()
-        #endif
-    }
+        }
+    #endif
 }

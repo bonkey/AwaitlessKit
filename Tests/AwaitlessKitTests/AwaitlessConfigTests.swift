@@ -7,9 +7,10 @@ import AwaitlessKitMacros
 import MacroTesting
 import Testing
 
+// MARK: - AwaitlessConfigTests
+
 @Suite(.macros(["AwaitlessConfig": AwaitlessConfigMacro.self], record: .missing))
 struct AwaitlessConfigTests {
-    
     @Test("Basic @AwaitlessConfig macro expansion")
     func basicConfigMacro() {
         assertMacro {
@@ -23,13 +24,13 @@ struct AwaitlessConfigTests {
             """
             class DataService {
                 func processData() async throws -> String { "test" }
-            
+
                 static let __awaitlessConfig: AwaitlessConfigData = AwaitlessConfigData(prefix: "sync")
             }
             """
         }
     }
-    
+
     @Test("@AwaitlessConfig with multiple parameters")
     func multipleParametersConfigMacro() {
         assertMacro {
@@ -43,13 +44,13 @@ struct AwaitlessConfigTests {
             """
             struct APIClient {
                 func fetchData() async -> Data { Data() }
-            
+
                 static let __awaitlessConfig: AwaitlessConfigData = AwaitlessConfigData(prefix: "legacy", availability: AwaitlessAvailability.deprecated("Use async version"))
             }
             """
         }
     }
-    
+
     @Test("@AwaitlessConfig with delivery parameter")
     func deliveryParameterConfigMacro() {
         assertMacro {
@@ -63,13 +64,13 @@ struct AwaitlessConfigTests {
             """
             actor EventService {
                 func processEvents() async { }
-            
+
                 static let __awaitlessConfig: AwaitlessConfigData = AwaitlessConfigData(delivery: AwaitlessDelivery.main)
             }
             """
         }
     }
-    
+
     @Test("@AwaitlessConfig with all parameters")
     func allParametersConfigMacro() {
         assertMacro {
@@ -88,13 +89,13 @@ struct AwaitlessConfigTests {
             """
             class CompleteService {
                 func doWork() async { }
-            
+
                 static let __awaitlessConfig: AwaitlessConfigData = AwaitlessConfigData(prefix: "sync", availability: AwaitlessAvailability.unavailable("Not supported"), delivery: AwaitlessDelivery.current, strategy: AwaitlessSynchronizationStrategy.serial)
             }
             """
         }
     }
-    
+
     @Test("@AwaitlessConfig with empty parameters")
     func emptyParametersConfigMacro() {
         assertMacro {
@@ -108,7 +109,7 @@ struct AwaitlessConfigTests {
             """
             class EmptyConfigService {
                 func work() async { }
-            
+
                 static let __awaitlessConfig: AwaitlessConfigData = AwaitlessConfigData()
             }
             """
@@ -116,9 +117,10 @@ struct AwaitlessConfigTests {
     }
 }
 
+// MARK: - AwaitlessConfigAPITests
+
 @Suite("AwaitlessConfig API Tests")
 struct AwaitlessConfigAPITests {
-    
     @Test("AwaitlessConfig.setDefaults and currentDefaults")
     @MainActor
     func configDefaults() async {
@@ -128,15 +130,14 @@ struct AwaitlessConfigAPITests {
         #expect(initialDefaults.availability == nil)
         #expect(initialDefaults.delivery == nil)
         #expect(initialDefaults.strategy == nil)
-        
+
         // Set new defaults
         AwaitlessConfig.setDefaults(
             prefix: "sync",
             availability: .deprecated("Use async version"),
             delivery: .main,
-            strategy: .concurrent
-        )
-        
+            strategy: .concurrent)
+
         // Verify defaults were set
         let newDefaults = AwaitlessConfig.currentDefaults
         #expect(newDefaults.prefix == "sync")
@@ -144,34 +145,35 @@ struct AwaitlessConfigAPITests {
         #expect(newDefaults.availability != nil)
         #expect(newDefaults.delivery != nil)
         #expect(newDefaults.strategy != nil)
-        
+
         // Reset defaults for other tests
         AwaitlessConfig.setDefaults()
     }
-    
+
     @Test("AwaitlessConfig.setDefaults with partial parameters")
     @MainActor
     func partialConfigDefaults() async {
         // Set only prefix
         AwaitlessConfig.setDefaults(prefix: "legacy")
-        
+
         let defaults = AwaitlessConfig.currentDefaults
         #expect(defaults.prefix == "legacy")
         #expect(defaults.availability == nil)
         #expect(defaults.delivery == nil)
         #expect(defaults.strategy == nil)
-        
+
         // Reset
         AwaitlessConfig.setDefaults()
     }
 }
 
+// MARK: - AwaitlessConfigurationHierarchyTests
+
 @Suite("Configuration Hierarchy Integration Tests", .macros([
     "AwaitlessConfig": AwaitlessConfigMacro.self,
-    "Awaitless": AwaitlessSyncMacro.self
+    "Awaitless": AwaitlessSyncMacro.self,
 ], record: .missing))
 struct AwaitlessConfigurationHierarchyTests {
-    
     @Test("Method-level prefix works correctly")
     func methodLevelPrefixWorks() {
         assertMacro {
@@ -186,20 +188,20 @@ struct AwaitlessConfigurationHierarchyTests {
             """
             class DataService {
                 func fetchData() async throws -> String { "test" }
-            
+
                 @available(*, noasync) func customfetchData() throws -> String {
                     try Noasync.run({
                             try await fetchData()
                         })
                 }
-            
+
                 static let __awaitlessConfig: AwaitlessConfigData = AwaitlessConfigData(prefix: "sync")
             }
             """
         }
     }
-    
-    @Test("Type-level configuration generates properly")  
+
+    @Test("Type-level configuration generates properly")
     func typeLevelConfigurationGenerates() {
         assertMacro {
             """
@@ -213,13 +215,13 @@ struct AwaitlessConfigurationHierarchyTests {
             """
             class DataService {
                 func processData() async throws -> String { "test" }
-            
+
                 @available(*, noasync) func processData() throws -> String {
                     try Noasync.run({
                             try await processData()
                         })
                 }
-            
+
                 static let __awaitlessConfig: AwaitlessConfigData = AwaitlessConfigData(prefix: "sync")
             }
             """

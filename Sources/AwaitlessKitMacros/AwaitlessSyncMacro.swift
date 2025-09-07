@@ -103,16 +103,16 @@ public struct AwaitlessSyncMacro: PeerMacro {
                 }
             }
         }
-        
+
         // Resolve configuration using the hierarchy
         // For now, we can't easily access the parent type, so we'll use basic resolution
         let resolvedConfig = resolveConfiguration(
             methodPrefix: methodPrefix,
             methodAvailability: methodAvailability,
-            methodDelivery: nil,  // @Awaitless doesn't use delivery
-            methodStrategy: nil,  // @Awaitless doesn't use strategy
+            methodDelivery: nil, // @Awaitless doesn't use delivery
+            methodStrategy: nil, // @Awaitless doesn't use strategy
             typeDeclaration: nil, // TODO: Get parent type declaration
-            builtInPrefix: ""     // @Awaitless uses empty string as default
+            builtInPrefix: "" // @Awaitless uses empty string as default
         )
 
         // Create the sync function
