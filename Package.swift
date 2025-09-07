@@ -4,7 +4,6 @@ import CompilerPluginSupport
 import PackageDescription
 
 let swiftSettings: [SwiftSetting] = [
-    .enableUpcomingFeature("StrictConcurrency"),
     .enableExperimentalFeature("AccessLevelOnImport"),
     .enableUpcomingFeature("InternalImportsByDefault"),
 ]
