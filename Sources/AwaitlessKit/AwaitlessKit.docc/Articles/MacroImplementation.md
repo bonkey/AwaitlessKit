@@ -1,23 +1,12 @@
 # Macro Implementation Guide
 
-Comprehensive guide to implementing and extending AwaitlessKit macros.
+Technical guide for extending AwaitlessKit macros and understanding their implementation.
 
 ## Overview
 
-This guide provides detailed information about how AwaitlessKit macros are implemented, how to extend them, and how to create custom macros that integrate with the configuration system.
+AwaitlessKit macros use SwiftSyntax to parse async functions and generate synchronous wrappers. All macros follow a consistent four-step pattern: parse declaration, resolve configuration, generate code, return syntax nodes.
 
-## Macro Architecture
-
-### Core Components
-
-Each macro in AwaitlessKit follows a consistent architecture with these components:
-
-1. **Declaration Parser** - Analyzes the Swift syntax tree
-2. **Configuration Resolver** - Applies the four-level configuration hierarchy
-3. **Code Generator** - Creates the wrapper implementation
-4. **Error Reporter** - Provides helpful diagnostic messages
-
-### Implementation Pattern
+## Implementation Pattern
 
 ```swift
 public struct ExampleMacro: AttachedMacro {
@@ -31,13 +20,13 @@ public struct ExampleMacro: AttachedMacro {
         guard let declaration = parseDeclaration(node) else {
             throw MacroError.invalidDeclaration
         }
-        
+
         // 2. Resolve configuration
         let config = resolveConfiguration(from: node, in: context)
-        
+
         // 3. Generate code
         let generatedCode = generateWrapper(for: declaration, with: config)
-        
+
         // 4. Return syntax nodes
         return [generatedCode]
     }
@@ -56,39 +45,33 @@ func resolveConfiguration(
     in context: MacroExpansionContext
 ) -> MacroConfiguration {
     var config = MacroConfiguration()
-    
+
     // 1. Start with built-in defaults
     config.prefix = ""
     config.availability = .none
     config.delivery = .current
     config.strategy = .concurrent
-    
+
     // 2. Apply process-level defaults
     if let processDefaults = AwaitlessConfig.processDefaults {
         config.merge(with: processDefaults)
     }
-    
+
     // 3. Apply type-scoped configuration
     if let typeConfig = findTypeConfiguration(in: context) {
         config.merge(with: typeConfig)
     }
-    
+
     // 4. Apply method-level configuration
     if let methodConfig = parseMethodConfiguration(from: node) {
         config.merge(with: methodConfig)
     }
-    
+
     return config
 }
 ```
 
-### Configuration Inheritance
-
-Configuration inheritance works through a merge strategy:
-
-- **Additive Properties** - Combine values (e.g., prefix concatenation)
-- **Override Properties** - Replace values (e.g., availability attributes)
-- **Contextual Properties** - Apply based on macro type (e.g., delivery for publishers)
+Configuration follows a four-level hierarchy: built-in defaults → process defaults → type configuration → method parameters. Higher levels override lower ones.
 
 ## Code Generation
 
@@ -133,14 +116,14 @@ func generateAwaitlessWrapper(
 ) -> FunctionDeclSyntax {
     // Remove async, keep throws
     let signature = removingAsync(from: function.signature)
-    
+
     // Generate blocking implementation
     let body = """
         return Noasync.run {
             try await \(function.name)(\(parameters))
         }
         """
-    
+
     return FunctionDeclSyntax(
         attributes: generateAvailabilityAttributes(config.availability),
         name: "\(config.prefix)\(function.name)",
@@ -159,7 +142,7 @@ func generatePublisherWrapper(
 ) -> FunctionDeclSyntax {
     // Convert return type to Publisher
     let returnType = "AnyPublisher<\(function.returnType), Error>"
-    
+
     // Generate publisher implementation
     let body = """
         return Future { promise in
@@ -175,10 +158,40 @@ func generatePublisherWrapper(
         .receive(on: \(config.delivery.schedulerCode))
         .eraseToAnyPublisher()
         """
-    
+
     return FunctionDeclSyntax(
         name: "\(config.prefix)\(function.name)",
         returnType: returnType,
+        body: body
+    )
+}
+```
+
+#### @AwaitlessCompletion Strategy
+
+```swift
+func generateCompletionWrapper(
+    for function: FunctionDeclSyntax,
+    with config: MacroConfiguration
+) -> FunctionDeclSyntax {
+    // Add completion parameter
+    let completionParameter = "completion: @escaping (Result<\(function.returnType), Error>) -> Void"
+
+    // Generate completion-based implementation
+    let body = """
+        Task {
+            do {
+                let result = try await \(function.name)(\(parameters))
+                completion(.success(result))
+            } catch {
+                completion(.failure(error))
+            }
+        }
+        """
+
+    return FunctionDeclSyntax(
+        name: "\(config.prefix)\(function.name)",
+        parameters: function.signature.parameters + [completionParameter],
         body: body
     )
 }
@@ -195,7 +208,9 @@ enum MacroError: Error, DiagnosticMessage {
     case invalidDeclaration
     case unsupportedSyntax(String)
     case configurationConflict(String)
-    
+    case missingAsyncModifier
+    case unsupportedReturnType(String)
+
     var message: String {
         switch self {
         case .invalidDeclaration:
@@ -204,13 +219,26 @@ enum MacroError: Error, DiagnosticMessage {
             return "Unsupported syntax: \(detail)"
         case .configurationConflict(let detail):
             return "Configuration conflict: \(detail)"
+        case .missingAsyncModifier:
+            return "Function must be marked as 'async' to use @Awaitless"
+        case .unsupportedReturnType(let type):
+            return "Return type '\(type)' is not supported for sync wrapper generation"
         }
     }
-    
+
     var severity: DiagnosticSeverity { .error }
     var diagnosticID: MessageID { MessageID(domain: "AwaitlessKit", id: "\(self)") }
 }
 ```
+
+### Comprehensive Error Reporting
+
+All macros provide comprehensive error reporting:
+
+- **Syntax Errors** - Clear messages for invalid usage patterns
+- **Configuration Conflicts** - Warnings when configurations conflict
+- **Type Safety** - Compile-time validation of generated code
+- **Diagnostic Messages** - Helpful suggestions for fixing issues
 
 ### Validation Rules
 
@@ -220,63 +248,54 @@ Implement comprehensive validation:
 func validateDeclaration(_ function: FunctionDeclSyntax) throws {
     // Check for async modifier
     guard function.signature.effectSpecifiers?.asyncSpecifier != nil else {
-        throw MacroError.invalidDeclaration
+        throw MacroError.missingAsyncModifier
     }
-    
+
     // Validate parameter types
     for parameter in function.signature.parameterClause.parameters {
         try validateParameterType(parameter.type)
     }
-    
+
     // Check return type compatibility
     try validateReturnType(function.signature.returnClause?.type)
-}
-```
 
-## Advanced Features
-
-### Custom Configuration Types
-
-Extend the configuration system with custom types:
-
-```swift
-// Define custom configuration
-public struct CustomAwaitlessConfig {
-    let timeout: TimeInterval?
-    let retryCount: Int?
-    let priority: TaskPriority?
+    // Validate function context (must be in class/struct/actor)
+    try validateContext(function)
 }
 
-// Integrate with macro system
-extension MacroConfiguration {
-    var custom: CustomAwaitlessConfig {
-        get { customData["CustomAwaitlessConfig"] as? CustomAwaitlessConfig ?? CustomAwaitlessConfig() }
-        set { customData["CustomAwaitlessConfig"] = newValue }
+func validateParameterType(_ type: TypeSyntax?) throws {
+    // Ensure parameter types are compatible with sync wrappers
+    guard let type = type else { return }
+
+    // Check for unsupported types like isolated parameters
+    if containsIsolatedParameters(type) {
+        throw MacroError.unsupportedSyntax("Isolated parameters not supported in sync wrappers")
+    }
+}
+
+func validateReturnType(_ returnType: TypeSyntax?) throws {
+    // Validate return type can be used in sync context
+    guard let returnType = returnType else { return }
+
+    // Check for actor-isolated return types
+    if isActorIsolated(returnType) {
+        throw MacroError.unsupportedReturnType("Actor-isolated types cannot be returned from sync wrappers")
     }
 }
 ```
 
-### Macro Composition
+## Macro Composition
 
-Combine multiple macros for complex behavior:
+Multiple macros can be applied to generate different wrapper styles:
 
 ```swift
 @Awaitless
-@AwaitlessPublisher  
+@AwaitlessPublisher
 @AwaitlessCompletion
 func complexOperation() async throws -> Result {
-    // Single async implementation generates three sync variants
+    // Generates three wrappers from one async implementation
 }
 ```
-
-### Performance Optimization
-
-Optimize macro expansion performance:
-
-1. **Cache Parsed Configurations** - Avoid re-parsing identical configurations
-2. **Lazy Code Generation** - Generate code only when needed
-3. **Minimize AST Traversal** - Efficient tree walking algorithms
-4. **Batch Operations** - Group related operations
 
 ## Testing Strategies
 
@@ -292,7 +311,7 @@ func testAwaitlessMacroExpansion() {
             // Implementation
         }
         """
-    
+
     let expected = """
         func fetchData() throws -> Data {
             return Noasync.run {
@@ -300,10 +319,36 @@ func testAwaitlessMacroExpansion() {
             }
         }
         """
-    
+
+    assertMacroExpansion(input, expandedSource: expected)
+}
+
+func testConfigurationInheritance() {
+    let input = """
+        @AwaitlessConfig(prefix: "sync_")
+        class APIService {
+            @Awaitless
+            func fetchUser() async throws -> User {
+                // Implementation
+            }
+        }
+        """
+
+    let expected = """
+        class APIService {
+            func sync_fetchUser() throws -> User {
+                return Noasync.run {
+                    try await fetchUser()
+                }
+            }
+        }
+        """
+
     assertMacroExpansion(input, expandedSource: expected)
 }
 ```
+
+### Integration Testing
 
 ### Integration Testing
 
@@ -312,39 +357,74 @@ Test macros with real code:
 ```swift
 func testMacroWithConfiguration() {
     AwaitlessConfig.setDefaults(prefix: "test_")
-    
+
     @AwaitlessConfig(availability: .deprecated("Test"))
     class TestClass {
         @Awaitless
         func testMethod() async -> Int { 42 }
     }
-    
+
     // Verify generated code behavior
     let instance = TestClass()
     let result = instance.test_testMethod()
     XCTAssertEqual(result, 42)
 }
+
+func testErrorHandling() {
+    @AwaitlessConfig(prefix: "failing_")
+    class ErrorTestClass {
+        @Awaitless
+        func throwingMethod() async throws -> String {
+            throw TestError.example
+        }
+    }
+
+    let instance = ErrorTestClass()
+    XCTAssertThrowsError(try instance.failing_throwingMethod()) { error in
+        XCTAssertTrue(error is TestError)
+    }
+}
 ```
 
-## Best Practices
+## Debugging Macro Expansion
 
-### Macro Development
+To understand how macros expand your code:
 
-1. **Follow Naming Conventions** - Use consistent naming across all macros
-2. **Provide Rich Diagnostics** - Help users understand and fix issues
-3. **Optimize for Common Cases** - Make common usage patterns efficient
-4. **Maintain Backward Compatibility** - Avoid breaking changes in macro behavior
+1. **Use Xcode's Macro Expansion** - Right-click on macro usage → "Expand Macro"
+2. **Add Debug Prints** - Temporarily add print statements in macro implementations
+3. **Examine Generated Code** - Review the generated interface in Xcode's navigator
+4. **Use Compiler Flags** - Add `-Xfrontend -dump-macro-expansions` for detailed output
 
-### Configuration Design
+### Common Debugging Scenarios
 
-1. **Hierarchical Thinking** - Design configurations to work well with the hierarchy
-2. **Sensible Defaults** - Choose defaults that work for most users
-3. **Clear Precedence** - Make the configuration precedence obvious
-4. **Validation Early** - Catch configuration errors at compile time
+```swift
+// Debug configuration resolution
+@Awaitless  // Add breakpoint here to examine resolved config
+func debugMethod() async -> String {
+    return "debug"
+}
 
-### Testing Coverage
+// Debug error messages
+@Awaitless
+func nonAsyncMethod() -> String {  // This will generate helpful error
+    return "error"
+}
 
-1. **Test All Configuration Combinations** - Ensure all hierarchy levels work
-2. **Test Error Cases** - Verify error messages are helpful
-3. **Performance Testing** - Ensure macros don't slow compilation
-4. **Integration Testing** - Test with real-world usage patterns
+// Debug generated code
+@Awaitless(prefix: "debug_")
+func complexMethod(param: String) async throws -> [String] {
+    // Examine generated wrapper in Xcode's navigator
+    return [param]
+}
+```
+
+## Extending AwaitlessKit
+
+To create custom macros, follow the established pattern:
+
+1. Parse the Swift syntax tree
+2. Resolve configuration hierarchy
+3. Generate wrapper code
+4. Provide clear error messages
+
+Test both macro expansion and runtime behavior with realistic use cases.

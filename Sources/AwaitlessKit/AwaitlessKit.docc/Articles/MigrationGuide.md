@@ -40,7 +40,7 @@ class NewFeatureService {
         let processed = try await processor.process(data)
         return processed
     }
-    
+
     // Generated automatically:
     // func processNewData() throws -> ProcessedData
 }
@@ -62,7 +62,7 @@ class ExistingService {
         // Blocking network call
         return URLSession.shared.synchronousDataTask(with: url)
     }
-    
+
     // ✅ New async implementation with sync wrapper
     @Awaitless(.deprecated("Use async version"))
     func fetchUserDataAsync() async throws -> UserData {
@@ -142,7 +142,7 @@ class CoreNetworkingModule {
     }
 }
 
-// Team B: Slower migration schedule  
+// Team B: Slower migration schedule
 @AwaitlessConfig(availability: .deprecated("Migrate by December 2024"))
 class LegacyIntegrationModule {
     @Awaitless
@@ -188,7 +188,7 @@ class UserRepository {
         try await cache.update(user)
         await notificationCenter.post(.userSaved(user))
     }
-    
+
     // Legacy sync method delegates to async
     func saveUserLegacy(_ user: User) throws {
         // Uses generated sync wrapper internally
@@ -207,13 +207,13 @@ class APIClient {
     func fetchUser(id: String, completion: @escaping (Result<User, Error>) -> Void) {
         // Legacy implementation
     }
-    
+
     // New: Async/await with completion wrapper
     @AwaitlessCompletion
     func fetchUser(id: String) async throws -> User {
         // Modern implementation
     }
-    
+
     // Generated automatically:
     // func fetchUser(id: String, completion: @escaping (Result<User, Error>) -> Void)
 }
@@ -236,10 +236,10 @@ class LegacyNetworkManager {
 class NetworkManager {
     @Awaitless
     func request<T>(_ endpoint: Endpoint) async throws -> T { /* ... */ }
-    
+
     @Awaitless
     func upload(_ data: Data) async throws -> Response { /* ... */ }
-    
+
     @Awaitless
     func download(_ url: URL) async throws -> Data { /* ... */ }
 }
@@ -261,47 +261,25 @@ Test both sync and async interfaces:
 ```swift
 class UserServiceTests: XCTestCase {
     let service = UserService()
-    
+
     // Test async interface
     func testCreateUserAsync() async throws {
         let user = try await service.createUser(userData)
         XCTAssertEqual(user.name, "Test User")
     }
-    
+
     // Test generated sync interface
     func testCreateUserSync() throws {
         let user = try service.createUser(userData)  // Uses generated wrapper
         XCTAssertEqual(user.name, "Test User")
     }
-    
+
     // Test behavioral equivalence
     func testInterfaceEquivalence() async throws {
         let asyncResult = try await service.createUser(userData)
         let syncResult = try service.createUser(userData)
-        
+
         XCTAssertEqual(asyncResult, syncResult)
-    }
-}
-```
-
-### Performance Testing
-
-Compare performance characteristics:
-
-```swift
-func testPerformanceComparison() {
-    measure {
-        // Test sync wrapper performance
-        for _ in 0..<100 {
-            _ = try! service.processData(data)
-        }
-    }
-    
-    measureAsync {
-        // Test native async performance
-        for _ in 0..<100 {
-            _ = try! await service.processData(data)
-        }
     }
 }
 ```
@@ -405,21 +383,25 @@ func longRunningOperation() async throws -> Data {
 ## Migration Timeline
 
 ### Phase 1: Foundation (Weeks 1-4)
+
 - Set up AwaitlessKit in project
 - Configure process-level defaults
 - Start with new feature development using @Awaitless
 
 ### Phase 2: Brownfield (Weeks 5-12)
+
 - Identify high-impact sync APIs for conversion
 - Add async implementations with @Awaitless wrappers
 - Begin migrating calling code to async versions
 
 ### Phase 3: Aggressive Migration (Weeks 13-24)
+
 - Convert remaining sync APIs
 - Use stronger deprecation warnings
 - Migrate majority of calling code
 
 ### Phase 4: Cleanup (Weeks 25-28)
+
 - Remove @Awaitless macros from converted APIs
 - Remove legacy sync implementations
 - Achieve pure async codebase
@@ -431,15 +413,5 @@ Track migration progress with these metrics:
 1. **API Coverage** - Percentage of APIs with async versions
 2. **Usage Migration** - Percentage of calls using async APIs
 3. **Deprecation Compliance** - Time to address deprecation warnings
-4. **Performance Impact** - Benchmark before/after migration
-5. **Bug Reports** - Issues related to sync/async interface mismatches
 
-## Best Practices Summary
-
-1. **Start Small** - Begin with new features or isolated components
-2. **Use Configuration Hierarchy** - Set organization-wide migration policies
-3. **Test Both Interfaces** - Ensure behavioral equivalence
-4. **Monitor Performance** - Watch for performance regressions
-5. **Communicate Timeline** - Keep teams informed of migration schedules
-6. **Document Decisions** - Record migration strategies and learnings
-7. **Iterate Quickly** - Use short cycles to identify and resolve issues early
+4. **Bug Reports** - Issues related to sync/async interface mismatches

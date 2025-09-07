@@ -30,11 +30,23 @@ public import AwaitlessCore
 /// class NetworkService {
 ///     @Awaitless(prefix: "blocking_", .deprecated("Use async version"))
 ///     func fetchData() async throws -> Data {
-///         // Async implementation
+///         let (data, _) = try await URLSession.shared.data(from: url)
+///         return data
 ///     }
-///     // Generates: @available(*, deprecated: "Use async version")
-///     //            func blocking_fetchData() throws -> Data
+///
+///     // Automatically generates:
+///     // @available(*, deprecated: "Use async version")
+///     // func blocking_fetchData() throws -> Data {
+///     //     return try Noasync.run {
+///     //         try await self.fetchData()
+///     //     }
+///     // }
 /// }
+///
+/// // Usage during migration
+/// let service = NetworkService()
+/// let data1 = try await service.fetchData()          // Async version
+/// let data2 = try service.blocking_fetchData()       // Generated sync version
 /// ```
 @attached(peer, names: arbitrary)
 public macro Awaitless(
@@ -52,6 +64,43 @@ public macro Awaitless(
 ///   - prefix: Prefix for the generated publisher function name
 ///   - deliverOn: Dispatch queue where publisher events are delivered
 ///   - availability: Availability attribute for the generated function
+///
+/// ## Example
+///
+/// ```swift
+/// import Combine
+///
+/// class DataService {
+///     @AwaitlessPublisher(deliverOn: .main)
+///     func fetchUser(id: String) async throws -> User {
+///         let response = try await URLSession.shared.data(from: userURL(id))
+///         return try JSONDecoder().decode(User.self, from: response.0)
+///     }
+///
+///     // Automatically generates:
+///     // func fetchUser(id: String) -> AnyPublisher<User, Error> {
+///     //     Future { promise in
+///     //         Task {
+///     //             do {
+///     //                 let result = try await self.fetchUser(id: id)
+///     //                 promise(.success(result))
+///     //             } catch {
+///     //                 promise(.failure(error))
+///     //             }
+///     //         }
+///     //     }
+///     //     .receive(on: DispatchQueue.main)
+///     //     .eraseToAnyPublisher()
+///     // }
+/// }
+///
+/// // Usage with Combine
+/// let service = DataService()
+/// service.fetchUser(id: "123")
+///     .sink(receiveCompletion: { _ in }, receiveValue: { user in
+///         // Handle user on main queue
+///     })
+/// ```
 @attached(peer, names: arbitrary)
 public macro AwaitlessPublisher(
     prefix: String = "",
@@ -68,6 +117,44 @@ public macro AwaitlessPublisher(
 /// - Parameters:
 ///   - prefix: Prefix for the generated completion handler function name
 ///   - availability: Availability attribute for the generated function
+///
+/// ## Example
+///
+/// ```swift
+/// class AuthService {
+///     @AwaitlessCompletion(prefix: "legacy_")
+///     func authenticate(token: String) async throws -> AuthResult {
+///         try await Task.sleep(nanoseconds: 1_000_000)
+///         return AuthResult(isValid: true, userID: "12345")
+///     }
+///
+///     // Automatically generates:
+///     // func legacy_authenticate(
+///     //     token: String,
+///     //     completion: @escaping (Result<AuthResult, Error>) -> Void
+///     // ) {
+///     //     Task {
+///     //         do {
+///     //             let result = try await self.authenticate(token: token)
+///     //             completion(.success(result))
+///     //         } catch {
+///     //             completion(.failure(error))
+///     //         }
+///     //     }
+///     // }
+/// }
+///
+/// // Usage with completion handlers
+/// let service = AuthService()
+/// service.legacy_authenticate(token: "abc123") { result in
+///     switch result {
+///     case .success(let authResult):
+///         print("Authenticated: \(authResult.userID)")
+///     case .failure(let error):
+///         print("Auth failed: \(error)")
+///     }
+/// }
+/// ```
 @attached(peer, names: arbitrary)
 public macro AwaitlessCompletion(
     prefix: String = "",
@@ -106,8 +193,45 @@ public macro awaitless<T>(_ expression: T) -> T = #externalMacro(
 /// @Awaitlessable
 /// protocol DataService {
 ///     func fetchUser(id: String) async throws -> User
+///     func fetchData() async -> Data
 /// }
-/// // Generates sync method signature and default implementation
+///
+/// // Automatically generates:
+/// // protocol DataService {
+/// //     func fetchUser(id: String) async throws -> User
+/// //     func fetchData() async -> Data
+/// //
+/// //     // Sync method signatures
+/// //     func fetchUser(id: String) throws -> User
+/// //     func fetchData() -> Data
+/// // }
+/// //
+/// // extension DataService {
+/// //     // Default implementations using Noasync.run
+/// //     public func fetchUser(id: String) throws -> User {
+/// //         return try Noasync.run { try await self.fetchUser(id: id) }
+/// //     }
+/// //
+/// //     public func fetchData() -> Data {
+/// //         return Noasync.run { await self.fetchData() }
+/// //     }
+/// // }
+///
+/// // Implementation - just implement async methods
+/// struct APIService: DataService {
+///     func fetchUser(id: String) async throws -> User {
+///         // Your async implementation
+///     }
+///
+///     func fetchData() async -> Data {
+///         // Your async implementation
+///     }
+///
+///     // Sync versions are automatically available!
+/// }
+///
+/// let service = APIService()
+/// let user = try service.fetchUser(id: "123")  // Uses generated sync version
 /// ```
 @attached(member, names: arbitrary)
 @attached(extension, names: arbitrary)
@@ -125,6 +249,36 @@ public macro Awaitlessable(
 ///   - writable: Whether to generate setter methods
 ///   - queueName: Custom dispatch queue name for synchronization
 ///   - strategy: Synchronization strategy (concurrent vs serial)
+///
+/// ## Example
+///
+/// ```swift
+/// class SharedState: Sendable {
+///     @IsolatedSafe(writable: true, strategy: .concurrent)
+///     private nonisolated(unsafe) var _items: [String] = []
+///
+///     @IsolatedSafe(writable: true, queueName: "critical.queue")
+///     private nonisolated(unsafe) var _criticalData: Data? = nil
+///
+///     // Automatically generates:
+///     // private let _itemsQueue = DispatchQueue(label: "...", attributes: .concurrent)
+///     // var items: [String] {
+///     //     get { _itemsQueue.sync { _items } }
+///     //     set { _itemsQueue.sync(flags: .barrier) { _items = newValue } }
+///     // }
+///     //
+///     // private let _criticalDataQueue = DispatchQueue(label: "critical.queue")
+///     // var criticalData: Data? {
+///     //     get { _criticalDataQueue.sync { _criticalData } }
+///     //     set { _criticalDataQueue.sync { _criticalData = newValue } }
+///     // }
+/// }
+///
+/// // Thread-safe usage
+/// let state = SharedState()
+/// state.items = ["new", "items"]       // Thread-safe write
+/// let currentItems = state.items       // Thread-safe read
+/// ```
 @attached(peer, names: arbitrary)
 public macro IsolatedSafe(
     writable: Bool = false,

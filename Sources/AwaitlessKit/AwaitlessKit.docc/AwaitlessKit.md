@@ -1,4 +1,4 @@
-# ``AwaitlessKit``
+# `AwaitlessKit`
 
 Automatically generate legacy sync interfaces for your async/await code, enabling easy migration to Swift 6 Structured Concurrency.
 
@@ -9,7 +9,7 @@ AwaitlessKit provides Swift macros to automatically generate synchronous wrapper
 ### Key Features
 
 - **@Awaitless** - Generate synchronous wrappers for async functions
-- **@AwaitlessPublisher** - Generate Combine publishers from async functions  
+- **@AwaitlessPublisher** - Generate Combine publishers from async functions
 - **@AwaitlessCompletion** - Generate completion-handler wrappers
 - **@Awaitlessable** - Protocol extension generation for async protocols
 - **Configuration System** - Four-level configuration hierarchy for flexible customization
@@ -20,35 +20,68 @@ AwaitlessKit provides Swift macros to automatically generate synchronous wrapper
 
 AwaitlessKit provides a flexible configuration system with four levels of precedence:
 
-1. **Process-Level Defaults** via ``AwaitlessConfig/setDefaults(prefix:availability:delivery:strategy:)``
-2. **Type-Scoped Configuration** via ``AwaitlessConfig`` member macro
-3. **Method-Level Configuration** via ``Awaitless`` parameters
+1. **Process-Level Defaults** via `AwaitlessConfig/setDefaults(prefix:availability:delivery:strategy:)`
+2. **Type-Scoped Configuration** via `AwaitlessConfig` member macro
+3. **Method-Level Configuration** via `Awaitless` parameters
 4. **Built-in Defaults** as fallback
+
+## Quick Start
+
+Add the `@Awaitless` macro to your async functions to automatically generate synchronous wrappers:
+
+```swift
+import AwaitlessKit
+
+class DataService {
+    @Awaitless
+    func fetchUser(id: String) async throws -> User {
+        // Your async implementation
+        let (data, _) = try await URLSession.shared.data(from: url)
+        return try JSONDecoder().decode(User.self, from: data)
+    }
+    // Generates: func fetchUser(id: String) throws -> User
+}
+
+// Use both versions during migration
+let service = DataService()
+let user1 = try await service.fetchUser(id: "123")  // Async version
+let user2 = try service.fetchUser(id: "456")        // Generated sync version
+```
+
+For comprehensive examples and real-world usage patterns, see <doc:Examples>.
 
 ## Topics
 
 ### Primary Macros
 
-- ``Awaitless``
-- ``AwaitlessPublisher`` 
-- ``AwaitlessCompletion``
-- ``Awaitlessable``
+- `Awaitless`
+- `AwaitlessPublisher`
+- `AwaitlessCompletion`
+- `Awaitlessable`
 
 ### Configuration System
 
-- ``AwaitlessConfig``
-- ``AwaitlessAvailability``
-- ``AwaitlessDelivery``
-- ``AwaitlessSynchronizationStrategy``
+- `AwaitlessConfig`
+- `AwaitlessAvailability`
+- `AwaitlessDelivery`
+- `AwaitlessSynchronizationStrategy`
 
 ### Utility Macros
 
-- ``awaitless(_:)``
-- ``IsolatedSafe``
+- `awaitless(_:)`
+- `IsolatedSafe`
 
 ### Low-Level API
 
-- ``Noasync``
+- `Noasync`
+
+### Comprehensive Guides
+
+- <doc:UsageGuide>
+- <doc:Examples>
+- <doc:Configuration>
+- <doc:MigrationGuide>
+- <doc:MacroImplementation>
 
 ## Migration Strategy
 
@@ -57,12 +90,14 @@ AwaitlessKit provides a flexible configuration system with four levels of preced
 ### Recommended Migration Path
 
 1. **Add async implementations** with `@Awaitless` to generate sync counterparts
-2. **Deprecate sync versions** using availability attributes  
+2. **Deprecate sync versions** using availability attributes
 3. **Migrate calling code** to async versions over time
 4. **Remove sync support** when migration is complete
 5. **Remove macros** for pure async implementation
 
-## Example Usage
+For detailed migration strategies and real-world scenarios, see <doc:MigrationGuide>.
+
+## Configuration Examples
 
 ```swift
 import AwaitlessKit
@@ -78,7 +113,7 @@ class NetworkService {
         let (data, _) = try await URLSession.shared.data(from: url)
         return data
     }
-    
+
     @Awaitless(prefix: "immediate_")  // Method-level override
     func quickCheck() async -> Bool {
         // Implementation
@@ -90,3 +125,11 @@ let service = NetworkService()
 let data1 = try await service.fetchData()      // Async version
 let data2 = try service.blocking_fetchData()   // Generated sync version
 ```
+
+For complete configuration documentation and advanced patterns, see <doc:Configuration>.
+
+## Implementation Details
+
+AwaitlessKit macros use SwiftSyntax to analyze your async code and automatically generate corresponding synchronous wrapper functions. All macros follow a consistent architecture pattern for reliability and maintainability.
+
+For comprehensive implementation details and extending AwaitlessKit, see <doc:MacroImplementation>.

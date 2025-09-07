@@ -27,8 +27,10 @@ Always reference these instructions first and fallback to search or bash command
 ### Documentation
 
 - The `README.md` file must always be up to date with the code. However, it should not cover all cases to prevent it from becoming too large.
+- **ALWAYS update version numbers in README.md** when making releases or version-related changes
 - Do always update DocC packages (e.g. `Sources/AwaitlessKit/Documentation.docc` and )
 - Do always create and update articles in DocC packages (e.g. `Sources/AwaitlessKitMacros/AwaitlessKitMacros.docc` and `Sources/AwaitlessKit/AwaitlessKit.docc`). They must be very comprehensive and include high-level information as well.
+- When updating documentation links, always use 'main' branch URLs instead of version-specific URLs
 
 ### Versioning
 
@@ -37,6 +39,10 @@ Always reference these instructions first and fallback to search or bash command
   - Increment minor version for new features.
   - Increment patch version for bug fixes.
 - Always suggest proper version in each PR, depending on the scale of changes
+- **CRITICAL**: When updating versions, update ALL of the following locations:
+  - `README.md` - Package.swift dependency version (documentation URLs should use 'main' branch)
+  - Any documentation links should reference 'main' branch, not specific version numbers
+  - Example code in DocC comments that show version numbers
 
 ### Code Validation
 
