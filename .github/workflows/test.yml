@@ -24,7 +24,8 @@ jobs:
     container:
       image: swift:latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup debug session
         uses: ./.github/actions/setup-debug
@@ -34,7 +35,8 @@ jobs:
       - name: Install curl
         run: apt-get update && apt-get install -y curl
 
-      - uses: jdx/mise-action@v2
+      - name: Setup mise
+        uses: jdx/mise-action@v2
 
       - name: Cache Swift dependencies
         uses: ./.github/actions/cache-swift-deps
@@ -57,14 +59,16 @@ jobs:
             xcode-version: "latest-stable"
             upload-coverage: true
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup debug session
         uses: ./.github/actions/setup-debug
         with:
           debug_enabled: ${{ github.event.inputs.debug_enabled }}
 
-      - uses: jdx/mise-action@v2
+      - name: Setup mise
+        uses: jdx/mise-action@v2
 
       - name: Use Xcode ${{ matrix.xcode-version }}
         uses: maxim-lobanov/setup-xcode@v1
