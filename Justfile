@@ -48,6 +48,8 @@ package-test *FILTER:
         set +x
     fi
 
+full-clean:
+    rm -rf .build .xcode
 
 all-clean: kill-xcode
     swift package clean
