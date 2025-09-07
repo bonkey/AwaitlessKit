@@ -1,6 +1,6 @@
 xcuserdata/
 .build/
-.xcodeDerivedData/
+.xcode/
 .crush
 
 # RFC prototype files (not for implementation)

@@ -7,7 +7,7 @@
 
 import AwaitlessCore
 import Dispatch
-import Foundation
+public import Foundation
 
 extension Noasync {
     // Executes the given async closure synchronously, waiting for it to finish before returning.
@@ -49,13 +49,13 @@ extension Noasync {
     /// Executes an async closure synchronously with optional timeout.
     ///
     /// - Parameters:
-    ///   - timeout: Optional timeout duration. Ignored on Linux due to stability issues.
+    ///   - timeout: Optional timeout duration in seconds. Ignored on Linux due to stability issues.
     ///   - code: The async closure to execute synchronously.
     /// - Returns: The result of the async closure.
     /// - Throws: The error from the closure, or `NoasyncError.timeout` if timeout exceeded.
     @available(*, noasync)
     public static func run(
-        timeout: Duration? = nil,
+        timeout: TimeInterval? = nil,
         _ code: sending () async throws -> Success) throws
         -> Success
     {
@@ -90,7 +90,7 @@ extension Noasync {
                 }
 
                 Task.detached(priority: .utility) { @Sendable () async in
-                    try? await Task.sleep(for: timeout)
+                    try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
                     task.cancel()
                 }
 

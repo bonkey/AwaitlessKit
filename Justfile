@@ -16,7 +16,7 @@ swift_build_dir := ".build"
 package_workspace := ".swiftpm/xcode/package.xcworkspace"
 package_scheme := "AwaitlessKit"
 
-xcode_derived_data := ".xcodeDerivedData"
+xcode_derived_data := ".xcode/derivedData"
 xcode_project := "SampleApp/SampleApp.xcodeproj"
 xcode_scheme := "SampleApp"
 xcode_formatter := `if command -v xcbeautify >/dev/null 2>&1; then echo "| xcbeautify -q"; elif command -v xcpretty >/dev/null 2>&1; then echo "| xcpretty"; else echo ""; fi`
@@ -90,18 +90,21 @@ sample-app-open:
 
 # ---------------------
 
-_xcodebuild project_type project scheme *ARGS:
+_xcodebuild scheme destination *ARGS:
     @just swift-version
     xcodebuild \
         -derivedDataPath "{{xcode_derived_data}}" \
-        -destination 'generic/platform=macOS' \
-        -{{project_type}} "{{project}}" \
+        -clonedSourcePackagesDirPath .xcode/clonedSourcePackages \
+        -destination "{{destination}}" \
         -scheme "{{scheme}}" \
         {{ARGS}} \
         {{xcode_formatter}}
 
 _xcodebuild-sample-app *ARGS:
-    @just _xcodebuild "project" "{{xcode_project}}" "{{xcode_scheme}}" {{ARGS}}
+    @just _xcodebuild "{{xcode_scheme}}" "generic/platform=macOS" -project "{{xcode_project}}" {{ARGS}}
+
+_xcodebuild-package destination *ARGS:
+    @just _xcodebuild "{{package_scheme}}" "{{destination}}" -skipMacroValidation -skipPackagePluginValidation {{ARGS}}
 
 coverage-lcov OUTPUT_FILE="coverage.lcov":
     #!/usr/bin/env bash
@@ -114,3 +117,9 @@ coverage-lcov OUTPUT_FILE="coverage.lcov":
         -instr-profile="$PROFDATA" \
         -ignore-filename-regex=".build|Tests" \
         -format=lcov > "{{OUTPUT_FILE}}"
+
+build-ios:
+    @just _xcodebuild-package "generic/platform=iOS" build
+
+build-macos:
+    @just _xcodebuild-package "platform=macOS,arch=arm64" build
