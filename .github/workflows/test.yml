@@ -26,7 +26,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/setup-debug
+      - name: Setup debug session
+        uses: ./.github/actions/setup-debug
         with:
           debug_enabled: ${{ github.event.inputs.debug_enabled }}
 
@@ -35,7 +36,8 @@ jobs:
 
       - uses: jdx/mise-action@v2
 
-      - uses: ./.github/actions/cache-swift-deps
+      - name: Cache Swift dependencies
+        uses: ./.github/actions/cache-swift-deps
         with:
           platform: linux
 
@@ -57,7 +59,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/setup-debug
+      - name: Setup debug session
+        uses: ./.github/actions/setup-debug
         with:
           debug_enabled: ${{ github.event.inputs.debug_enabled }}
 
@@ -68,7 +71,8 @@ jobs:
         with:
           xcode-version: ${{ matrix.xcode-version }}
 
-      - uses: ./.github/actions/cache-swift-deps
+      - name: Cache Swift dependencies
+        uses: ./.github/actions/cache-swift-deps
         with:
           platform: macos
           cache-suffix: ${{ matrix.xcode-version }}
