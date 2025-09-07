@@ -17,7 +17,7 @@
 - [Why AwaitlessKit?](#why-awaitlesskit)
 - [Installation](#installation)
 - [Core Features](#core-features)
-- [Examples](#examples)
+- [More Examples](#more-examples)
 - [Documentation](#documentation)
 - [Migration Overview](#migration-overview)
 - [License](#license)
@@ -43,6 +43,8 @@ let service = DataService()
 let user1 = try await service.fetchUser(id: "123")  // Async version
 let user2 = try service.fetchUser(id: "456")        // Generated sync version
 ```
+
+See [more examples](#more-examples) or [documentation](#documentation) for more sophisticated cases.
 
 ## Why AwaitlessKit?
 
@@ -81,7 +83,7 @@ targets: [
 
 Generates synchronous wrappers for `async` functions with built-in deprecation controls.
 
-#### Output Variants
+Output variants:
 
 - **`@Awaitless`** - Generates synchronous throwing functions that can be called directly from non-async contexts
 - **`@AwaitlessPublisher`** - Generates Combine `AnyPublisher` wrappers for reactive programming patterns
@@ -112,7 +114,7 @@ AwaitlessKit provides a flexible configuration system with multiple levels of pr
 3. **Method-Level Configuration** via `@Awaitless` parameters
 4. **Built-in Defaults** as fallback
 
-## Examples
+## More Examples
 
 ### Non-async Function
 
