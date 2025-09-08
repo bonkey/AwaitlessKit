@@ -15,7 +15,7 @@ let package = Package(
         .library(name: "AwaitlessKit", targets: ["AwaitlessKit"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/swiftlang/swift-syntax.git", exact: "600.0.1"),
+        .package(url: "https://github.com/swiftlang/swift-syntax.git", exact: "601.0.1"),
         .package(url: "https://github.com/pointfreeco/swift-macro-testing.git", from: "0.6.3"),
     ],
     targets: [
