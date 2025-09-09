@@ -15,7 +15,7 @@ struct TimeoutRaceConditionTests {
         func stressTestTimeoutRaceCondition() throws {
             // This test tries to trigger the race condition by rapidly executing
             // many timeout operations with very short timeouts
-            for iteration in 1 ... 100 {
+            for iteration in 1 ... 500 {
                 for timeoutMs in [1, 2, 3, 5, 10] {
                     let timeout = Double(timeoutMs) / 1000.0
 
@@ -35,7 +35,7 @@ struct TimeoutRaceConditionTests {
                     do {
                         _ = try Noasync<String, any Error>.run(timeout: timeout) {
                             // Sleep for much longer than timeout
-                            try await Task.sleep(nanoseconds: UInt64(timeout * 10 * 1_000_000_000))
+                            try await Task.sleep(nanoseconds: UInt64(timeout * 1_000 * 1_000_000_000))
                             return "Should timeout"
                         }
                         #expect(Bool(false), "Should have timed out")

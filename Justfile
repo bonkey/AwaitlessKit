@@ -41,11 +41,9 @@ package-test *FILTER:
     if [ -n "{{FILTER}}" ]; then
         set -x
         swift test --parallel $coverage_flag --filter "{{FILTER}}"
-        set +x
     else
         set -x
         swift test --parallel $coverage_flag
-        set +x
     fi
 
 full-clean:
