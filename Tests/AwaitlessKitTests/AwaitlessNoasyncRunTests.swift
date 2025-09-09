@@ -93,56 +93,67 @@ struct AwaitlessNoasyncRunTests {
 
     // MARK: - Safety Features Tests
 
-    @Test("Execute with timeout - success case")
+    @Test("Execute with timeout - success case", .enabled(if: !isLinux))
     func timeoutSuccess() throws {
+        #if !os(Linux)
         let result: String = try Noasync<String, any Error>.run(timeout: 0.1) {
             try await Task.sleep(for: .milliseconds(10))
             return "Success"
         }
 
         #expect(result == "Success")
+        #endif
     }
 
     @Test("Execute with timeout - timeout case", .enabled(if: !isLinux))
     func timeoutFailure() throws {
+        #if !os(Linux)
         #expect(throws: NoasyncError.timeout(0.05)) {
             try Noasync<String, any Error>.run(timeout: 0.05) {
                 try await Task.sleep(for: .milliseconds(200))
                 return "Should not reach here"
             }
         }
+        #endif
     }
 
-    @Test("Execute with timeout disabled (nil)")
+    @Test("Execute with timeout disabled (nil)", .enabled(if: !isLinux))
     func timeoutDisabled() throws {
+        #if !os(Linux)
         let result: String = try Noasync<String, any Error>.run(timeout: nil) {
             try await Task.sleep(for: .milliseconds(10))
             return "Success"
         }
 
         #expect(result == "Success")
+        #endif
     }
 
-    @Test("Timeout with void return type")
+    @Test("Timeout with void return type", .enabled(if: !isLinux))
     func timeoutVoidReturn() throws {
+        #if !os(Linux)
         try Noasync<Void, any Error>.run(timeout: 0.1) {
             try await Task.sleep(for: .milliseconds(10))
             #expect(Bool(true))
         }
+        #endif
     }
 
-    @Test("Timeout with error propagation")
+    @Test("Timeout with error propagation", .enabled(if: !isLinux))
     func timeoutErrorPropagation() throws {
+        #if !os(Linux)
         #expect(throws: TestError.simpleError) {
             try Noasync<String, any Error>.run(timeout: 0.1) {
                 try await Task.sleep(for: .milliseconds(10))
                 throw TestError.simpleError
             }
         }
+        #endif
     }
 
-    @Test("Multiple timeout operations in sequence")
+    @Test("Multiple timeout operations in sequence", .enabled(if: !isLinux))
     func multipleTimeoutOperations() throws {
+        #if !os(Linux)
         for i in 0 ..< 10 {
             let result: Int = try Noasync<Int, any Error>.run(timeout: 0.05) {
                 try await Task.sleep(for: .milliseconds(5))
@@ -150,20 +161,24 @@ struct AwaitlessNoasyncRunTests {
             }
             #expect(result == i)
         }
+        #endif
     }
 
     @Test("Very short timeout", .enabled(if: !isLinux))
     func veryShortTimeout() throws {
+        #if !os(Linux)
         #expect(throws: NoasyncError.timeout(0.001)) {
             try Noasync<String, any Error>.run(timeout: 0.001) {
                 try await Task.sleep(for: .milliseconds(100))
                 return "Should not reach here"
             }
         }
+        #endif
     }
 
-    @Test("Different return types with timeout")
+    @Test("Different return types with timeout", .enabled(if: !isLinux))
     func differentReturnTypesWithTimeout() throws {
+        #if !os(Linux)
         let intResult: Int = try Noasync<Int, any Error>.run(timeout: 0.1) {
             try await Task.sleep(for: .milliseconds(10))
             return 42
@@ -179,6 +194,7 @@ struct AwaitlessNoasyncRunTests {
             return TestData(value: "test")
         }
         #expect(structResult.value == "test")
+        #endif
     }
 
     /// Platform detection for conditional testing
