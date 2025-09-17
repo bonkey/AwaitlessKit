@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Daniel Bauke
 //
 
-@testable import AwaitlessKitPromise
+@testable import AwaitlessKitPromiseKit
 import AwaitlessKitPromiseMacros
 import MacroTesting
 import PromiseKit

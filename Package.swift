@@ -13,7 +13,7 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v15), .tvOS(.v13), .watchOS(.v10), .macCatalyst(.v14)],
     products: [
         .library(name: "AwaitlessKit", targets: ["AwaitlessKit"]),
-        .library(name: "AwaitlessKitPromise", targets: ["AwaitlessKitPromise"]),
+        .library(name: "AwaitlessKit-PromiseKit", targets: ["AwaitlessKitPromiseKit"]),
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", exact: "600.0.1"),
@@ -26,7 +26,7 @@ let package = Package(
             dependencies: ["AwaitlessKitMacros", "AwaitlessCore"],
             swiftSettings: swiftSettings),
         .target(
-            name: "AwaitlessKitPromise",
+            name: "AwaitlessKitPromiseKit",
             dependencies: [
                 "AwaitlessKitPromiseMacros", 
                 "AwaitlessCore",
@@ -65,7 +65,7 @@ let package = Package(
         .testTarget(
             name: "AwaitlessKitPromiseTests",
             dependencies: [
-                "AwaitlessKitPromise",
+                "AwaitlessKitPromiseKit",
                 "AwaitlessKitPromiseMacros",
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
                 .product(name: "MacroTesting", package: "swift-macro-testing"),
