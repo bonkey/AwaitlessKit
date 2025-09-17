@@ -31,6 +31,7 @@ Always reference these instructions first and fallback to search or bash command
 - Do always update DocC packages (e.g. `Sources/AwaitlessKit/Documentation.docc` and )
 - Do always create and update articles in DocC packages (e.g. `Sources/AwaitlessKitMacros/AwaitlessKitMacros.docc` and `Sources/AwaitlessKit/AwaitlessKit.docc`). They must be very comprehensive and include high-level information as well.
 - When updating documentation links, always use 'main' branch URLs instead of version-specific URLs
+- **Remember**: All new features require comprehensive documentation updates (see [New Feature Requirements](#new-feature-requirements))
 
 ### Versioning
 
@@ -49,6 +50,25 @@ Always reference these instructions first and fallback to search or bash command
 - `just fmt` - formats code using SwiftFormat
 - CI runs on Linux and macOS with GitHub Actions
 
+### New Feature Requirements
+
+When adding any new features to AwaitlessKit, **ALWAYS** ensure both of the following requirements are met:
+
+1. **SampleApp Integration**: Add the new feature to `SampleApp/` with working examples
+   - Create realistic usage examples that demonstrate the feature
+   - Ensure examples compile and run correctly on macOS
+   - Examples should be comprehensive enough to serve as documentation
+   - Use the feature in a real-world context within the sample application
+
+2. **Documentation Updates**: Update all relevant documentation
+   - Add feature description and usage examples to `README.md`
+   - Update DocC documentation packages with comprehensive guides
+   - Include code examples in documentation comments
+   - Update version references if this is a major/minor release
+   - Ensure documentation covers edge cases and limitations
+
+**Note**: These requirements apply to any new macros, APIs, configuration options, or functionality changes. Even small features should be demonstrated in SampleApp and documented in README.
+
 ## Validation Scenarios
 
 ### Core Macro Functionality Testing
@@ -64,6 +84,7 @@ After making changes to macro code, always validate by:
 - **SampleApp CANNOT be built or run on Linux** - requires Xcode and macOS
 - Use test suite instead of SampleApp for validation on Linux systems
 - SampleApp demonstrates real-world usage patterns for documentation
+- **Remember**: All new features must be added to SampleApp (see [New Feature Requirements](#new-feature-requirements))
 
 **Note**:
 
