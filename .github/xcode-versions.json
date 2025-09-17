@@ -1,0 +1,16 @@
+{
+  "include": [
+    {
+      "name": "Latest",
+      "xcode-version": "latest"
+    },
+    {
+      "name": "Stable", 
+      "xcode-version": "latest-stable"
+    },
+    {
+      "name": "Xcode 16",
+      "xcode-version": "^16.4"
+    }
+  ]
+}
