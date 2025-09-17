@@ -273,6 +273,12 @@ public struct AwaitlessSyncMacro: PeerMacro {
 
         // Create the closure to pass to Noasync.run
         let innerClosure = ClosureExprSyntax(
+            signature: ClosureSignatureSyntax(
+                attributes: AttributeListSyntax {
+                    AttributeListSyntax.Element(
+                        AttributeSyntax(
+                            attributeName: IdentifierTypeSyntax(name: .identifier("Sendable"))))
+                }),
             statements: CodeBlockItemListSyntax {
                 CodeBlockItemSyntax(item: .expr(innerCallExpr))
             })

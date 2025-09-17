@@ -183,9 +183,9 @@ public struct AwaitlessableMacro: MemberMacro, ExtensionMacro {
         // Create the body with Noasync.run call
         let bodyContent =
             if isThrowing {
-                "try Noasync.run { try await self.\(functionCall) }"
+                "try Noasync.run { @Sendable in try await self.\(functionCall) }"
             } else {
-                "Noasync.run { await self.\(functionCall) }"
+                "Noasync.run { @Sendable in await self.\(functionCall) }"
             }
 
         let hasReturnValue = funcDecl.signature.returnClause != nil

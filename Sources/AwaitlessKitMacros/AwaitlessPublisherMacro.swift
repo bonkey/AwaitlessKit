@@ -327,6 +327,12 @@ public struct AwaitlessPublisherMacro: PeerMacro {
                 arguments: LabeledExprListSyntax(),
                 rightParen: .rightParenToken(),
                 trailingClosure: ClosureExprSyntax(
+                    signature: ClosureSignatureSyntax(
+                        attributes: AttributeListSyntax {
+                            AttributeListSyntax.Element(
+                                AttributeSyntax(
+                                    attributeName: IdentifierTypeSyntax(name: .identifier("Sendable"))))
+                        }),
                     statements: taskStatements))
 
             // Create the Future closure that takes a promise parameter

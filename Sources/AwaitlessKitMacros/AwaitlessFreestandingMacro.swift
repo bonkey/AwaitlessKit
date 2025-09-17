@@ -46,6 +46,12 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
 
         let closure = ExprSyntax(
             ClosureExprSyntax(
+                signature: ClosureSignatureSyntax(
+                    attributes: AttributeListSyntax {
+                        AttributeListSyntax.Element(
+                            AttributeSyntax(
+                                attributeName: IdentifierTypeSyntax(name: .identifier("Sendable"))))
+                    }),
                 statements: CodeBlockItemListSyntax {
                     CodeBlockItemSyntax(item: .stmt(
                         StmtSyntax(

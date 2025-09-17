@@ -17,7 +17,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await fetchData()
                 })
             """
@@ -32,7 +32,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return try await fetchData()
                 })
             """
@@ -47,7 +47,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await process("data")
                 })
             """
@@ -62,7 +62,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await transform("input", to: "format")
                 })
             """
@@ -77,7 +77,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await calculate(from: 10, to: 20)
                 })
             """
@@ -92,7 +92,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return try await fetch(url: "http://example.com", timeout: 30.0, retries: 3)
                 })
             """
@@ -107,7 +107,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await asyncFunctionWithArguments("arg1", arg2: "arg2", arg3: "internalArg", arg4: "custom")
                 })
             """
@@ -122,7 +122,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            Noasync.run({
+            Noasync.run({ @Sendable in
                     return await modify(&value, with: "suffix")
                 })
             """
@@ -137,7 +137,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await process(data: "test", transform: {
                             $0.uppercased()
                         })
@@ -154,7 +154,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            Noasync.run({
+            Noasync.run({ @Sendable in
                     return await asyncProcess(data: "test", completion: {
                             print($0)
                         })
@@ -171,7 +171,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await transform(42, using: String.init)
                 })
             """
@@ -186,7 +186,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await processCollection(items, where: {
                             $0 == target
                         })
@@ -203,7 +203,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await lookup(id: "test", cache: nil)
                 })
             """
@@ -218,7 +218,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await evaluate(condition: true, message: "Error occurred")
                 })
             """
@@ -233,7 +233,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await combine("first", "second", "third")
                 })
             """
@@ -248,7 +248,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return try await complexOperation("input", output: &output, transform: {
                             $0.uppercased()
                         }, options: [:])
@@ -265,7 +265,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await process(transform("data", using: {
                                 $0.uppercased()
                             }))
@@ -282,7 +282,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await object.asyncMethod(with: "parameter")
                 })
             """
@@ -297,7 +297,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await object.process("data").transform()
                 })
             """
@@ -314,7 +314,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await processAsync(data: "test") { result in
                         print(result)
                     }
@@ -335,7 +335,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await processAsync(data: "test") { success in
                         print("Success: \\(success)")
                     } failure: { error in
@@ -354,7 +354,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await object?.asyncMethod()?.process()
                 })
             """
@@ -369,7 +369,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await object!.asyncMethod()!
                 })
             """
@@ -386,7 +386,7 @@ struct AwaitlessFreestandingTests {
             // Property access is not an async call; expansion should probably fail or be a no-op, depending on macro
             // behavior.
             """
-            let value = Noasync.run({
+            let value = Noasync.run({ @Sendable in
                     return await object.asyncProperty
                 })
             """
@@ -401,7 +401,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let result = Noasync.run({
+            let result = Noasync.run({ @Sendable in
                     return await object[42]
                 })
             """
@@ -416,7 +416,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let value = Noasync.run({
+            let value = Noasync.run({ @Sendable in
                     return await MyTypeAsync.init(param: 7)
                 })
             """
@@ -431,7 +431,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            Noasync.run({
+            Noasync.run({ @Sendable in
                     return await doSomethingAsync()
                 })
             """
@@ -446,7 +446,7 @@ struct AwaitlessFreestandingTests {
             """
         } expansion: {
             """
-            let value = Noasync.run({
+            let value = Noasync.run({ @Sendable in
                     return await MyType.staticAsyncMethod(with: 5)
                 })
             """
