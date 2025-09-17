@@ -13,15 +13,25 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v15), .tvOS(.v13), .watchOS(.v10), .macCatalyst(.v14)],
     products: [
         .library(name: "AwaitlessKit", targets: ["AwaitlessKit"]),
+        .library(name: "AwaitlessKitPromise", targets: ["AwaitlessKitPromise"]),
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", exact: "600.0.1"),
         .package(url: "https://github.com/pointfreeco/swift-macro-testing.git", from: "0.6.3"),
+        .package(url: "https://github.com/mxcl/PromiseKit.git", from: "8.0.0"),
     ],
     targets: [
         .target(
             name: "AwaitlessKit",
             dependencies: ["AwaitlessKitMacros", "AwaitlessCore"],
+            swiftSettings: swiftSettings),
+        .target(
+            name: "AwaitlessKitPromise",
+            dependencies: [
+                "AwaitlessKitPromiseMacros", 
+                "AwaitlessCore",
+                .product(name: "PromiseKit", package: "PromiseKit")
+            ],
             swiftSettings: swiftSettings),
         .macro(
             name: "AwaitlessKitMacros",
@@ -29,6 +39,15 @@ let package = Package(
                 "AwaitlessCore",
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
+            ],
+            swiftSettings: swiftSettings),
+        .macro(
+            name: "AwaitlessKitPromiseMacros",
+            dependencies: [
+                "AwaitlessCore",
+                .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
+                .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
+                .product(name: "PromiseKit", package: "PromiseKit")
             ],
             swiftSettings: swiftSettings),
         .target(
@@ -41,6 +60,16 @@ let package = Package(
                 "AwaitlessKitMacros",
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
                 .product(name: "MacroTesting", package: "swift-macro-testing"),
+            ],
+            swiftSettings: swiftSettings),
+        .testTarget(
+            name: "AwaitlessKitPromiseTests",
+            dependencies: [
+                "AwaitlessKitPromise",
+                "AwaitlessKitPromiseMacros",
+                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+                .product(name: "MacroTesting", package: "swift-macro-testing"),
+                .product(name: "PromiseKit", package: "PromiseKit")
             ],
             swiftSettings: swiftSettings),
     ],

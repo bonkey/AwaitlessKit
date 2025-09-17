@@ -1,6 +1,15 @@
 {
-  "originHash" : "26625b88f16b659b930ae5f0182bf374a37c51803b7a37d799285994eaa9c914",
+  "originHash" : "10cc47a6b442a6d0b1f16186d1d9a23d5526881fa818fa4db84428e660641b09",
   "pins" : [
+    {
+      "identity" : "promisekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mxcl/PromiseKit.git",
+      "state" : {
+        "revision" : "2bc44395edb4f8391902a9ff7c220471882a4d07",
+        "version" : "8.2.0"
+      }
+    },
     {
       "identity" : "swift-custom-dump",
       "kind" : "remoteSourceControl",
