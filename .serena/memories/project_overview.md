@@ -11,7 +11,7 @@ The primary goal is to solve the "all-or-nothing" problem of Swift's async/await
 - `@Awaitless` macro - automatically generates sync wrappers for async functions
 - `#awaitless()` macro - inline async code execution (Swift 6.0+ only)
 - `@IsolatedSafe` macro - generates thread-safe properties for nonisolated(unsafe) properties
-- `Noasync.run()` - low-level bridge for running async code in sync contexts
+- `Awaitless.run()` - low-level bridge for running async code in sync contexts
 - Built-in deprecation controls to manage migration timeline
 
 ## Requirements

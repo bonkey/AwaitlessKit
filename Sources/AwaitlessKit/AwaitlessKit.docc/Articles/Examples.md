@@ -75,7 +75,7 @@ class DataProcessor {
 
 ### Basic Publisher Generation
 
-Generate Combine publishers from async functions:
+Generate Combine publishers from async functions (now backed by a dedicated cancellation-aware Task-based publisher rather than a Future for correct cancellation and cleaner semantics):
 
 ```swift
 import Combine
@@ -132,22 +132,31 @@ service.loadImage(from: imageURL)
     })
 ```
 
-### Publisher with Background Delivery
+### Non-throwing Publisher Example
 
-Use global queues for background processing:
+Showcasing a non-throwing async function generating a `Never`-failing publisher:
 
 ```swift
-class DataAnalyzer {
-    @AwaitlessPublisher(deliverOn: .global(qos: .background))
-    func analyzeData() async throws -> AnalysisResult {
-        // Heavy computation
-        let result = try await performComplexAnalysis()
-        return result
+class StatsService {
+    @AwaitlessPublisher
+    func currentLoad() async -> Double {
+        await metrics.loadAverage()
     }
-    // Generates: func analyzeData() -> AnyPublisher<AnalysisResult, Error>
-    // Events delivered on background queue
+    // Generates: func currentLoad() -> AnyPublisher<Double, Never>
 }
+
+// Usage
+let stats = StatsService()
+let cancellable = stats.currentLoad()
+    .sink(
+        receiveCompletion: { _ in },
+        receiveValue: { load in
+            print("Current load: \(load)")
+        }
+    )
 ```
+
+Cancellation note: All `@AwaitlessPublisher` wrappers are built on Task-backed publishers (not `Future`), so cancelling the subscription cancels the underlying `Task` promptly.
 
 ## Completion Handler Examples
 
@@ -394,7 +403,7 @@ class LegacyIntegration {
     func synchronousMethod() -> String {
         // Execute async code inline within sync method
         let result = #awaitless {
-            let data = try await modernAsyncAPI.fetchData()
+            let data = try await asyncAPI.fetchData()
             let processed = try await processor.process(data)
             return processed.description
         }
@@ -447,15 +456,15 @@ class SharedCounter {
 ```swift
 // Phase 1: Add async implementation with sync wrappers
 class NetworkClient {
-    // Legacy sync method (existing)
+    // Synchronous method
     func requestLegacy<T: Codable>(_ endpoint: Endpoint) throws -> T {
-        // Existing synchronous implementation
+        // Synchronous implementation
         let data = synchronousNetworkCall(endpoint)
         return try JSONDecoder().decode(T.self, from: data)
     }
 
-    // New async method with sync wrapper
-    @Awaitless(prefix: "modern_", .deprecated("Use async version"))
+    // Async method with sync wrapper
+    @Awaitless(prefix: "wrapped_", .deprecated("Use async version"))
     func request<T: Codable>(_ endpoint: Endpoint) async throws -> T {
         let (data, response) = try await URLSession.shared.data(for: endpoint.urlRequest)
 
@@ -480,7 +489,7 @@ let user1: User = try client.requestLegacy(.user(id: "123"))
 let user2: User = try await client.request(.user(id: "456"))
 
 // Generated wrapper for gradual migration
-let user3: User = try client.modern_request(.user(id: "789"))
+let user3: User = try client.wrapped_request(.user(id: "789"))
 ```
 
 ### Migrating a Data Repository

@@ -1,4 +1,18 @@
-# `AwaitlessKit`
+# AwaitlessKit
+
+### Concurrency & Sendable Summary
+
+For best results with macro-generated synchronous, completion, and publisher wrappers in Swift 6:
+
+- Mark service / repository classes as `final` and `Sendable` when their async methods are wrapped (`@Awaitless`, `@AwaitlessPublisher`, `@AwaitlessCompletion`).
+- Mark protocols annotated with `@Awaitlessable` as `Sendable` if conformers cross task or actor boundaries.
+- Prefer value-semantic / `Sendable` model types for parameters and returns to reduce isolation warnings.
+- Use `@IsolatedSafe` for mutable shared state that is accessed from generated sync wrappers or Task-backed publishers.
+- Non-throwing async functions generate `AnyPublisher<Output, Never>`; throwing ones generate `AnyPublisher<Output, Error>`.
+- Use `deliverOn: .main` only for UI-facing publishers; default `.current` avoids extra queue hops.
+- Encapsulate legacy non-Sendable dependencies behind audited `final` façade types (only use `@unchecked Sendable` after careful review).
+
+This section is a summary—see the detailed guidance in the Usage, Migration, and Macro Implementation articles for deeper rationale and patterns.
 
 Automatically generate legacy sync interfaces for your async/await code, enabling easy migration to Swift 6 Structured Concurrency.
 
@@ -73,7 +87,7 @@ For comprehensive examples and real-world usage patterns, see <doc:Examples>.
 
 ### Low-Level API
 
-- `Noasync`
+- `Awaitless`
 
 ### Comprehensive Guides
 

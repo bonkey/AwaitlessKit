@@ -252,6 +252,87 @@ class AsyncNetworkManager {
 }
 ```
 
+## Concurrency & Sendable Considerations
+
+When migrating, ensure your types comply with Swift 6 concurrency expectations so that generated synchronous, completion, and publisher wrappers are safe and produce minimal warnings.
+
+### Mark Service Types `final` and `Sendable`
+
+Prefer:
+
+```swift
+final class UserService: Sendable {
+    @Awaitless
+    func fetchUser(id: String) async throws -> User { /* ... */ }
+}
+```
+
+This:
+
+- Prevents subclass override pitfalls that wrappers can't anticipate
+- Improves optimizer assumptions
+- Makes intent explicit for cross-task usage
+
+### Protocols with `@Awaitlessable`
+
+Add `Sendable` when conformers will cross actor/task boundaries:
+
+```swift
+@Awaitlessable
+protocol DataService: Sendable {
+    func fetchUser(id: String) async throws -> User
+}
+```
+
+Generated synchronous signatures will then align with concurrency checking.
+
+### Publisher Generation and Cancellation
+
+`@AwaitlessPublisher` now uses task-backed publishers:
+
+- Cancellation of the subscription cancels the underlying `Task`
+- Non-throwing async produces `AnyPublisher<Output, Never>`
+- Throwing async produces `AnyPublisher<Output, Error>`
+  Use `deliverOn: .main` only when UI delivery is required; otherwise keep `.current` to avoid unnecessary hops.
+
+### Handling Mutable Shared State
+
+If you expose mutable `nonisolated(unsafe)` state accessed by generated wrappers:
+
+- Protect it with `@IsolatedSafe`
+- Or refactor into value types passed through function boundaries
+  Avoid ad‑hoc locking mingled with wrapper usage.
+
+### Dealing with Non-Sendable Legacy Dependencies
+
+If a dependency cannot be made `Sendable`:
+
+1. Wrap it in a `final` façade
+2. Audit and (only if necessary) mark that façade `@unchecked Sendable`
+3. Keep its usage internal to async functions—wrappers should only see the audited boundary.
+
+```swift
+final class LegacyBridge: @unchecked Sendable {
+    private let ref: LegacyNonThreadSafeThing
+    init(ref: LegacyNonThreadSafeThing) { self.ref = ref }
+
+    @Awaitless
+    func perform() async { ref.doWork() }
+}
+```
+
+### Migration Checklist
+
+- [ ] All macro-decorated classes are `final` (or consciously not, with review)
+- [ ] Core service & repository protocols are `Sendable`
+- [ ] Model types crossing task boundaries conform to `Sendable`
+- [ ] Non-throwing async APIs considered for `@AwaitlessPublisher` to get `Never` failure
+- [ ] UI-facing publishers use `deliverOn: .main` explicitly
+- [ ] Shared mutable state wrapped with `@IsolatedSafe`
+- [ ] Any `@unchecked Sendable` usage audited & justified
+
+Applying these practices early reduces refactors later when tightening availability or removing legacy sync paths.
+
 ## Testing During Migration
 
 ### Dual Testing Strategy

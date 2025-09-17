@@ -32,16 +32,9 @@
                 }
 
                 func fetchData() -> AnyPublisher<[String], Error> {
-                    Future.init({ promise in
-                            Task() {
-                                do {
-                                    let result = try await self.fetchData()
-                                    promise(.success(result))
-                                } catch {
-                                    promise(.failure(error))
-                                }
-                            }
-                        }).eraseToAnyPublisher()
+                    AwaitlessCombineFactory.makeThrowing() {
+                        try await self.fetchData()
+                    }
                 }
                 """
             }
@@ -65,12 +58,9 @@
                 }
 
                 func fetchData() -> AnyPublisher<[String], Never> {
-                    Future.init({ promise in
-                            Task() {
-                                let result = await self.fetchData()
-                                promise(.success(result))
-                            }
-                        }).eraseToAnyPublisher()
+                    AwaitlessCombineFactory.makeNonThrowing() {
+                        await self.fetchData()
+                    }
                 }
                 """
             }
@@ -96,16 +86,9 @@
                 }
 
                 func fetchData() -> AnyPublisher<[String], Error> {
-                    Future.init({ promise in
-                            Task() {
-                                do {
-                                    let result = try await self.fetchData()
-                                    promise(.success(result))
-                                } catch {
-                                    promise(.failure(error))
-                                }
-                            }
-                        }).receive(on: DispatchQueue.main).eraseToAnyPublisher()
+                    AwaitlessCombineFactory.makeThrowing() {
+                        try await self.fetchData()
+                    } .receive(on: DispatchQueue.main).eraseToAnyPublisher()
                 }
                 """
             }
@@ -129,16 +112,9 @@
                 }
 
                 func publisher_fetchData() -> AnyPublisher<[String], Error> {
-                    Future.init({ promise in
-                            Task() {
-                                do {
-                                    let result = try await self.fetchData()
-                                    promise(.success(result))
-                                } catch {
-                                    promise(.failure(error))
-                                }
-                            }
-                        }).eraseToAnyPublisher()
+                    AwaitlessCombineFactory.makeThrowing() {
+                        try await self.fetchData()
+                    }
                 }
                 """
             }

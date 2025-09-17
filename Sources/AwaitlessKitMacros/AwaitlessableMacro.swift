@@ -83,7 +83,7 @@ public struct AwaitlessableMacro: MemberMacro, ExtensionMacro {
                 let isAsync = functionDecl.signature.effectSpecifiers?.asyncSpecifier != nil
 
                 if isAsync {
-                    // Create a sync version with default implementation using Noasync.run
+                    // Create a sync version with default implementation using Awaitless.run
                     let syncFunction = createSyncFunctionWithDefaultImplementation(from: functionDecl)
                     extensionMembers.append(MemberBlockItemSyntax(decl: DeclSyntax(syncFunction)))
                 }
@@ -142,7 +142,7 @@ public struct AwaitlessableMacro: MemberMacro, ExtensionMacro {
             body: nil)
     }
 
-    /// Creates a sync function with default implementation using Noasync.run
+    /// Creates a sync function with default implementation using Awaitless.run
     private static func createSyncFunctionWithDefaultImplementation(
         from funcDecl: FunctionDeclSyntax)
         -> FunctionDeclSyntax
@@ -174,12 +174,10 @@ public struct AwaitlessableMacro: MemberMacro, ExtensionMacro {
             calledExpression: MemberAccessExprSyntax(
                 base: DeclReferenceExprSyntax(baseName: .identifier("self")),
                 period: .periodToken(),
-                name: funcDecl.name
-            ),
+                name: funcDecl.name),
             leftParen: .leftParenToken(),
             arguments: argumentList,
-            rightParen: .rightParenToken()
-        )
+            rightParen: .rightParenToken())
 
         // Add await to the async call
         let awaitExpression = AwaitExprSyntax(expression: ExprSyntax(asyncCallExpr))
@@ -189,27 +187,24 @@ public struct AwaitlessableMacro: MemberMacro, ExtensionMacro {
             ? ExprSyntax(TryExprSyntax(expression: awaitExpression))
             : ExprSyntax(awaitExpression)
 
-        // Create the closure for Noasync.run with proper formatting
+        // Create the closure for Awaitless.run with proper formatting
         let innerClosure = ClosureExprSyntax(
             leftBrace: .leftBraceToken(leadingTrivia: .space),
             statements: CodeBlockItemListSyntax {
                 CodeBlockItemSyntax(item: .expr(innerCallExpr))
             },
-            rightBrace: .rightBraceToken(leadingTrivia: .newline)
-        )
+            rightBrace: .rightBraceToken(leadingTrivia: .newline))
 
-        // Create the Noasync.run call with trailing closure syntax
+        // Create the Awaitless.run call with trailing closure syntax
         let taskNoasyncCall = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
-                base: DeclReferenceExprSyntax(baseName: .identifier("Noasync")),
+                base: DeclReferenceExprSyntax(baseName: .identifier("Awaitless")),
                 period: .periodToken(),
-                name: .identifier("run")
-            ),
+                name: .identifier("run")),
             leftParen: nil,
             arguments: LabeledExprListSyntax([]),
             rightParen: nil,
-            trailingClosure: innerClosure
-        )
+            trailingClosure: innerClosure)
 
         // Wrap with try if needed
         let finalCall: ExprSyntax = isThrowing
@@ -225,10 +220,9 @@ public struct AwaitlessableMacro: MemberMacro, ExtensionMacro {
         let body = CodeBlockSyntax(
             leftBrace: .leftBraceToken(leadingTrivia: .space),
             statements: CodeBlockItemListSyntax([
-                CodeBlockItemSyntax(item: finalExpression)
+                CodeBlockItemSyntax(item: finalExpression),
             ]),
-            rightBrace: .rightBraceToken(leadingTrivia: .newline)
-        )
+            rightBrace: .rightBraceToken(leadingTrivia: .newline))
 
         return FunctionDeclSyntax(
             attributes: AttributeListSyntax([]),
