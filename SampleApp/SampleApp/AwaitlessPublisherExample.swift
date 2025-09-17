@@ -12,7 +12,7 @@ final class AwaitlessPublisherExample: Sendable {
         await simulateProcessing()
         return ["Item 1", "Item 2", "Item 3"]
     }
-    
+
     @AwaitlessPublisher
     func loadUserData(id: String) async throws -> String {
         await simulateProcessing()
@@ -21,19 +21,19 @@ final class AwaitlessPublisherExample: Sendable {
         }
         return "User data for \(id)"
     }
-    
+
     @AwaitlessPublisher(prefix: "stream_", deliverOn: .main)
     func getCurrentTimestamp() async -> Int {
         await simulateProcessing()
         return Int(Date().timeIntervalSince1970)
     }
-    
+
     @AwaitlessPublisher(deliverOn: .current)
     func processInBackground() async throws -> String {
         await simulateProcessing()
         return "Background processing complete"
     }
-    
+
     @AwaitlessPublisher
     func fetchConfig() async -> [String: String] {
         await simulateProcessing()

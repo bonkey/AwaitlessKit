@@ -5,11 +5,10 @@
 import Foundation
 public import AwaitlessCore
 
+// MARK: - ConfigStorage
+
 /// Thread-safe storage for configuration
 private final class ConfigStorage: @unchecked Sendable {
-    private let lock = NSLock()
-    private var _value: AwaitlessConfigData = .init()
-    
     var value: AwaitlessConfigData {
         get {
             lock.lock()
@@ -22,7 +21,12 @@ private final class ConfigStorage: @unchecked Sendable {
             _value = newValue
         }
     }
+
+    private let lock = NSLock()
+    private var _value: AwaitlessConfigData = .init()
 }
+
+// MARK: - AwaitlessConfig
 
 /// Global configuration for AwaitlessKit macros, providing process-level defaults.
 ///

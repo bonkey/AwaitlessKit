@@ -235,11 +235,11 @@ public struct AwaitlessPublisherMacro: PeerMacro {
                     }))
 
             // Optional delivery adaptation
-            let deliveredExpr: ExprSyntax = {
+            let deliveredExpr =
                 switch delivery {
                 case .main:
                     // Add receive(on:) then erase to AnyPublisher so the return type matches
-                    return ExprSyntax(
+                    ExprSyntax(
                         FunctionCallExprSyntax(
                             calledExpression: MemberAccessExprSyntax(
                                 base: FunctionCallExprSyntax(
@@ -254,7 +254,8 @@ public struct AwaitlessPublisherMacro: PeerMacro {
                                             colon: .colonToken(),
                                             expression: ExprSyntax(
                                                 MemberAccessExprSyntax(
-                                                    base: DeclReferenceExprSyntax(baseName: .identifier("DispatchQueue")),
+                                                    base: DeclReferenceExprSyntax(
+                                                        baseName: .identifier("DispatchQueue")),
                                                     period: .periodToken(),
                                                     name: .identifier("main"))))
                                     },
@@ -264,10 +265,10 @@ public struct AwaitlessPublisherMacro: PeerMacro {
                             leftParen: .leftParenToken(),
                             arguments: LabeledExprListSyntax(),
                             rightParen: .rightParenToken()))
+
                 case .current:
-                    return ExprSyntax(factoryCall)
+                    ExprSyntax(factoryCall)
                 }
-            }()
 
             return CodeBlockSyntax(
                 statements: CodeBlockItemListSyntax {

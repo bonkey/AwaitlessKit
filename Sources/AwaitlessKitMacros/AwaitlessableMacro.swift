@@ -174,12 +174,10 @@ public struct AwaitlessableMacro: MemberMacro, ExtensionMacro {
             calledExpression: MemberAccessExprSyntax(
                 base: DeclReferenceExprSyntax(baseName: .identifier("self")),
                 period: .periodToken(),
-                name: funcDecl.name
-            ),
+                name: funcDecl.name),
             leftParen: .leftParenToken(),
             arguments: argumentList,
-            rightParen: .rightParenToken()
-        )
+            rightParen: .rightParenToken())
 
         // Add await to the async call
         let awaitExpression = AwaitExprSyntax(expression: ExprSyntax(asyncCallExpr))
@@ -195,21 +193,18 @@ public struct AwaitlessableMacro: MemberMacro, ExtensionMacro {
             statements: CodeBlockItemListSyntax {
                 CodeBlockItemSyntax(item: .expr(innerCallExpr))
             },
-            rightBrace: .rightBraceToken(leadingTrivia: .newline)
-        )
+            rightBrace: .rightBraceToken(leadingTrivia: .newline))
 
         // Create the Awaitless.run call with trailing closure syntax
         let taskNoasyncCall = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
                 base: DeclReferenceExprSyntax(baseName: .identifier("Awaitless")),
                 period: .periodToken(),
-                name: .identifier("run")
-            ),
+                name: .identifier("run")),
             leftParen: nil,
             arguments: LabeledExprListSyntax([]),
             rightParen: nil,
-            trailingClosure: innerClosure
-        )
+            trailingClosure: innerClosure)
 
         // Wrap with try if needed
         let finalCall: ExprSyntax = isThrowing
@@ -225,10 +220,9 @@ public struct AwaitlessableMacro: MemberMacro, ExtensionMacro {
         let body = CodeBlockSyntax(
             leftBrace: .leftBraceToken(leadingTrivia: .space),
             statements: CodeBlockItemListSyntax([
-                CodeBlockItemSyntax(item: finalExpression)
+                CodeBlockItemSyntax(item: finalExpression),
             ]),
-            rightBrace: .rightBraceToken(leadingTrivia: .newline)
-        )
+            rightBrace: .rightBraceToken(leadingTrivia: .newline))
 
         return FunctionDeclSyntax(
             attributes: AttributeListSyntax([]),

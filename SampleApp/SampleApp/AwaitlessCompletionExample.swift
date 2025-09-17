@@ -14,7 +14,7 @@ final class AwaitlessCompletionExample: Sendable {
         }
         return "Completion handler data"
     }
-    
+
     @AwaitlessCompletion(prefix: "callback_")
     func processRequest(_ request: String) async throws -> Bool {
         await simulateProcessing()

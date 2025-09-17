@@ -35,7 +35,7 @@ struct TimeoutRaceConditionTests {
                     do {
                         _ = try Awaitless<String, any Error>.run(timeout: timeout) {
                             // Sleep for much longer than timeout
-                            try await Task.sleep(nanoseconds: UInt64(timeout * 1_000 * 1_000_000_000))
+                            try await Task.sleep(nanoseconds: UInt64(timeout * 1000 * 1_000_000_000))
                             return "Should timeout"
                         }
                         #expect(Bool(false), "Should have timed out")

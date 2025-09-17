@@ -115,7 +115,8 @@ public struct AwaitlessCompletionMacro: PeerMacro {
         let isThrowing = funcDecl.signature.effectSpecifiers?.description.contains("throws") ?? false
         let resultInnerType: TypeSyntax = returnTypeSyntax ??
             TypeSyntax(IdentifierTypeSyntax(name: .identifier("Void")))
-        let completionType = TypeSyntax("sending @escaping (Result<\(raw: resultInnerType.description), Error>) -> Void")
+        let completionType =
+            TypeSyntax("sending @escaping (Result<\(raw: resultInnerType.description), Error>) -> Void")
 
         // Build parameter list: original parameters + trailing completion
         var newParams = funcDecl.signature.parameterClause.parameters

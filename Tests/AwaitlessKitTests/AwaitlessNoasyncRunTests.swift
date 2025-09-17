@@ -96,104 +96,104 @@ struct AwaitlessNoasyncRunTests {
     @Test("Execute with timeout - success case", .enabled(if: !isLinux))
     func timeoutSuccess() throws {
         #if !os(Linux)
-        let result: String = try Awaitless<String, any Error>.run(timeout: 0.1) {
-            try await Task.sleep(for: .milliseconds(10))
-            return "Success"
-        }
+            let result: String = try Awaitless<String, any Error>.run(timeout: 0.1) {
+                try await Task.sleep(for: .milliseconds(10))
+                return "Success"
+            }
 
-        #expect(result == "Success")
+            #expect(result == "Success")
         #endif
     }
 
     @Test("Execute with timeout - timeout case", .enabled(if: !isLinux))
     func timeoutFailure() throws {
         #if !os(Linux)
-        #expect(throws: AwaitlessError.timeout(0.05)) {
-            try Awaitless<String, any Error>.run(timeout: 0.05) {
-                try await Task.sleep(for: .milliseconds(200))
-                return "Should not reach here"
+            #expect(throws: AwaitlessError.timeout(0.05)) {
+                try Awaitless<String, any Error>.run(timeout: 0.05) {
+                    try await Task.sleep(for: .milliseconds(200))
+                    return "Should not reach here"
+                }
             }
-        }
         #endif
     }
 
     @Test("Execute with timeout disabled (nil)", .enabled(if: !isLinux))
     func timeoutDisabled() throws {
         #if !os(Linux)
-        let result: String = try Awaitless<String, any Error>.run(timeout: nil) {
-            try await Task.sleep(for: .milliseconds(10))
-            return "Success"
-        }
+            let result: String = try Awaitless<String, any Error>.run(timeout: nil) {
+                try await Task.sleep(for: .milliseconds(10))
+                return "Success"
+            }
 
-        #expect(result == "Success")
+            #expect(result == "Success")
         #endif
     }
 
     @Test("Timeout with void return type", .enabled(if: !isLinux))
     func timeoutVoidReturn() throws {
         #if !os(Linux)
-        try Awaitless<Void, any Error>.run(timeout: 0.1) {
-            try await Task.sleep(for: .milliseconds(10))
-            #expect(Bool(true))
-        }
+            try Awaitless<Void, any Error>.run(timeout: 0.1) {
+                try await Task.sleep(for: .milliseconds(10))
+                #expect(Bool(true))
+            }
         #endif
     }
 
     @Test("Timeout with error propagation", .enabled(if: !isLinux))
     func timeoutErrorPropagation() throws {
         #if !os(Linux)
-        #expect(throws: TestError.simpleError) {
-            try Awaitless<String, any Error>.run(timeout: 0.1) {
-                try await Task.sleep(for: .milliseconds(10))
-                throw TestError.simpleError
+            #expect(throws: TestError.simpleError) {
+                try Awaitless<String, any Error>.run(timeout: 0.1) {
+                    try await Task.sleep(for: .milliseconds(10))
+                    throw TestError.simpleError
+                }
             }
-        }
         #endif
     }
 
     @Test("Multiple timeout operations in sequence", .enabled(if: !isLinux))
     func multipleTimeoutOperations() throws {
         #if !os(Linux)
-        for i in 0 ..< 10 {
-            let result: Int = try Awaitless<Int, any Error>.run(timeout: 0.05) {
-                try await Task.sleep(for: .milliseconds(5))
-                return i
+            for i in 0 ..< 10 {
+                let result: Int = try Awaitless<Int, any Error>.run(timeout: 0.05) {
+                    try await Task.sleep(for: .milliseconds(5))
+                    return i
+                }
+                #expect(result == i)
             }
-            #expect(result == i)
-        }
         #endif
     }
 
     @Test("Very short timeout", .enabled(if: !isLinux))
     func veryShortTimeout() throws {
         #if !os(Linux)
-        #expect(throws: AwaitlessError.timeout(0.001)) {
-            try Awaitless<String, any Error>.run(timeout: 0.001) {
-                try await Task.sleep(for: .milliseconds(100))
-                return "Should not reach here"
+            #expect(throws: AwaitlessError.timeout(0.001)) {
+                try Awaitless<String, any Error>.run(timeout: 0.001) {
+                    try await Task.sleep(for: .milliseconds(100))
+                    return "Should not reach here"
+                }
             }
-        }
         #endif
     }
 
     @Test("Different return types with timeout", .enabled(if: !isLinux))
     func differentReturnTypesWithTimeout() throws {
         #if !os(Linux)
-        let intResult: Int = try Awaitless<Int, any Error>.run(timeout: 0.1) {
-            try await Task.sleep(for: .milliseconds(10))
-            return 42
-        }
-        #expect(intResult == 42)
+            let intResult: Int = try Awaitless<Int, any Error>.run(timeout: 0.1) {
+                try await Task.sleep(for: .milliseconds(10))
+                return 42
+            }
+            #expect(intResult == 42)
 
-        struct TestData {
-            let value: String
-        }
+            struct TestData {
+                let value: String
+            }
 
-        let structResult: TestData = try Awaitless<TestData, any Error>.run(timeout: 0.1) {
-            try await Task.sleep(for: .milliseconds(10))
-            return TestData(value: "test")
-        }
-        #expect(structResult.value == "test")
+            let structResult: TestData = try Awaitless<TestData, any Error>.run(timeout: 0.1) {
+                try await Task.sleep(for: .milliseconds(10))
+                return TestData(value: "test")
+            }
+            #expect(structResult.value == "test")
         #endif
     }
 

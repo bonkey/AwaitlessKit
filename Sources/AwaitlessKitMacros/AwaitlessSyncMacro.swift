@@ -277,8 +277,7 @@ public struct AwaitlessSyncMacro: PeerMacro {
             statements: CodeBlockItemListSyntax {
                 CodeBlockItemSyntax(item: .expr(innerCallExpr))
             },
-            rightBrace: .rightBraceToken(leadingTrivia: .newline)
-        )
+            rightBrace: .rightBraceToken(leadingTrivia: .newline))
 
         // Create the Awaitless.run call
         let taskNoasyncCall = createTaskNoasyncCall(with: ExprSyntax(innerClosure), isThrowing: isThrowing)
