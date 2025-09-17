@@ -5,7 +5,7 @@
 import AwaitlessKit
 import Foundation
 
-final class IsolatedSafeState: Sendable {
+final class IsolatedSafeStateExample: Sendable {
     @IsolatedSafe(writable: true)
     private nonisolated(unsafe) var _unsafeCounter: Int = 0
 

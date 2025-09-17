@@ -6,7 +6,7 @@ import AwaitlessKit
 import Combine
 import Foundation
 
-final class AwaitlessPublisher: Sendable {
+final class AwaitlessPublisherExample: Sendable {
     @AwaitlessPublisher(deliverOn: .main)
     func fetchItems() async -> [String] {
         await simulateProcessing()

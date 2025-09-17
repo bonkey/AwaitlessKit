@@ -5,7 +5,7 @@
 import AwaitlessKit
 import Foundation
 
-final class AwaitlessCompletion: Sendable {
+final class AwaitlessCompletionExample: Sendable {
     @AwaitlessCompletion
     func fetchData() async throws -> String {
         await simulateProcessing()

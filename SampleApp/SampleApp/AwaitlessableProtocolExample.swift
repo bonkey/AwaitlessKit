@@ -17,14 +17,14 @@ struct ApiResponse {
 }
 
 @Awaitlessable
-protocol AwaitlessableProtocol: Sendable {
+protocol AwaitlessableProtocolExample: Sendable {
     func fetchUserProfile(id: String) async throws -> UserProfile
     func fetchRawData(endpoint: String) async throws -> ApiResponse
     func updateUserProfile(_ profile: UserProfile) async throws -> Bool
     func deleteUser(id: String) async -> Bool
 }
 
-final class MockRepository: AwaitlessableProtocol {
+final class MockRepositoryExample: AwaitlessableProtocolExample {
     func fetchUserProfile(id: String) async throws -> UserProfile {
         await simulateProcessing()
         return UserProfile(
@@ -51,7 +51,7 @@ final class MockRepository: AwaitlessableProtocol {
     }
 }
 
-final class RemoteRepository: AwaitlessableProtocol {
+final class RemoteRepositoryExample: AwaitlessableProtocolExample {
     func fetchUserProfile(id: String) async throws -> UserProfile {
         await simulateProcessing()
         return UserProfile(

@@ -5,7 +5,7 @@
 import AwaitlessKit
 import Foundation
 
-final class AwaitlessBasic: Sendable {
+final class AwaitlessBasicExample: Sendable {
     @Awaitless
     func downloadFile(url: URL) async throws -> Data {
         let (data, _) = try await URLSession.shared.data(from: url)

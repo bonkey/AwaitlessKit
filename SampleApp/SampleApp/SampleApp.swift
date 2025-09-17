@@ -30,7 +30,7 @@ final class SampleApp {
     private func demonstrateAwaitlessBasic() throws {
         print("1. @Awaitless Basic Usage")
         
-        let service = AwaitlessBasic()
+        let service = AwaitlessBasicExample()
         let url = URL(string: "https://httpbin.org/json")!
         
         let data = try service.downloadFile(url: url)
@@ -54,8 +54,8 @@ final class SampleApp {
     private func demonstrateAwaitlessableProtocol() throws {
         print("2. @Awaitlessable Protocol Generation")
         
-        let mockRepo: AwaitlessableProtocol = MockRepository()
-        let remoteRepo: AwaitlessableProtocol = RemoteRepository()
+        let mockRepo: AwaitlessableProtocolExample = MockRepositoryExample()
+        let remoteRepo: AwaitlessableProtocolExample = RemoteRepositoryExample()
         
         let user1 = try mockRepo.fetchUserProfile(id: "123")
         print("   Mock user: \(user1.name) (\(user1.email))")
@@ -74,7 +74,7 @@ final class SampleApp {
     private func demonstrateAwaitlessPublisher() {
         print("3. @AwaitlessPublisher Generation")
         
-        let service = AwaitlessPublisher()
+        let service = AwaitlessPublisherExample()
         var cancellables = Set<AnyCancellable>()
         
         service.fetchItems()
@@ -119,7 +119,7 @@ final class SampleApp {
     private func demonstrateAwaitlessFreestanding() throws {
         print("4. #awaitless Freestanding Macro")
         
-        let service = AwaitlessBasic()
+        let service = AwaitlessBasicExample()
         let url = URL(string: "https://httpbin.org/json")!
         
         // Use existing async functions with #awaitless
@@ -143,7 +143,7 @@ final class SampleApp {
     private func demonstrateIsolatedSafeState() {
         print("5. @IsolatedSafe Thread-Safe State")
         
-        let state = IsolatedSafeState()
+        let state = IsolatedSafeStateExample()
         
         state.incrementCounter()
         state.incrementCounter()
@@ -173,7 +173,7 @@ final class SampleApp {
     private func demonstrateAwaitlessCompletion() throws {
         print("6. @AwaitlessCompletion Handler Generation")
         
-        let service = AwaitlessCompletion()
+        let service = AwaitlessCompletionExample()
         let semaphore = DispatchSemaphore(value: 0)
         
         service.fetchData { result in

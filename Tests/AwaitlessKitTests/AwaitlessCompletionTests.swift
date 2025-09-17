@@ -28,7 +28,7 @@ struct AwaitlessCompletionTests {
                 return "OK"
             }
 
-            func fetch(completion: @escaping (Result<String, Error>) -> Void) {
+            func fetch(completion: sending @escaping (Result<String, Error>) -> Void) {
                 Task() {
                     do {
                         let result = try await self.fetch()
@@ -53,7 +53,7 @@ struct AwaitlessCompletionTests {
             """
             func data() async -> Int { 1 }
 
-            func data(completion: @escaping (Result<Int, Error>) -> Void) {
+            func data(completion: sending @escaping (Result<Int, Error>) -> Void) {
                 Task() {
                     let result = await self.data()
                     completion(.success(result))
@@ -74,7 +74,7 @@ struct AwaitlessCompletionTests {
             """
             func ping() async { }
 
-            func ping(completion: @escaping (Result<Void, Error>) -> Void) {
+            func ping(completion: sending @escaping (Result<Void, Error>) -> Void) {
                 Task() {
                     await self.ping()
                     completion(.success(()))
@@ -95,7 +95,7 @@ struct AwaitlessCompletionTests {
             """
             func calc() async -> Int { 2 }
 
-            func c_calc(completion: @escaping (Result<Int, Error>) -> Void) {
+            func c_calc(completion: sending @escaping (Result<Int, Error>) -> Void) {
                 Task() {
                     let result = await self.calc()
                     completion(.success(result))
