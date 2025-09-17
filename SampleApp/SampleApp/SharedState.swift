@@ -16,4 +16,3 @@ final class SharedState: Sendable {
     @IsolatedSafe(writable: true)
     private nonisolated(unsafe) var _unsafeItems: [String] = []
 }
-}
