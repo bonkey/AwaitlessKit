@@ -31,9 +31,15 @@ struct AwaitlessableTests {
             }
 
             extension DataService {
-                public func fetchUser(id: String) throws -> User {return try Noasync.run { try await self.fetchUser(id: id) }
+                public func fetchUser(id: String) throws -> User {
+                    return try Noasync.run {
+                        try await self.fetchUser(id: id)
+                    }
                 }
-                public func fetchData() -> Data {return Noasync.run { await self.fetchData() }
+                public func fetchData() -> Data {
+                    return Noasync.run {
+                        await self.fetchData()
+                    }
                 }
             }
             """
@@ -64,7 +70,10 @@ struct AwaitlessableTests {
             }
 
             extension Service {
-                public func asyncMethod() throws -> String {return try Noasync.run { try await self.asyncMethod() }
+                public func asyncMethod() throws -> String {
+                    return try Noasync.run {
+                        try await self.asyncMethod()
+                    }
                 }
             }
             """
@@ -113,7 +122,10 @@ struct AwaitlessableTests {
             }
 
             extension DataService {
-                public func fetchUser(id: String) throws -> User {return try Noasync.run { try await self.fetchUser(id: id) }
+                public func fetchUser(id: String) throws -> User {
+                    return try Noasync.run {
+                        try await self.fetchUser(id: id)
+                    }
                 }
             }
             """

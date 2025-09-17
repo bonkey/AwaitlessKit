@@ -167,42 +167,68 @@ public struct AwaitlessableMacro: MemberMacro, ExtensionMacro {
 
         // Generate parameter call for the async call
         let parameters = funcDecl.signature.parameterClause.parameters
-        let parameterCall =
-            if parameters.isEmpty {
-                "()"
-            } else {
-                "(" + parameters.enumerated().map { _, param in
-                    let label = param.firstName.text == "_" ? "" : "\(param.firstName.text): "
-                    let value = param.secondName?.text ?? param.firstName.text
-                    return "\(label)\(value)"
-                }.joined(separator: ", ") + ")"
-            }
+        let argumentList = createArgumentList(from: parameters)
 
-        let functionCall = "\(funcDecl.name)\(parameterCall)"
+        // Create the function call to the original async function
+        let asyncCallExpr = FunctionCallExprSyntax(
+            calledExpression: MemberAccessExprSyntax(
+                base: DeclReferenceExprSyntax(baseName: .identifier("self")),
+                period: .periodToken(),
+                name: funcDecl.name
+            ),
+            leftParen: .leftParenToken(),
+            arguments: argumentList,
+            rightParen: .rightParenToken()
+        )
 
-        // Create the body with Noasync.run call
-        let bodyContent =
-            if isThrowing {
-                "try Noasync.run { try await self.\(functionCall) }"
-            } else {
-                "Noasync.run { await self.\(functionCall) }"
-            }
+        // Add await to the async call
+        let awaitExpression = AwaitExprSyntax(expression: ExprSyntax(asyncCallExpr))
 
+        // If the original function throws, add try to the call
+        let innerCallExpr: ExprSyntax = isThrowing
+            ? ExprSyntax(TryExprSyntax(expression: awaitExpression))
+            : ExprSyntax(awaitExpression)
+
+        // Create the closure for Noasync.run with proper formatting
+        let innerClosure = ClosureExprSyntax(
+            leftBrace: .leftBraceToken(leadingTrivia: .space),
+            statements: CodeBlockItemListSyntax {
+                CodeBlockItemSyntax(item: .expr(innerCallExpr))
+            },
+            rightBrace: .rightBraceToken(leadingTrivia: .newline)
+        )
+
+        // Create the Noasync.run call with trailing closure syntax
+        let taskNoasyncCall = FunctionCallExprSyntax(
+            calledExpression: MemberAccessExprSyntax(
+                base: DeclReferenceExprSyntax(baseName: .identifier("Noasync")),
+                period: .periodToken(),
+                name: .identifier("run")
+            ),
+            leftParen: nil,
+            arguments: LabeledExprListSyntax([]),
+            rightParen: nil,
+            trailingClosure: innerClosure
+        )
+
+        // Wrap with try if needed
+        let finalCall: ExprSyntax = isThrowing
+            ? ExprSyntax(TryExprSyntax(expression: ExprSyntax(taskNoasyncCall)))
+            : ExprSyntax(taskNoasyncCall)
+
+        // Wrap with return if function has return value
         let hasReturnValue = funcDecl.signature.returnClause != nil
-        let finalBodyContent =
-            if hasReturnValue {
-                "return \(bodyContent)"
-            } else {
-                bodyContent
-            }
+        let finalExpression: CodeBlockItemSyntax.Item = hasReturnValue
+            ? .stmt(StmtSyntax(ReturnStmtSyntax(expression: finalCall)))
+            : .expr(finalCall)
 
         let body = CodeBlockSyntax(
             leftBrace: .leftBraceToken(leadingTrivia: .space),
             statements: CodeBlockItemListSyntax([
-                CodeBlockItemSyntax(
-                    item: .expr(ExprSyntax(stringLiteral: finalBodyContent))),
+                CodeBlockItemSyntax(item: finalExpression)
             ]),
-            rightBrace: .rightBraceToken(leadingTrivia: .newline))
+            rightBrace: .rightBraceToken(leadingTrivia: .newline)
+        )
 
         return FunctionDeclSyntax(
             attributes: AttributeListSyntax([]),
