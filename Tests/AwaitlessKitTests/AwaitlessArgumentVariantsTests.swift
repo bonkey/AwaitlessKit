@@ -25,9 +25,9 @@ struct AwaitlessArgumentVariantsTests {
             }
 
             @available(*, noasync) func process(_ data: String) -> String {
-                Noasync.run({
-                        await process(data)
-                    })
+                Awaitless.run {
+                    await process(data)
+                }
             }
             """
         }
@@ -49,9 +49,9 @@ struct AwaitlessArgumentVariantsTests {
             }
 
             @available(*, noasync) func transform(_ input: String, to format: String) -> String {
-                Noasync.run({
-                        await transform(input, to: format)
-                    })
+                Awaitless.run {
+                    await transform(input, to: format)
+                }
             }
             """
         }
@@ -73,9 +73,9 @@ struct AwaitlessArgumentVariantsTests {
             }
 
             @available(*, noasync) func calculate(from startValue: Int, to endValue: Int) -> Int {
-                Noasync.run({
-                        await calculate(from: startValue, to: endValue)
-                    })
+                Awaitless.run {
+                    await calculate(from: startValue, to: endValue)
+                }
             }
             """
         }
@@ -97,9 +97,9 @@ struct AwaitlessArgumentVariantsTests {
             }
 
             @available(*, noasync) func fetch(url: String, timeout: Double = 30.0, retries: Int = 3) throws -> Data {
-                try Noasync.run({
-                        try await fetch(url: url, timeout: timeout, retries: retries)
-                    })
+                try Awaitless.run {
+                    try await fetch(url: url, timeout: timeout, retries: retries)
+                }
             }
             """
         }
@@ -133,9 +133,9 @@ struct AwaitlessArgumentVariantsTests {
                 arg2: String,
                 arg3 internalArg: String,
                 arg4: String = "default") -> String {
-                Noasync.run({
-                        await asyncFunctionWithArguments(arg1, arg2: arg2, arg3: internalArg, arg4: arg4)
-                    })
+                Awaitless.run {
+                    await asyncFunctionWithArguments(arg1, arg2: arg2, arg3: internalArg, arg4: arg4)
+                }
             }
             """
         }
@@ -157,9 +157,9 @@ struct AwaitlessArgumentVariantsTests {
             }
 
             @available(*, noasync) func modify(_ value: inout String, with suffix: String) {
-                Noasync.run({
-                        await modify(&value, with: suffix)
-                    })
+                Awaitless.run {
+                    await modify(&value, with: suffix)
+                }
             }
             """
         }
@@ -181,9 +181,9 @@ struct AwaitlessArgumentVariantsTests {
             }
 
             @available(*, noasync) func process(data: String, transform: (String) -> String) -> String {
-                Noasync.run({
-                        await process(data: data, transform: transform)
-                    })
+                Awaitless.run {
+                    await process(data: data, transform: transform)
+                }
             }
             """
         }
@@ -205,9 +205,9 @@ struct AwaitlessArgumentVariantsTests {
             }
 
             @available(*, noasync) func asyncProcess(data: String, completion: @escaping (String) -> Void) {
-                Noasync.run({
-                        await asyncProcess(data: data, completion: completion)
-                    })
+                Awaitless.run {
+                    await asyncProcess(data: data, completion: completion)
+                }
             }
             """
         }
@@ -229,9 +229,9 @@ struct AwaitlessArgumentVariantsTests {
             }
 
             @available(*, noasync) func transform<T>(_ input: T, using mapper: (T) -> String) -> String {
-                Noasync.run({
-                        await transform(input, using: mapper)
-                    })
+                Awaitless.run {
+                    await transform(input, using: mapper)
+                }
             }
             """
         }
@@ -253,9 +253,9 @@ struct AwaitlessArgumentVariantsTests {
             }
 
             @available(*, noasync) func processCollection<T: Collection>(_ items: T, where predicate: (T.Element) -> Bool) -> [T.Element] where T.Element: Equatable {
-                Noasync.run({
-                        await processCollection(items, where: predicate)
-                    })
+                Awaitless.run {
+                    await processCollection(items, where: predicate)
+                }
             }
             """
         }
@@ -277,9 +277,9 @@ struct AwaitlessArgumentVariantsTests {
             }
 
             @available(*, noasync) func lookup(id: String, cache: [String: String]? = nil) -> String? {
-                Noasync.run({
-                        await lookup(id: id, cache: cache)
-                    })
+                Awaitless.run {
+                    await lookup(id: id, cache: cache)
+                }
             }
             """
         }
@@ -301,9 +301,9 @@ struct AwaitlessArgumentVariantsTests {
             }
 
             @available(*, noasync) func evaluate(condition: Bool, message: @autoclosure () -> String) -> String {
-                Noasync.run({
-                        await evaluate(condition: condition, message: message)
-                    })
+                Awaitless.run {
+                    await evaluate(condition: condition, message: message)
+                }
             }
             """
         }
@@ -325,9 +325,9 @@ struct AwaitlessArgumentVariantsTests {
             }
 
             @available(*, noasync) func combine(_ first: String, _ second: String, _ third: String) -> String {
-                Noasync.run({
-                        await combine(first, second, third)
-                    })
+                Awaitless.run {
+                    await combine(first, second, third)
+                }
             }
             """
         }
@@ -363,9 +363,9 @@ struct AwaitlessArgumentVariantsTests {
                 output: inout String,
                 transform: @escaping (String) -> String,
                 options: [String: Any] = [:]) throws -> Bool {
-                try Noasync.run({
-                        try await complexOperation(input, output: &output, transform: transform, options: options)
-                    })
+                try Awaitless.run {
+                    try await complexOperation(input, output: &output, transform: transform, options: options)
+                }
             }
             """
         }

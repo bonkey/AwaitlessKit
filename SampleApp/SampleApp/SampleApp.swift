@@ -4,7 +4,6 @@
 
 import AwaitlessKit
 import Combine
-import Darwin
 import Foundation
 
 @main
@@ -15,88 +14,214 @@ final class SampleApp {
     }
 
     func run() throws {
-        try basicUsageExample()
-        try migrationWithDeprecationExample()
-        try customNamingExample()
-        threadSafePropertiesExample()
-        try protocolExample()
-        combineExample()
-        freestandingMacroExample()
+        print("=== AwaitlessKit Feature Demonstrations ===\n")
+
+        try demonstrateAwaitlessBasic()
+        try demonstrateAwaitlessableProtocol()
+        demonstrateAwaitlessPublisher()
+        try demonstrateAwaitlessFreestanding()
+        demonstrateIsolatedSafeState()
+        try demonstrateAwaitlessCompletion()
+        try demonstrateAwaitlessConfig()
+
+        print("\n=== All demonstrations completed ===")
     }
 
-    // MARK: - Basic Sync Wrapper Generation
+    private func demonstrateAwaitlessBasic() throws {
+        print("1. @Awaitless Basic Usage")
 
-    private func basicUsageExample() throws {
-        let fileURL = URL(string: "https://example.com")!
-        let data = try NetworkManager().downloadFile(url: fileURL)
-        print("Basic Usage - downloaded data size: \(data.count)")
+        let service = AwaitlessBasicExample()
+        let url = URL(string: "https://httpbin.org/json")!
+
+        let data = try service.downloadFile(url: url)
+        print("   Downloaded: \(data.count) bytes")
+
+        let result = service.deprecated_processData(data)
+        print("   Processed: \(result)")
+
+        let isValid = try service.blocking_validateInput("test input")
+        print("   Input valid: \(isValid)")
+
+        // unavailable
+        // let hash = service.unavailable_computeHash(data)
+        // print("   Hash: \(hash)")
+        // print()
     }
 
-    // MARK: - Deprecation Strategy for Legacy Code
+    private func demonstrateAwaitlessableProtocol() throws {
+        print("2. @Awaitlessable Protocol Generation")
 
-    private func migrationWithDeprecationExample() throws {
-        let service = LegacyService()
-        let result = try service.processData()
-        print("Migration with Deprecation - result: \(result)")
+        let sample1: AwaitlessableProtocolExample = FirstAwaitlessableProtocolExample()
+        let sample2: AwaitlessableProtocolExample = SecondAwaitlessableProtocolExample()
+
+        let user1 = try sample1.fetchUserProfile(id: "123")
+        print("   Mock user: \(user1.name) (\(user1.email))")
+
+        let response = try sample2.fetchRawData(endpoint: "/api/data")
+        print("   Remote response: \(response.statusCode), \(response.data.count) bytes")
+
+        let updateSuccess = try sample1.updateUserProfile(user1)
+        print("   Update success: \(updateSuccess)")
+
+        let deleteSuccess = sample2.deleteUser(id: "user456")
+        print("   Delete success: \(deleteSuccess)")
+        print()
     }
 
-    // MARK: - Custom Function Prefixes
+    private func demonstrateAwaitlessPublisher() {
+        print("3. @AwaitlessPublisher Generation")
 
-    private func customNamingExample() throws {
-        let token = try APIClient().sync_authenticate()
-        print("Custom Naming - token: \(token)")
-    }
-
-    // MARK: - Actor-Safe Property Access
-
-    private func threadSafePropertiesExample() {
-        let state = SharedState()
-        print("Thread-Safe Properties - counter: \(state.counter)")
-        state.incrementCounter()
-        print("Thread-Safe Properties - counter: \(state.counter)")
-        state.items.append("Item1")
-        print("Thread-Safe Properties - items: \(state.items)")
-    }
-
-    // MARK: - Protocol Extension Generation
-
-    private func protocolExample() throws {
-        let dataService: DataService = MockDataService()
-        // Call the synchronous version of the method, available via the @Awaitless macro on the protocol
-        let user = try dataService.fetchUser(id: "123")
-        print("Protocol Example - user: \(user.name)")
-    }
-
-    // MARK: - Publisher Generation from Async Functions
-
-    private func combineExample() {
-        let combineService = CombineService()
+        let service = AwaitlessPublisherExample()
         var cancellables = Set<AnyCancellable>()
 
-        print("Combine Example - Subscribing to fetchItems publisher...")
-        combineService.fetchItems()
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    print("Combine Example - Publisher finished.")
-                case let .failure(error):
-                    print("Combine Example - Publisher failed with error: \(error)")
-                }
-            }, receiveValue: { items in
-                print("Combine Example - Received items: \(items)")
-            })
+        service.fetchItems()
+            .sink { items in
+                print("   Fetched items: \(items)")
+            }
             .store(in: &cancellables)
 
-        // In a real app, you'd manage the lifecycle of cancellables.
-        // Here we just let it run. A sleep is needed to see output in a simple command-line tool.
-        Thread.sleep(forTimeInterval: 0.1)
+        service.loadUserData(id: "user456")
+            .sink(
+                receiveCompletion: { completion in
+                    switch completion {
+                    case .finished:
+                        break
+                    case let .failure(error):
+                        print("   User data error: \(error.localizedDescription)")
+                    }
+                },
+                receiveValue: { data in
+                    print("   User data loaded: \(data)")
+                })
+            .store(in: &cancellables)
+
+        let timestamp = service.stream_getCurrentTimestamp()
+        timestamp
+            .sink { time in
+                print("   Current timestamp: \(time)")
+            }
+            .store(in: &cancellables)
+
+        service.fetchConfig()
+            .sink { config in
+                print("   Config: \(config)")
+            }
+            .store(in: &cancellables)
+
+        Thread.sleep(forTimeInterval: 0.2)
+        print()
     }
 
-    // MARK: - Expression-Level Sync Conversion
+    private func demonstrateAwaitlessFreestanding() throws {
+        print("4. #awaitless Freestanding Macro")
 
-    private func freestandingMacroExample() {
-        let service = FreestandingMacroService()
-        let number = #awaitless(service.getNumber())
-        print("Freestanding Macro Example - number: \(number)")
+        let service = AwaitlessBasicExample()
+        let url = URL(string: "https://httpbin.org/json")!
+
+        // Use existing async functions with #awaitless
+        let data = try #awaitless(try service.downloadFile(url: url))
+        print("   Downloaded via #awaitless: \(data.count) bytes")
+
+        // Chain operations
+        let result = #awaitless(service.processData(data))
+        print("   Chained processing: \(result)")
+
+        // Use in conditional
+        if try #awaitless(try service.validateInput("test")) {
+            print("   Conditional validation: passed")
+        }
+
+        print()
+    }
+
+    private func demonstrateIsolatedSafeState() {
+        print("5. @IsolatedSafe Thread-Safe State")
+
+        let state = IsolatedSafeExample()
+
+        state.incrementCounter()
+        state.incrementCounter()
+        state.addItem("First item")
+        state.addItem("Second item")
+
+        let stats = state.getStats()
+        print("   Stats: counter=\(stats.counter), items=\(stats.itemsCount), hasData=\(stats.hasData)")
+
+        state.cacheUser(id: "u1", name: "Alice")
+        state.cacheUser(id: "u2", name: "Bob")
+
+        if let cachedUser = state.getCachedUser(id: "u1") {
+            print("   Cached user: \(cachedUser)")
+        }
+
+        state.updateCriticalData("critical info".data(using: .utf8)!)
+        let updatedStats = state.getStats()
+        print("   Updated stats: hasData=\(updatedStats.hasData)")
+
+        state.bulkUpdateItems(["bulk1", "bulk2", "bulk3"])
+        let finalStats = state.getStats()
+        print("   Final items count: \(finalStats.itemsCount)")
+        print()
+    }
+
+    private func demonstrateAwaitlessCompletion() throws {
+        print("6. @AwaitlessCompletion Handler Generation")
+
+        let service = AwaitlessCompletionExample()
+        let semaphore = DispatchSemaphore(value: 0)
+
+        service.fetchData { result in
+            switch result {
+            case let .success(data):
+                print("   Completion result: \(data)")
+            case let .failure(error):
+                print("   Completion error: \(error.localizedDescription)")
+            }
+            semaphore.signal()
+        }
+
+        semaphore.wait()
+
+        let semaphore2 = DispatchSemaphore(value: 0)
+
+        service.callback_processRequest("test request") { result in
+            switch result {
+            case let .success(success):
+                print("   Request processed: \(success)")
+            case .failure:
+                print("   Request processed: false")
+            }
+            semaphore2.signal()
+        }
+
+        semaphore2.wait()
+        print()
+    }
+
+    private func demonstrateAwaitlessConfig() throws {
+        print("7. AwaitlessConfig Global Configuration")
+
+        // Show current defaults
+        let initialDefaults = AwaitlessConfig.currentDefaults
+        print(
+            "   Initial defaults: prefix=\(initialDefaults.prefix ?? "nil"), strategy=\(String(describing: initialDefaults.strategy))")
+
+        // Set custom global defaults
+        AwaitlessConfig.setDefaults(
+            prefix: "blocking_",
+            availability: .deprecated("Use async version instead"),
+            delivery: .main,
+            strategy: .concurrent)
+
+        let updatedDefaults = AwaitlessConfig.currentDefaults
+        print(
+            "   Updated defaults: prefix=\(updatedDefaults.prefix ?? "nil"), strategy=\(String(describing: updatedDefaults.strategy))")
+
+        // Reset to default configuration
+        AwaitlessConfig.setDefaults()
+        let resetDefaults = AwaitlessConfig.currentDefaults
+        print(
+            "   Reset defaults: prefix=\(resetDefaults.prefix ?? "nil"), strategy=\(String(describing: resetDefaults.strategy))")
+        print()
     }
 }

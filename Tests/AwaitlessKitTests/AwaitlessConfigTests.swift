@@ -190,9 +190,9 @@ struct AwaitlessConfigurationHierarchyTests {
                 func fetchData() async throws -> String { "test" }
 
                 @available(*, noasync) func customfetchData() throws -> String {
-                    try Noasync.run({
-                            try await fetchData()
-                        })
+                    try Awaitless.run {
+                        try await fetchData()
+                    }
                 }
 
                 static let __awaitlessConfig: AwaitlessConfigData = AwaitlessConfigData(prefix: "sync")
@@ -217,9 +217,9 @@ struct AwaitlessConfigurationHierarchyTests {
                 func processData() async throws -> String { "test" }
 
                 @available(*, noasync) func processData() throws -> String {
-                    try Noasync.run({
-                            try await processData()
-                        })
+                    try Awaitless.run {
+                        try await processData()
+                    }
                 }
 
                 static let __awaitlessConfig: AwaitlessConfigData = AwaitlessConfigData(prefix: "sync")

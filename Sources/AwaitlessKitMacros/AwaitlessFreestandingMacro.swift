@@ -12,7 +12,7 @@ import SwiftSyntaxBuilder
 
 // MARK: - AwaitlessFreestandingMacro
 
-/// A freestanding macro that wraps an expression with Noasync.run
+/// A freestanding macro that wraps an expression with Awaitless.run
 /// Usage: #awaitless(someAsyncFunction())
 public struct AwaitlessFreestandingMacro: ExpressionMacro {
     public static func expansion(
@@ -20,7 +20,7 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
         in context: some MacroExpansionContext) throws
         -> ExprSyntax
     {
-        // Get the expression to wrap with Noasync.run
+        // Get the expression to wrap with Awaitless.run
         guard let argument = node.arguments.first?.expression else {
             let diagnostic = Diagnostic(
                 node: Syntax(node),
@@ -44,27 +44,53 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
             ExprSyntax(TryExprSyntax(expression: awaitExpr)) :
             awaitExpr
 
-        let closure = ExprSyntax(
-            ClosureExprSyntax(
-                statements: CodeBlockItemListSyntax {
-                    CodeBlockItemSyntax(item: .stmt(
-                        StmtSyntax(
-                            ReturnStmtSyntax(
-                                returnKeyword: .keyword(.return, trailingTrivia: .space),
-                                expression: finalExpr))))
-                }))
+        // For simple expressions, use a single statement without return
+        // For complex expressions, use a return statement
+        let isSimpleExpression: Bool = {
+            if let funcCall = actualExpression.as(FunctionCallExprSyntax.self) {
+                // Function calls with trailing closures or complex arguments are not simple
+                return funcCall.trailingClosure == nil &&
+                    !funcCall.arguments.contains { arg in
+                        arg.expression.is(ClosureExprSyntax.self)
+                    }
+            }
+            return actualExpression.is(DeclReferenceExprSyntax.self) ||
+                actualExpression.is(MemberAccessExprSyntax.self)
+        }()
+
+        let closure =
+            if isSimpleExpression {
+                // Simple single-line closure for basic function calls - no newlines
+                ClosureExprSyntax(
+                    leftBrace: .leftBraceToken(leadingTrivia: .space),
+                    statements: CodeBlockItemListSyntax {
+                        CodeBlockItemSyntax(item: .expr(finalExpr), trailingTrivia: .space)
+                    },
+                    rightBrace: .rightBraceToken())
+            } else {
+                // Multi-line closure with return statement for complex expressions
+                ClosureExprSyntax(
+                    leftBrace: .leftBraceToken(leadingTrivia: .space),
+                    statements: CodeBlockItemListSyntax {
+                        CodeBlockItemSyntax(item: .stmt(
+                            StmtSyntax(
+                                ReturnStmtSyntax(
+                                    returnKeyword: .keyword(.return, trailingTrivia: .space),
+                                    expression: finalExpr))))
+                    },
+                    rightBrace: .rightBraceToken(leadingTrivia: .newline))
+            }
 
         return ExprSyntax(
             FunctionCallExprSyntax(
                 calledExpression: MemberAccessExprSyntax(
-                    base: DeclReferenceExprSyntax(baseName: .identifier("Noasync")),
+                    base: DeclReferenceExprSyntax(baseName: .identifier("Awaitless")),
                     period: .periodToken(),
                     name: .identifier("run")),
-                leftParen: .leftParenToken(),
-                arguments: LabeledExprListSyntax {
-                    LabeledExprSyntax(expression: closure)
-                },
-                rightParen: .rightParenToken()))
+                leftParen: nil,
+                arguments: LabeledExprListSyntax([]),
+                rightParen: nil,
+                trailingClosure: closure))
     }
 }
 

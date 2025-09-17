@@ -46,7 +46,7 @@ package-test *FILTER:
         swift test --parallel $coverage_flag
     fi
 
-full-clean:
+full-clean: kill-xcode
     rm -rf .build .xcode
 
 all-clean: kill-xcode

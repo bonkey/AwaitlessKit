@@ -119,7 +119,7 @@ func generateAwaitlessWrapper(
 
     // Generate blocking implementation
     let body = """
-        return Noasync.run {
+        return Awaitless.run {
             try await \(function.name)(\(parameters))
         }
         """
@@ -133,30 +133,37 @@ func generateAwaitlessWrapper(
 }
 ```
 
-#### @AwaitlessPublisher Strategy
+#### @AwaitlessPublisher Strategy (Task-backed)
+
+`@AwaitlessPublisher` no longer emits a `Future` wrapper. It now generates a body that uses an internal Task-backed publisher factory so cancellation of the Combine subscription cancels the underlying `Task` immediately.
+
+Key improvements:
+
+- Proper cancellation propagation
+- Avoids retaining a `promise` closure
+- Distinguishes throwing vs non-throwing async (failure type `Error` vs `Never`)
+- Optional main-thread delivery (`deliverOn: .main`)
 
 ```swift
 func generatePublisherWrapper(
     for function: FunctionDeclSyntax,
     with config: MacroConfiguration
 ) -> FunctionDeclSyntax {
-    // Convert return type to Publisher
-    let returnType = "AnyPublisher<\(function.returnType), Error>"
+    // Determine failure type based on throws
+    let throwsError = function.signature.effectSpecifiers?.throwsSpecifier != nil
+    let outputType = inferredReturnType(from: function) ?? "Void"
+    let returnType = throwsError
+        ? "AnyPublisher<\(outputType), Error>"
+        : "AnyPublisher<\(outputType), Never>"
 
-    // Generate publisher implementation
+    // Factory name depends on throwing-ness
+    let factory = throwsError ? "makeThrowing" : "makeNonThrowing"
+
+    // Generated body (conceptual)
     let body = """
-        return Future { promise in
-            Task {
-                do {
-                    let result = try await \(function.name)(\(parameters))
-                    promise(.success(result))
-                } catch {
-                    promise(.failure(error))
-                }
-            }
-        }
-        .receive(on: \(config.delivery.schedulerCode))
-        .eraseToAnyPublisher()
+        return AwaitlessCombineFactory.\(factory) {
+            \(throwsError ? "try " : "")await self.\(function.name)(\(parameters))
+        }\(config.delivery == .main ? ".receive(on: DispatchQueue.main)" : "")
         """
 
     return FunctionDeclSyntax(
@@ -166,6 +173,8 @@ func generatePublisherWrapper(
     )
 }
 ```
+
+(Actual implementation builds the equivalent SwiftSyntax tree; shown here in conceptual source form for clarity.)
 
 #### @AwaitlessCompletion Strategy
 
@@ -290,12 +299,30 @@ Multiple macros can be applied to generate different wrapper styles:
 
 ```swift
 @Awaitless
-@AwaitlessPublisher
+@AwaitlessPublisher(deliverOn: .main)
 @AwaitlessCompletion
 func complexOperation() async throws -> Result {
-    // Generates three wrappers from one async implementation
+    // Generates three wrappers:
+    // 1. Synchronous throwing function
+    // 2. Task-backed Combine publisher (delivers on main)
+    // 3. Completion-handler variant
 }
 ```
+
+## Concurrency & Sendable Guidance
+
+When authoring code intended for macro expansion under Swift 6 concurrency rules:
+
+- Prefer `final` + `Sendable` for service classes whose async methods receive wrappers.
+- Mark protocols annotated with `@Awaitlessable` as `Sendable` if conformers cross task/actor boundaries.
+- Use value-semantic or `Sendable` model types for parameters & returns to reduce warnings.
+- For mutable shared state accessed by generated sync or publisher wrappers, wrap storage with `@IsolatedSafe` instead of ad‑hoc locking.
+- Generated `@AwaitlessPublisher` wrappers are Task-backed: cancelling the `AnyPublisher` subscription cancels the underlying `Task`.
+- Non-throwing async functions generate `AnyPublisher<Output, Never>`; throwing async functions generate `AnyPublisher<Output, Error>`.
+- Use `deliverOn: .main` only when UI delivery is required; prefer `.current` (the default) to avoid unnecessary queue hops.
+- If unavoidable legacy non-Sendable dependencies exist, encapsulate them in a `final` audited façade (optionally `@unchecked Sendable` after review) and confine direct interaction to the async implementation rather than the generated wrappers.
+
+These practices ensure the macro-generated synchronous, publisher, and completion-based surfaces remain safe, predictable, and compatible with Swift concurrency diagnostics.
 
 ## Testing Strategies
 
@@ -314,7 +341,7 @@ func testAwaitlessMacroExpansion() {
 
     let expected = """
         func fetchData() throws -> Data {
-            return Noasync.run {
+            return Awaitless.run {
                 try await fetchData()
             }
         }
@@ -337,7 +364,7 @@ func testConfigurationInheritance() {
     let expected = """
         class APIService {
             func sync_fetchUser() throws -> User {
-                return Noasync.run {
+                return Awaitless.run {
                     try await fetchUser()
                 }
             }

@@ -14,7 +14,7 @@ import SwiftSyntaxBuilder
 
 /// A macro that generates a synchronous version of an async function.
 /// This macro creates a twin function with specified prefix that wraps the original
-/// async function in a Noasync.run call, making it callable from synchronous contexts.
+/// async function in a Awaitless.run call, making it callable from synchronous contexts.
 public struct AwaitlessSyncMacro: PeerMacro {
     public static func expansion(
         of node: AttributeSyntax,
@@ -246,7 +246,7 @@ public struct AwaitlessSyncMacro: PeerMacro {
         }
     }
 
-    /// Creates the function body that wraps the async call in Noasync.run
+    /// Creates the function body that wraps the async call in Awaitless.run
     private static func createSyncFunctionBody(
         originalFuncName: String,
         parameters: FunctionParameterListSyntax,
@@ -271,34 +271,37 @@ public struct AwaitlessSyncMacro: PeerMacro {
             ? ExprSyntax(TryExprSyntax(expression: awaitExpression))
             : ExprSyntax(awaitExpression)
 
-        // Create the closure to pass to Noasync.run
+        // Create the closure to pass to Awaitless.run with proper formatting
         let innerClosure = ClosureExprSyntax(
+            leftBrace: .leftBraceToken(leadingTrivia: .space),
             statements: CodeBlockItemListSyntax {
                 CodeBlockItemSyntax(item: .expr(innerCallExpr))
-            })
+            },
+            rightBrace: .rightBraceToken(leadingTrivia: .newline))
 
-        // Create the Noasync.run call
+        // Create the Awaitless.run call
         let taskNoasyncCall = createTaskNoasyncCall(with: ExprSyntax(innerClosure), isThrowing: isThrowing)
 
-        // Create the function body with the Noasync.run call
+        // Create the function body with the Awaitless.run call
         return CodeBlockSyntax(
             statements: CodeBlockItemListSyntax {
                 CodeBlockItemSyntax(item: .expr(taskNoasyncCall))
             })
     }
 
-    /// Creates a Noasync.run function call with the provided closure
+    /// Creates a Awaitless.run function call with trailing closure syntax
     private static func createTaskNoasyncCall(with closure: ExprSyntax, isThrowing: Bool) -> ExprSyntax {
+        // Create Awaitless.run with trailing closure syntax (no parentheses)
         let taskNoasyncCall = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
-                base: DeclReferenceExprSyntax(baseName: .identifier("Noasync")),
+                base: DeclReferenceExprSyntax(baseName: .identifier("Awaitless")),
                 period: .periodToken(),
                 name: .identifier("run")),
-            leftParen: .leftParenToken(),
-            arguments: LabeledExprListSyntax {
-                LabeledExprSyntax(expression: closure)
-            },
-            rightParen: .rightParenToken())
+            leftParen: nil,
+            arguments: LabeledExprListSyntax([]), // Empty arguments since we use trailing closure
+            rightParen: nil,
+            trailingClosure: closure.as(ClosureExprSyntax.self) // Use trailing closure
+        )
 
         // Add 'try' if the original function throws
         if isThrowing {
