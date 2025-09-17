@@ -7,7 +7,7 @@
 
 import AwaitlessCore
 import Dispatch
-public import Foundation
+import Foundation
 
 extension Awaitless {
     // Executes the given async closure synchronously, waiting for it to finish before returning.
@@ -71,7 +71,7 @@ extension Awaitless {
     /// - Returns: The result of the async closure
     /// - Throws: Any error thrown by the async closure
     @available(*, noasync)
-    public static func run(_ code: sending @Sendable () async throws(Failure) -> Success) throws(Failure)
+    public static func run(_ code: sending () async throws(Failure) -> Success) throws(Failure)
         -> Success
     {
         let semaphore = DispatchSemaphore(value: 0)
@@ -98,117 +98,4 @@ extension Awaitless {
 
         return try result!.get()
     }
-
-    // Executes an async closure synchronously with optional timeout.
-    //
-    // This variant allows you to specify a timeout for the async operation, helping prevent
-    // indefinite blocking in synchronous contexts. The timeout is ignored on Linux due to
-    // platform stability considerations.
-    //
-    // ## Basic Usage with Timeout
-    //
-    // ```swift
-    // func fetchDataWithTimeout() -> Data? {
-    //     do {
-    //         let data = try Awaitless.run(timeout: 5.0) {
-    //             try await URLSession.shared.data(from: slowEndpoint)
-    //         }
-    //         return data.0
-    //     } catch AwaitlessError.timeout(let duration) {
-    //         print("Operation timed out after \(duration) seconds")
-    //         return nil
-    //     } catch {
-    //         print("Operation failed: \(error)")
-    //         return nil
-    //     }
-    // }
-    // ```
-    //
-    // ## Long-Running Operations
-    //
-    // ```swift
-    // func processLargeDataset() -> ProcessingResult? {
-    //     do {
-    //         let result = try Awaitless.run(timeout: 60.0) {
-    //             try await heavyProcessingTask()
-    //         }
-    //         return result
-    //     } catch AwaitlessError.timeout {
-    //         print("Processing took too long, cancelling...")
-    //         return nil
-    //     }
-    // }
-    // ```
-    //
-    // ## Network Requests with Fallback
-    //
-    // ```swift
-    // func fetchWithFallback() -> APIResponse {
-    //     // Try primary endpoint with short timeout
-    //     if let response = try? Awaitless.run(timeout: 2.0) {
-    //         try await primaryAPI.fetchData()
-    //     } {
-    //         return response
-    //     }
-    //
-    //     // Fallback to secondary endpoint with longer timeout
-    //     return try! Awaitless.run(timeout: 10.0) {
-    //         try await fallbackAPI.fetchData()
-    //     }
-    // }
-    // ```
-    //
-    // - Parameters:
-    //   - timeout: Optional timeout duration in seconds. Ignored on Linux due to stability issues.
-    //   - code: The async closure to execute synchronously.
-    // - Returns: The result of the async closure.
-    // - Throws: The error from the closure, or `AwaitlessError.timeout` if timeout exceeded.
-    #if !os(Linux)
-        @available(*, noasync)
-        public static func run(
-            timeout: TimeInterval? = nil,
-            _ code: sending @Sendable () async throws -> Success) throws
-            -> Success
-        {
-            guard let timeout else {
-                return try Awaitless<Success, any Error>.run(code)
-            }
-
-            let semaphore = DispatchSemaphore(value: 0)
-            nonisolated(unsafe) var result: Result<Success, any Error>? = nil
-
-            withoutActuallyEscaping(code) {
-                nonisolated(unsafe) let sendableCode = $0
-
-                let coreTask = Task<Void, Never>.detached(priority: .userInitiated) { @Sendable () async in
-                    do {
-                        let value = try await withTaskCancellationHandler {
-                            try await sendableCode()
-                        } onCancel: {
-                            // Task was cancelled by timeout
-                        }
-                        result = .success(value)
-                    } catch is CancellationError {
-                        result = .failure(AwaitlessError.timeout(timeout))
-                    } catch {
-                        result = .failure(error)
-                    }
-                }
-
-                Task<Void, Never>.detached(priority: .userInitiated) {
-                    await coreTask.value
-                    semaphore.signal()
-                }
-
-                Task.detached(priority: .utility) { @Sendable () async in
-                    try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-                    coreTask.cancel()
-                }
-
-                semaphore.wait()
-            }
-
-            return try result!.get()
-        }
-    #endif
 }
