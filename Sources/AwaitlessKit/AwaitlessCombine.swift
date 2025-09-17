@@ -158,7 +158,7 @@ import Foundation
 
 // MARK: - Factory used by macro-generated code
 
-public enum _AwaitlessCombineFactory {
+public enum AwaitlessCombineFactory {
     public static func makeThrowing<Output: Sendable>(
         priority: TaskPriority = .medium,
         work: @escaping @Sendable () async throws -> Output

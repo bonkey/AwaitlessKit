@@ -218,12 +218,12 @@ public struct AwaitlessPublisherMacro: PeerMacro {
                 }
             }()
 
-            // _AwaitlessCombineFactory.makeThrowing { ... }  OR  makeNonThrowing { ... }
+            // AwaitlessCombineFactory.makeThrowing { ... }  OR  makeNonThrowing { ... }
             let factoryName = isThrowing ? "makeThrowing" : "makeNonThrowing"
 
             let factoryCall = FunctionCallExprSyntax(
                 calledExpression: MemberAccessExprSyntax(
-                    base: DeclReferenceExprSyntax(baseName: .identifier("_AwaitlessCombineFactory")),
+                    base: DeclReferenceExprSyntax(baseName: .identifier("AwaitlessCombineFactory")),
                     period: .periodToken(),
                     name: .identifier(factoryName)),
                 leftParen: .leftParenToken(),

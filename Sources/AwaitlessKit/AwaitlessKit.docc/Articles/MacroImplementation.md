@@ -161,7 +161,7 @@ func generatePublisherWrapper(
 
     // Generated body (conceptual)
     let body = """
-        return _AwaitlessCombineFactory.\(factory) {
+        return AwaitlessCombineFactory.\(factory) {
             \(throwsError ? "try " : "")await self.\(function.name)(\(parameters))
         }\(config.delivery == .main ? ".receive(on: DispatchQueue.main)" : "")
         """

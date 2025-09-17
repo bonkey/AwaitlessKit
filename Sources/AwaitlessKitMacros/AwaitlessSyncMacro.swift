@@ -271,7 +271,7 @@ public struct AwaitlessSyncMacro: PeerMacro {
             ? ExprSyntax(TryExprSyntax(expression: awaitExpression))
             : ExprSyntax(awaitExpression)
 
-        // Create the closure to pass to Noasync.run with proper formatting
+        // Create the closure to pass to Awaitless.run with proper formatting
         let innerClosure = ClosureExprSyntax(
             leftBrace: .leftBraceToken(leadingTrivia: .space),
             statements: CodeBlockItemListSyntax {
@@ -290,9 +290,9 @@ public struct AwaitlessSyncMacro: PeerMacro {
             })
     }
 
-    /// Creates a Noasync.run function call with trailing closure syntax
+    /// Creates a Awaitless.run function call with trailing closure syntax
     private static func createTaskNoasyncCall(with closure: ExprSyntax, isThrowing: Bool) -> ExprSyntax {
-        // Create Noasync.run with trailing closure syntax (no parentheses)
+        // Create Awaitless.run with trailing closure syntax (no parentheses)
         let taskNoasyncCall = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
                 base: DeclReferenceExprSyntax(baseName: .identifier("Awaitless")),
