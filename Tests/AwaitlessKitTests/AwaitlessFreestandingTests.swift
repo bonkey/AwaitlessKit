@@ -33,7 +33,7 @@ struct AwaitlessFreestandingTests {
         } expansion: {
             """
             let result = Noasync.run {
-                return try await fetchData()
+                try await fetchData()
             }
             """
         }
@@ -93,7 +93,7 @@ struct AwaitlessFreestandingTests {
         } expansion: {
             """
             let result = Noasync.run {
-                return try await fetch(url: "http://example.com", timeout: 30.0, retries: 3)
+                try await fetch(url: "http://example.com", timeout: 30.0, retries: 3)
             }
             """
         }
