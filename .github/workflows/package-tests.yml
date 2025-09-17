@@ -58,6 +58,9 @@ jobs:
           - name: "Stable"
             xcode-version: "latest-stable"
             upload-coverage: true
+          - name: "Xcode 16"
+            xcode-version: "^16.4"
+            upload-coverage: false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
