@@ -44,15 +44,17 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
             ExprSyntax(TryExprSyntax(expression: awaitExpr)) :
             awaitExpr
 
-        let closure = ExprSyntax(
-            ClosureExprSyntax(
-                statements: CodeBlockItemListSyntax {
-                    CodeBlockItemSyntax(item: .stmt(
-                        StmtSyntax(
-                            ReturnStmtSyntax(
-                                returnKeyword: .keyword(.return, trailingTrivia: .space),
-                                expression: finalExpr))))
-                }))
+        let closure = ClosureExprSyntax(
+            leftBrace: .leftBraceToken(leadingTrivia: .space),
+            statements: CodeBlockItemListSyntax {
+                CodeBlockItemSyntax(item: .stmt(
+                    StmtSyntax(
+                        ReturnStmtSyntax(
+                            returnKeyword: .keyword(.return, trailingTrivia: .space),
+                            expression: finalExpr))))
+            },
+            rightBrace: .rightBraceToken(leadingTrivia: .newline)
+        )
 
         return ExprSyntax(
             FunctionCallExprSyntax(
@@ -60,11 +62,12 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
                     base: DeclReferenceExprSyntax(baseName: .identifier("Noasync")),
                     period: .periodToken(),
                     name: .identifier("run")),
-                leftParen: .leftParenToken(),
-                arguments: LabeledExprListSyntax {
-                    LabeledExprSyntax(expression: closure)
-                },
-                rightParen: .rightParenToken()))
+                leftParen: nil,
+                arguments: LabeledExprListSyntax([]),
+                rightParen: nil,
+                trailingClosure: closure
+            )
+        )
     }
 }
 

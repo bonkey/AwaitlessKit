@@ -271,11 +271,14 @@ public struct AwaitlessSyncMacro: PeerMacro {
             ? ExprSyntax(TryExprSyntax(expression: awaitExpression))
             : ExprSyntax(awaitExpression)
 
-        // Create the closure to pass to Noasync.run
+        // Create the closure to pass to Noasync.run with proper formatting
         let innerClosure = ClosureExprSyntax(
+            leftBrace: .leftBraceToken(leadingTrivia: .space),
             statements: CodeBlockItemListSyntax {
                 CodeBlockItemSyntax(item: .expr(innerCallExpr))
-            })
+            },
+            rightBrace: .rightBraceToken(leadingTrivia: .newline)
+        )
 
         // Create the Noasync.run call
         let taskNoasyncCall = createTaskNoasyncCall(with: ExprSyntax(innerClosure), isThrowing: isThrowing)
@@ -287,18 +290,19 @@ public struct AwaitlessSyncMacro: PeerMacro {
             })
     }
 
-    /// Creates a Noasync.run function call with the provided closure
+    /// Creates a Noasync.run function call with trailing closure syntax
     private static func createTaskNoasyncCall(with closure: ExprSyntax, isThrowing: Bool) -> ExprSyntax {
+        // Create Noasync.run with trailing closure syntax (no parentheses)
         let taskNoasyncCall = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
                 base: DeclReferenceExprSyntax(baseName: .identifier("Noasync")),
                 period: .periodToken(),
                 name: .identifier("run")),
-            leftParen: .leftParenToken(),
-            arguments: LabeledExprListSyntax {
-                LabeledExprSyntax(expression: closure)
-            },
-            rightParen: .rightParenToken())
+            leftParen: nil,
+            arguments: LabeledExprListSyntax([]), // Empty arguments since we use trailing closure
+            rightParen: nil,
+            trailingClosure: closure.as(ClosureExprSyntax.self) // Use trailing closure
+        )
 
         // Add 'try' if the original function throws
         if isThrowing {
