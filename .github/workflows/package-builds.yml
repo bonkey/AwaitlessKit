@@ -18,24 +18,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  setup:
-    name: Setup Xcode Matrix
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Set matrix
-        id: set-matrix
-        run: echo "matrix=$(cat .github/xcode-versions.json)" >> $GITHUB_OUTPUT
   build-ios:
     name: Build for iOS 15 (${{ matrix.name }})
     runs-on: macos-15
-    needs: setup
     strategy:
-      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+      matrix:
+        include:
+          - name: "Latest"
+            xcode-version: "latest"
+          - name: "Stable"
+            xcode-version: "latest-stable"
+          - name: "Xcode 16"
+            xcode-version: "^16.4"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -65,9 +59,15 @@ jobs:
   build-macos:
     name: Build for macOS (${{ matrix.name }})
     runs-on: macos-15
-    needs: setup
     strategy:
-      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+      matrix:
+        include:
+          - name: "Latest"
+            xcode-version: "latest"
+          - name: "Stable"
+            xcode-version: "latest-stable"
+          - name: "Xcode 16"
+            xcode-version: "^16.4"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
