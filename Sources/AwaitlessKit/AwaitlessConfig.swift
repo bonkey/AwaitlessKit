@@ -5,6 +5,25 @@
 import Foundation
 public import AwaitlessCore
 
+/// Thread-safe storage for configuration
+private final class ConfigStorage: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _value: AwaitlessConfigData = .init()
+    
+    var value: AwaitlessConfigData {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _value
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _value = newValue
+        }
+    }
+}
+
 /// Global configuration for AwaitlessKit macros, providing process-level defaults.
 ///
 /// AwaitlessKit uses a four-level configuration hierarchy:
@@ -28,7 +47,6 @@ public import AwaitlessCore
 /// ```
 ///
 /// These defaults will be used by all AwaitlessKit macros unless overridden by more specific configuration.
-@MainActor
 public enum AwaitlessConfig {
     /// Access the current process-level defaults.
     ///
@@ -37,7 +55,7 @@ public enum AwaitlessConfig {
     ///
     /// - Returns: The current process-level configuration data
     public static var currentDefaults: AwaitlessConfigData {
-        _currentDefaults
+        _storage.value
     }
 
     /// Sets process-level defaults for AwaitlessKit macros.
@@ -80,7 +98,7 @@ public enum AwaitlessConfig {
         delivery: AwaitlessDelivery? = nil,
         strategy: AwaitlessSynchronizationStrategy? = nil)
     {
-        _currentDefaults = AwaitlessConfigData(
+        _storage.value = AwaitlessConfigData(
             prefix: prefix,
             availability: availability,
             delivery: delivery,
@@ -88,5 +106,5 @@ public enum AwaitlessConfig {
     }
 
     /// Internal storage for the current defaults
-    private static var _currentDefaults: AwaitlessConfigData = .init()
+    private static let _storage = ConfigStorage()
 }

@@ -19,7 +19,7 @@ final class SampleApp {
         try demonstrateAwaitlessBasic()
         try demonstrateAwaitlessableProtocol()
         demonstrateAwaitlessPublisher()
-        demonstrateAwaitlessFreestanding()
+        try demonstrateAwaitlessFreestanding()
         demonstrateIsolatedSafeState()
         try demonstrateAwaitlessCompletion()
         try demonstrateAwaitlessConfig()
@@ -116,27 +116,29 @@ final class SampleApp {
         print()
     }
 
-    private func demonstrateAwaitlessFreestanding() {
+    private func demonstrateAwaitlessFreestanding() throws {
         print("4. #awaitless Freestanding Macro")
         
-        let usage = AwaitlessFreestandingUsage()
+        let service = AwaitlessBasic()
+        let url = URL(string: "https://httpbin.org/json")!
         
-        let result1 = usage.syncMethodUsingAsyncCode()
-        print("   Sync method result: \(result1)")
+        // Use existing async functions with #awaitless
+        let data = try #awaitless(try service.downloadFile(url: url))
+        print("   Downloaded via #awaitless: \(data.count) bytes")
         
-        let result2 = usage.processDataSync()
-        print("   Process data sync: \(result2)")
+        // Chain operations
+        let result = #awaitless(service.processData(data))
+        print("   Chained processing: \(result)")
         
-        let computed = usage.computedProperty
-        print("   Computed property: \(computed)")
+        // Use in conditional
+        if try #awaitless(try service.validateInput("test")) {
+            print("   Conditional validation: passed")
+        }
         
-        let mixed = usage.mixedOperations()
-        print("   Mixed operations: hash=\(mixed.hash), number=\(mixed.number), processed=\(mixed.processed)")
-        
-        let hashes = usage.batchProcess(items: ["item1", "item2", "item3"])
-        print("   Batch hashes: \(hashes)")
         print()
     }
+    
+
 
     private func demonstrateIsolatedSafeState() {
         print("5. @IsolatedSafe Thread-Safe State")
@@ -203,22 +205,27 @@ final class SampleApp {
     }
 
     private func demonstrateAwaitlessConfig() throws {
-        print("7. Direct Awaitless.run() Usage")
+        print("7. AwaitlessConfig Global Configuration")
         
-        let directResult = Awaitless.run {
-            await simulateProcessing()
-            return "Direct async execution result"
-        }
-        print("   Direct result: \(directResult)")
+        // Show current defaults
+        let initialDefaults = AwaitlessConfig.currentDefaults
+        print("   Initial defaults: prefix=\(initialDefaults.prefix ?? "nil"), strategy=\(String(describing: initialDefaults.strategy))")
         
-        let computedValue = Awaitless.run {
-            await withCheckedContinuation { continuation in
-                DispatchQueue.global().asyncAfter(deadline: .now() + 0.001) {
-                    continuation.resume(returning: 999)
-                }
-            }
-        }
-        print("   Computed value: \(computedValue)")
+        // Set custom global defaults
+        AwaitlessConfig.setDefaults(
+            prefix: "blocking_",
+            availability: .deprecated("Use async version instead"),
+            delivery: .main,
+            strategy: .concurrent
+        )
+        
+        let updatedDefaults = AwaitlessConfig.currentDefaults
+        print("   Updated defaults: prefix=\(updatedDefaults.prefix ?? "nil"), strategy=\(String(describing: updatedDefaults.strategy))")
+        
+        // Reset to default configuration
+        AwaitlessConfig.setDefaults()
+        let resetDefaults = AwaitlessConfig.currentDefaults
+        print("   Reset defaults: prefix=\(resetDefaults.prefix ?? "nil"), strategy=\(String(describing: resetDefaults.strategy))")
         print()
     }
 
