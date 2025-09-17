@@ -140,7 +140,7 @@ struct AwaitlessFreestandingTests {
             let result = Noasync.run {
                 return await process(data: "test", transform: {
                         $0.uppercased()
-                })
+                    })
             }
             """
         }
@@ -157,8 +157,8 @@ struct AwaitlessFreestandingTests {
             Noasync.run {
                 return await asyncProcess(data: "test", completion: {
                         print($0)
+                    })
             }
-                })
             """
         }
     }
@@ -189,8 +189,8 @@ struct AwaitlessFreestandingTests {
             let result = Noasync.run {
                 return await processCollection(items, where: {
                         $0 == target
+                    })
             }
-                })
             """
         }
     }
@@ -266,9 +266,9 @@ struct AwaitlessFreestandingTests {
         } expansion: {
             """
             let result = Noasync.run {
-                return await process(transform("data", using: {
-                        $0.uppercased()
-                }))
+                await process(transform("data", using: {
+                            $0.uppercased()
+                        }))
             }
             """
         }
