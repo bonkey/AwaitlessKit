@@ -15,7 +15,7 @@ struct AwaitlessNoasyncRunTests {
 
     @Test("Execute basic async operation synchronously")
     func basicExecution() throws {
-        let result = try Noasync.run {
+        let result = try Awaitless.run {
             try await Task.sleep(nanoseconds: 100_000_000)
             return "Success"
         }
@@ -25,7 +25,7 @@ struct AwaitlessNoasyncRunTests {
 
     @Test("Handle different return types")
     func differentReturnTypes() throws {
-        let intResult = try Noasync.run {
+        let intResult = try Awaitless.run {
             try await Task.sleep(nanoseconds: 10_000_000)
             return 42
         }
@@ -35,7 +35,7 @@ struct AwaitlessNoasyncRunTests {
             let value: String
         }
 
-        let structResult = try Noasync.run {
+        let structResult = try Awaitless.run {
             try await Task.sleep(nanoseconds: 10_000_000)
             return TestData(value: "test")
         }
@@ -44,7 +44,7 @@ struct AwaitlessNoasyncRunTests {
 
     @Test("Execute void-returning async operation")
     func voidReturn() throws {
-        try Noasync.run {
+        try Awaitless.run {
             try await Task.sleep(nanoseconds: 10_000_000)
             #expect(Bool(true))
         }
@@ -55,7 +55,7 @@ struct AwaitlessNoasyncRunTests {
     @Test("Propagate errors correctly")
     func errorPropagation() throws {
         #expect(throws: TestError.simpleError) {
-            try Noasync.run {
+            try Awaitless.run {
                 throw TestError.simpleError
             }
         }
@@ -64,7 +64,7 @@ struct AwaitlessNoasyncRunTests {
     @Test("Catch errors from nested async calls")
     func nestedErrors() throws {
         do {
-            try Noasync.run {
+            try Awaitless.run {
                 try await Task.sleep(nanoseconds: 10_000_000)
                 throw TestError.simpleError
             }
@@ -79,7 +79,7 @@ struct AwaitlessNoasyncRunTests {
         var results: [Int] = []
 
         for i in 0 ..< count {
-            let result = try Noasync.run {
+            let result = try Awaitless.run {
                 try await Task.sleep(for: .microseconds(Int.random(in: 10 ... 5000)))
                 return i
             }
@@ -96,7 +96,7 @@ struct AwaitlessNoasyncRunTests {
     @Test("Execute with timeout - success case", .enabled(if: !isLinux))
     func timeoutSuccess() throws {
         #if !os(Linux)
-        let result: String = try Noasync<String, any Error>.run(timeout: 0.1) {
+        let result: String = try Awaitless<String, any Error>.run(timeout: 0.1) {
             try await Task.sleep(for: .milliseconds(10))
             return "Success"
         }
@@ -108,8 +108,8 @@ struct AwaitlessNoasyncRunTests {
     @Test("Execute with timeout - timeout case", .enabled(if: !isLinux))
     func timeoutFailure() throws {
         #if !os(Linux)
-        #expect(throws: NoasyncError.timeout(0.05)) {
-            try Noasync<String, any Error>.run(timeout: 0.05) {
+        #expect(throws: AwaitlessError.timeout(0.05)) {
+            try Awaitless<String, any Error>.run(timeout: 0.05) {
                 try await Task.sleep(for: .milliseconds(200))
                 return "Should not reach here"
             }
@@ -120,7 +120,7 @@ struct AwaitlessNoasyncRunTests {
     @Test("Execute with timeout disabled (nil)", .enabled(if: !isLinux))
     func timeoutDisabled() throws {
         #if !os(Linux)
-        let result: String = try Noasync<String, any Error>.run(timeout: nil) {
+        let result: String = try Awaitless<String, any Error>.run(timeout: nil) {
             try await Task.sleep(for: .milliseconds(10))
             return "Success"
         }
@@ -132,7 +132,7 @@ struct AwaitlessNoasyncRunTests {
     @Test("Timeout with void return type", .enabled(if: !isLinux))
     func timeoutVoidReturn() throws {
         #if !os(Linux)
-        try Noasync<Void, any Error>.run(timeout: 0.1) {
+        try Awaitless<Void, any Error>.run(timeout: 0.1) {
             try await Task.sleep(for: .milliseconds(10))
             #expect(Bool(true))
         }
@@ -143,7 +143,7 @@ struct AwaitlessNoasyncRunTests {
     func timeoutErrorPropagation() throws {
         #if !os(Linux)
         #expect(throws: TestError.simpleError) {
-            try Noasync<String, any Error>.run(timeout: 0.1) {
+            try Awaitless<String, any Error>.run(timeout: 0.1) {
                 try await Task.sleep(for: .milliseconds(10))
                 throw TestError.simpleError
             }
@@ -155,7 +155,7 @@ struct AwaitlessNoasyncRunTests {
     func multipleTimeoutOperations() throws {
         #if !os(Linux)
         for i in 0 ..< 10 {
-            let result: Int = try Noasync<Int, any Error>.run(timeout: 0.05) {
+            let result: Int = try Awaitless<Int, any Error>.run(timeout: 0.05) {
                 try await Task.sleep(for: .milliseconds(5))
                 return i
             }
@@ -167,8 +167,8 @@ struct AwaitlessNoasyncRunTests {
     @Test("Very short timeout", .enabled(if: !isLinux))
     func veryShortTimeout() throws {
         #if !os(Linux)
-        #expect(throws: NoasyncError.timeout(0.001)) {
-            try Noasync<String, any Error>.run(timeout: 0.001) {
+        #expect(throws: AwaitlessError.timeout(0.001)) {
+            try Awaitless<String, any Error>.run(timeout: 0.001) {
                 try await Task.sleep(for: .milliseconds(100))
                 return "Should not reach here"
             }
@@ -179,7 +179,7 @@ struct AwaitlessNoasyncRunTests {
     @Test("Different return types with timeout", .enabled(if: !isLinux))
     func differentReturnTypesWithTimeout() throws {
         #if !os(Linux)
-        let intResult: Int = try Noasync<Int, any Error>.run(timeout: 0.1) {
+        let intResult: Int = try Awaitless<Int, any Error>.run(timeout: 0.1) {
             try await Task.sleep(for: .milliseconds(10))
             return 42
         }
@@ -189,7 +189,7 @@ struct AwaitlessNoasyncRunTests {
             let value: String
         }
 
-        let structResult: TestData = try Noasync<TestData, any Error>.run(timeout: 0.1) {
+        let structResult: TestData = try Awaitless<TestData, any Error>.run(timeout: 0.1) {
             try await Task.sleep(for: .milliseconds(10))
             return TestData(value: "test")
         }

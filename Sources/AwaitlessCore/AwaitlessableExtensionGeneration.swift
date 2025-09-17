@@ -8,6 +8,6 @@ import Foundation
 public enum AwaitlessableExtensionGeneration {
     /// No extensions are generated. Only protocol members are added.
     case disabled
-    /// Extensions with default implementations are generated using `Noasync.run`.
+    /// Extensions with default implementations are generated using `Awaitless.run`.
     case enabled
 }

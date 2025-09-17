@@ -5,8 +5,8 @@
 import AwaitlessKit
 import Foundation
 
-class APIClient {
-    @Awaitless(prefix: "sync_")
+final class APIClient: Sendable {
+       @Awaitless(prefix: "sync_")
     func authenticate() async throws -> String {
         try await Task.sleep(nanoseconds: 1_000_000)
         return "Authenticated"

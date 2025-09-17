@@ -284,7 +284,7 @@ service.fetchData { result in
 
 ```swift
 class NetworkClient {
-    // New async API with backward compatibility
+    // Async API with backward compatibility
     @Awaitless(prefix: "sync_", .deprecated("Use async version"))
     func request<T: Codable>(_ endpoint: Endpoint) async throws -> T {
         let (data, response) = try await URLSession.shared.data(for: endpoint.request)
@@ -306,7 +306,7 @@ let client = NetworkClient()
 // Legacy code continues working
 let user1: User = try client.sync_request(.user(id: "123"))
 
-// New code uses async
+// Async usage
 let user2: User = try await client.request(.user(id: "456"))
 ```
 
@@ -381,3 +381,82 @@ service.processRequest("input") { result in
 For comprehensive examples and advanced usage patterns, see <doc:Examples>.
 For configuration details, see <doc:Configuration>.
 For migration strategies, see <doc:MigrationGuide>.
+
+## Concurrency & Sendable Requirements
+
+When using AwaitlessKit macros in Swift 6+ you should explicitly model isolation and value transfer semantics to avoid warnings or undefined behavior:
+
+### Mark Classes `final` Whenever Possible
+
+Marking an async-capable service class `final`:
+
+- Enables the compiler to better reason about thread-safety
+- Avoids accidental subclass overrides that could bypass wrappers
+- Reduces dynamic dispatch overhead
+
+```swift
+final class UserService: Sendable {
+    @Awaitless
+    func fetchUser(id: String) async throws -> User { /* ... */ }
+}
+```
+
+If a class must be subclassed, ensure all async or macro-decorated methods are not relying on subclass-only invariants that the generated sync or publisher wrappers could violate.
+
+### Adopt `Sendable` on Types Participating in Concurrency
+
+Add `Sendable` to:
+
+- Service classes whose methods you wrap with `@Awaitless`, `@AwaitlessPublisher`, or `@AwaitlessCompletion`
+- Protocols you annotate with `@Awaitlessable`
+- Parameter/result model types crossing concurrency boundaries (where feasible)
+
+```swift
+@Awaitlessable
+protocol DataService: Sendable {
+    func fetchUser(id: String) async throws -> User
+}
+```
+
+### Protocols + `@Awaitlessable`
+
+When you generate synchronous protocol extensions:
+
+- Mark the protocol `Sendable` if conforming types will be used across tasks/threads
+- Ensure all associated types & referenced types are `Sendable` (or consciously non-Sendable if confined)
+
+### Capturing Self in Generated Publishers
+
+`@AwaitlessPublisher` generates a Task-backed publisher. To keep captures safe:
+
+- Prefer immutable or thread-safe state inside the async function
+- Use `@IsolatedSafe` for mutable `nonisolated(unsafe)` properties when crossing threads
+- Avoid relying on main-thread-only assumptions unless you specify `deliverOn: .main`
+
+### Non-Sendable Legacy Types
+
+If you must interact with non-Sendable legacy types:
+
+- Contain them inside a final wrapper object marked `@unchecked Sendable` only after a deliberate audit
+- Keep such usage out of macro-generated surfaces when possible
+
+```swift
+final class LegacyWrapper: @unchecked Sendable {
+    private let ref: LegacyNonThreadSafeThing
+    init(_ ref: LegacyNonThreadSafeThing) { self.ref = ref }
+
+    @Awaitless
+    func perform() async { ref.doWork() } // Consciously audited
+}
+```
+
+### Summary Checklist
+
+- final + Sendable for service classes
+- Sendable protocols with @Awaitlessable
+- Prefer value-semantic / Sendable parameter & return types
+- Use `deliverOn: .main` only for UI-sensitive delivery
+- Introduce `@IsolatedSafe` for unsafe shared mutable state
+- Avoid `@unchecked Sendable` unless strictly necessary and audited
+
+These practices keep the generated synchronous and publisher surfaces aligned with Swift 6 concurrency expectations while minimizing warnings and migration friction.

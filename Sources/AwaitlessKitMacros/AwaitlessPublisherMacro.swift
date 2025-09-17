@@ -196,11 +196,10 @@ public struct AwaitlessPublisherMacro: PeerMacro {
             delivery: AwaitlessDelivery)
             -> CodeBlockSyntax
         {
-            // Map parameters from the original function to argument expressions
             let argumentList = createArgumentList(from: parameters)
 
-            // Create the function call to the original async function with self.
-            let asyncCallExpr = FunctionCallExprSyntax(
+            // self.originalFuncName(<args>)
+            let baseCall = FunctionCallExprSyntax(
                 calledExpression: MemberAccessExprSyntax(
                     base: DeclReferenceExprSyntax(baseName: .identifier("self")),
                     period: .periodToken(),
@@ -209,192 +208,70 @@ public struct AwaitlessPublisherMacro: PeerMacro {
                 arguments: argumentList,
                 rightParen: .rightParenToken())
 
-            // Add await to the async call
-            let awaitExpression = AwaitExprSyntax(expression: ExprSyntax(asyncCallExpr))
-
-            // If the original function throws, add try to the call
-            let innerCallExpr: ExprSyntax = isThrowing
-                ? ExprSyntax(TryExprSyntax(expression: awaitExpression))
-                : ExprSyntax(awaitExpression)
-
-            // Build the Task body statements
-            let taskStatements =
+            // await (+ try) self.originalFuncName(...)
+            let awaited: ExprSyntax = {
+                let awaitedExpr = AwaitExprSyntax(expression: ExprSyntax(baseCall))
                 if isThrowing {
-                    CodeBlockItemListSyntax {
-                        // do {
-                        CodeBlockItemSyntax(item: .stmt(StmtSyntax(
-                            DoStmtSyntax(
-                                body: CodeBlockSyntax(
-                                    statements: CodeBlockItemListSyntax {
-                                        // let result = try await originalFunc()
-                                        CodeBlockItemSyntax(item: .decl(DeclSyntax(
-                                            VariableDeclSyntax(
-                                                bindingSpecifier: .keyword(.let),
-                                                bindings: PatternBindingListSyntax {
-                                                    PatternBindingSyntax(
-                                                        pattern: IdentifierPatternSyntax(
-                                                            identifier: .identifier("result")),
-                                                        initializer: InitializerClauseSyntax(value: innerCallExpr))
-                                                }))))
-                                        // promise(.success(result))
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(
-                                            FunctionCallExprSyntax(
-                                                calledExpression: DeclReferenceExprSyntax(
-                                                    baseName: .identifier("promise")),
-                                                leftParen: .leftParenToken(),
-                                                arguments: LabeledExprListSyntax {
-                                                    LabeledExprSyntax(
-                                                        expression: FunctionCallExprSyntax(
-                                                            calledExpression: MemberAccessExprSyntax(
-                                                                period: .periodToken(),
-                                                                name: .identifier("success")),
-                                                            leftParen: .leftParenToken(),
-                                                            arguments: LabeledExprListSyntax {
-                                                                LabeledExprSyntax(
-                                                                    expression: DeclReferenceExprSyntax(
-                                                                        baseName: .identifier("result")))
-                                                            },
-                                                            rightParen: .rightParenToken()))
-                                                },
-                                                rightParen: .rightParenToken()))))
-                                    }),
-                                catchClauses: CatchClauseListSyntax {
-                                    CatchClauseSyntax(
-                                        body: CodeBlockSyntax(
-                                            statements: CodeBlockItemListSyntax {
-                                                // promise(.failure(error))
-                                                CodeBlockItemSyntax(item: .expr(ExprSyntax(
-                                                    FunctionCallExprSyntax(
-                                                        calledExpression: DeclReferenceExprSyntax(
-                                                            baseName: .identifier("promise")),
-                                                        leftParen: .leftParenToken(),
-                                                        arguments: LabeledExprListSyntax {
-                                                            LabeledExprSyntax(
-                                                                expression: FunctionCallExprSyntax(
-                                                                    calledExpression: MemberAccessExprSyntax(
-                                                                        period: .periodToken(),
-                                                                        name: .identifier("failure")),
-                                                                    leftParen: .leftParenToken(),
-                                                                    arguments: LabeledExprListSyntax {
-                                                                        LabeledExprSyntax(
-                                                                            expression: DeclReferenceExprSyntax(
-                                                                                baseName: .identifier("error")))
-                                                                    },
-                                                                    rightParen: .rightParenToken()))
-                                                        },
-                                                        rightParen: .rightParenToken()))))
-                                            }))
-                                }))))
-                    }
+                    return ExprSyntax(TryExprSyntax(expression: awaitedExpr))
                 } else {
-                    CodeBlockItemListSyntax {
-                        // let result = await originalFunc()
-                        CodeBlockItemSyntax(item: .decl(DeclSyntax(
-                            VariableDeclSyntax(
-                                bindingSpecifier: .keyword(.let),
-                                bindings: PatternBindingListSyntax {
-                                    PatternBindingSyntax(
-                                        pattern: IdentifierPatternSyntax(identifier: .identifier("result")),
-                                        initializer: InitializerClauseSyntax(value: innerCallExpr))
-                                }))))
-                        // promise(.success(result))
-                        CodeBlockItemSyntax(item: .expr(ExprSyntax(
-                            FunctionCallExprSyntax(
-                                calledExpression: DeclReferenceExprSyntax(baseName: .identifier("promise")),
-                                leftParen: .leftParenToken(),
-                                arguments: LabeledExprListSyntax {
-                                    LabeledExprSyntax(
-                                        expression: FunctionCallExprSyntax(
-                                            calledExpression: MemberAccessExprSyntax(
-                                                period: .periodToken(),
-                                                name: .identifier("success")),
-                                            leftParen: .leftParenToken(),
-                                            arguments: LabeledExprListSyntax {
-                                                LabeledExprSyntax(
-                                                    expression: DeclReferenceExprSyntax(
-                                                        baseName: .identifier("result")))
-                                            },
-                                            rightParen: .rightParenToken()))
-                                },
-                                rightParen: .rightParenToken()))))
-                    }
+                    return ExprSyntax(awaitedExpr)
                 }
+            }()
 
-            // Create the Task call
-            let taskCall = FunctionCallExprSyntax(
-                calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Task")),
+            // _AwaitlessCombineFactory.makeThrowing { ... }  OR  makeNonThrowing { ... }
+            let factoryName = isThrowing ? "makeThrowing" : "makeNonThrowing"
+
+            let factoryCall = FunctionCallExprSyntax(
+                calledExpression: MemberAccessExprSyntax(
+                    base: DeclReferenceExprSyntax(baseName: .identifier("_AwaitlessCombineFactory")),
+                    period: .periodToken(),
+                    name: .identifier(factoryName)),
                 leftParen: .leftParenToken(),
                 arguments: LabeledExprListSyntax(),
                 rightParen: .rightParenToken(),
                 trailingClosure: ClosureExprSyntax(
-                    statements: taskStatements))
+                    statements: CodeBlockItemListSyntax {
+                        CodeBlockItemSyntax(item: .expr(awaited))
+                    }))
 
-            // Create the Future closure that takes a promise parameter
-            let futureClosure = ClosureExprSyntax(
-                signature: ClosureSignatureSyntax(
-                    parameterClause: .simpleInput(
-                        ClosureShorthandParameterListSyntax {
-                            ClosureShorthandParameterSyntax(name: .identifier("promise"))
-                        })),
-                statements: CodeBlockItemListSyntax {
-                    CodeBlockItemSyntax(item: .expr(ExprSyntax(taskCall)))
-                })
-
-            // Create the Future publisher call
-            let publisherCall = FunctionCallExprSyntax(
-                calledExpression: MemberAccessExprSyntax(
-                    base: DeclReferenceExprSyntax(baseName: .identifier("Future")),
-                    period: .periodToken(),
-                    name: .identifier("init")),
-                leftParen: .leftParenToken(),
-                arguments: LabeledExprListSyntax {
-                    LabeledExprSyntax(
-                        expression: ExprSyntax(futureClosure))
-                },
-                rightParen: .rightParenToken())
-
-            // Optionally add .receive(on: DispatchQueue.main)
-            let baseForErase: ExprSyntax = {
+            // Optional delivery adaptation
+            let deliveredExpr: ExprSyntax = {
                 switch delivery {
                 case .main:
-                    let receiveCall = FunctionCallExprSyntax(
-                        calledExpression: MemberAccessExprSyntax(
-                            base: ExprSyntax(publisherCall),
-                            period: .periodToken(),
-                            name: .identifier("receive")),
-                        leftParen: .leftParenToken(),
-                        arguments: LabeledExprListSyntax {
-                            LabeledExprSyntax(
-                                label: .identifier("on"),
-                                colon: .colonToken(),
-                                expression: ExprSyntax(
-                                    MemberAccessExprSyntax(
-                                        base: DeclReferenceExprSyntax(baseName: .identifier("DispatchQueue")),
+                    // Add receive(on:) then erase to AnyPublisher so the return type matches
+                    return ExprSyntax(
+                        FunctionCallExprSyntax(
+                            calledExpression: MemberAccessExprSyntax(
+                                base: FunctionCallExprSyntax(
+                                    calledExpression: MemberAccessExprSyntax(
+                                        base: ExprSyntax(factoryCall),
                                         period: .periodToken(),
-                                        name: .identifier("main"))))
-                        },
-                        rightParen: .rightParenToken())
-                    return ExprSyntax(receiveCall)
-
+                                        name: .identifier("receive")),
+                                    leftParen: .leftParenToken(),
+                                    arguments: LabeledExprListSyntax {
+                                        LabeledExprSyntax(
+                                            label: .identifier("on"),
+                                            colon: .colonToken(),
+                                            expression: ExprSyntax(
+                                                MemberAccessExprSyntax(
+                                                    base: DeclReferenceExprSyntax(baseName: .identifier("DispatchQueue")),
+                                                    period: .periodToken(),
+                                                    name: .identifier("main"))))
+                                    },
+                                    rightParen: .rightParenToken()),
+                                period: .periodToken(),
+                                name: .identifier("eraseToAnyPublisher")),
+                            leftParen: .leftParenToken(),
+                            arguments: LabeledExprListSyntax(),
+                            rightParen: .rightParenToken()))
                 case .current:
-                    return ExprSyntax(publisherCall)
+                    return ExprSyntax(factoryCall)
                 }
             }()
 
-            // Add .eraseToAnyPublisher()
-            let erasedPublisher = FunctionCallExprSyntax(
-                calledExpression: MemberAccessExprSyntax(
-                    base: baseForErase,
-                    period: .periodToken(),
-                    name: .identifier("eraseToAnyPublisher")),
-                leftParen: .leftParenToken(),
-                arguments: LabeledExprListSyntax(),
-                rightParen: .rightParenToken())
-
-            // Create the return statement with erased publisher
             return CodeBlockSyntax(
                 statements: CodeBlockItemListSyntax {
-                    CodeBlockItemSyntax(item: .expr(ExprSyntax(erasedPublisher)))
+                    CodeBlockItemSyntax(item: .expr(deliveredExpr))
                 })
         }
 

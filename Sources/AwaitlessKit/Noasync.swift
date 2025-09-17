@@ -4,4 +4,4 @@
 
 import Foundation
 
-public enum Noasync<Success: Sendable, Failure: Sendable & Error> {}
+public enum Awaitless<Success: Sendable, Failure: Sendable & Error> {}

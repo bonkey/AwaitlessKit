@@ -14,7 +14,7 @@ import SwiftSyntaxBuilder
 
 /// A macro that generates a synchronous version of an async function.
 /// This macro creates a twin function with specified prefix that wraps the original
-/// async function in a Noasync.run call, making it callable from synchronous contexts.
+/// async function in a Awaitless.run call, making it callable from synchronous contexts.
 public struct AwaitlessSyncMacro: PeerMacro {
     public static func expansion(
         of node: AttributeSyntax,
@@ -246,7 +246,7 @@ public struct AwaitlessSyncMacro: PeerMacro {
         }
     }
 
-    /// Creates the function body that wraps the async call in Noasync.run
+    /// Creates the function body that wraps the async call in Awaitless.run
     private static func createSyncFunctionBody(
         originalFuncName: String,
         parameters: FunctionParameterListSyntax,
@@ -280,10 +280,10 @@ public struct AwaitlessSyncMacro: PeerMacro {
             rightBrace: .rightBraceToken(leadingTrivia: .newline)
         )
 
-        // Create the Noasync.run call
+        // Create the Awaitless.run call
         let taskNoasyncCall = createTaskNoasyncCall(with: ExprSyntax(innerClosure), isThrowing: isThrowing)
 
-        // Create the function body with the Noasync.run call
+        // Create the function body with the Awaitless.run call
         return CodeBlockSyntax(
             statements: CodeBlockItemListSyntax {
                 CodeBlockItemSyntax(item: .expr(taskNoasyncCall))
@@ -295,7 +295,7 @@ public struct AwaitlessSyncMacro: PeerMacro {
         // Create Noasync.run with trailing closure syntax (no parentheses)
         let taskNoasyncCall = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
-                base: DeclReferenceExprSyntax(baseName: .identifier("Noasync")),
+                base: DeclReferenceExprSyntax(baseName: .identifier("Awaitless")),
                 period: .periodToken(),
                 name: .identifier("run")),
             leftParen: nil,

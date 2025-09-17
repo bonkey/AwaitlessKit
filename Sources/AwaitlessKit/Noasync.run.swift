@@ -9,7 +9,7 @@ import AwaitlessCore
 import Dispatch
 public import Foundation
 
-extension Noasync {
+extension Awaitless {
     // Executes the given async closure synchronously, waiting for it to finish before returning.
     //
     // **Warning**: Do not call this from a thread used by Swift Concurrency (e.g. an actor, including global actors
@@ -26,7 +26,7 @@ extension Noasync {
     /// ```swift
     /// // Call async function from sync context
     /// func syncFunction() -> String {
-    ///     let result = Noasync.run {
+    ///     let result = Awaitless.run {
     ///         try await URLSession.shared.data(from: url)
     ///     }
     ///     return String(data: result.0, encoding: .utf8) ?? ""
@@ -38,7 +38,7 @@ extension Noasync {
     /// ```swift
     /// func fetchUserData() -> User? {
     ///     do {
-    ///         let user = try Noasync.run {
+    ///         let user = try Awaitless.run {
     ///             try await apiService.fetchUser(id: "123")
     ///         }
     ///         return user
@@ -53,7 +53,7 @@ extension Noasync {
     ///
     /// ```swift
     /// func loadDashboardData() -> DashboardData {
-    ///     return Noasync.run {
+    ///     return Awaitless.run {
     ///         async let users = fetchUsers()
     ///         async let posts = fetchPosts()
     ///         async let notifications = fetchNotifications()
@@ -71,7 +71,7 @@ extension Noasync {
     /// - Returns: The result of the async closure
     /// - Throws: Any error thrown by the async closure
     @available(*, noasync)
-    public static func run(_ code: sending () async throws(Failure) -> Success) throws(Failure)
+    public static func run(_ code: sending @Sendable () async throws(Failure) -> Success) throws(Failure)
         -> Success
     {
         let semaphore = DispatchSemaphore(value: 0)
@@ -110,11 +110,11 @@ extension Noasync {
     // ```swift
     // func fetchDataWithTimeout() -> Data? {
     //     do {
-    //         let data = try Noasync.run(timeout: 5.0) {
+    //         let data = try Awaitless.run(timeout: 5.0) {
     //             try await URLSession.shared.data(from: slowEndpoint)
     //         }
     //         return data.0
-    //     } catch NoasyncError.timeout(let duration) {
+    //     } catch AwaitlessError.timeout(let duration) {
     //         print("Operation timed out after \(duration) seconds")
     //         return nil
     //     } catch {
@@ -129,11 +129,11 @@ extension Noasync {
     // ```swift
     // func processLargeDataset() -> ProcessingResult? {
     //     do {
-    //         let result = try Noasync.run(timeout: 60.0) {
+    //         let result = try Awaitless.run(timeout: 60.0) {
     //             try await heavyProcessingTask()
     //         }
     //         return result
-    //     } catch NoasyncError.timeout {
+    //     } catch AwaitlessError.timeout {
     //         print("Processing took too long, cancelling...")
     //         return nil
     //     }
@@ -145,14 +145,14 @@ extension Noasync {
     // ```swift
     // func fetchWithFallback() -> APIResponse {
     //     // Try primary endpoint with short timeout
-    //     if let response = try? Noasync.run(timeout: 2.0) {
+    //     if let response = try? Awaitless.run(timeout: 2.0) {
     //         try await primaryAPI.fetchData()
     //     } {
     //         return response
     //     }
     //
     //     // Fallback to secondary endpoint with longer timeout
-    //     return try! Noasync.run(timeout: 10.0) {
+    //     return try! Awaitless.run(timeout: 10.0) {
     //         try await fallbackAPI.fetchData()
     //     }
     // }
@@ -162,16 +162,16 @@ extension Noasync {
     //   - timeout: Optional timeout duration in seconds. Ignored on Linux due to stability issues.
     //   - code: The async closure to execute synchronously.
     // - Returns: The result of the async closure.
-    // - Throws: The error from the closure, or `NoasyncError.timeout` if timeout exceeded.
+    // - Throws: The error from the closure, or `AwaitlessError.timeout` if timeout exceeded.
     #if !os(Linux)
         @available(*, noasync)
         public static func run(
             timeout: TimeInterval? = nil,
-            _ code: sending () async throws -> Success) throws
+            _ code: sending @Sendable () async throws -> Success) throws
             -> Success
         {
             guard let timeout else {
-                return try Noasync<Success, any Error>.run(code)
+                return try Awaitless<Success, any Error>.run(code)
             }
 
             let semaphore = DispatchSemaphore(value: 0)
@@ -189,7 +189,7 @@ extension Noasync {
                         }
                         result = .success(value)
                     } catch is CancellationError {
-                        result = .failure(NoasyncError.timeout(timeout))
+                        result = .failure(AwaitlessError.timeout(timeout))
                     } catch {
                         result = .failure(error)
                     }

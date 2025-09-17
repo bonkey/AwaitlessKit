@@ -37,7 +37,7 @@ public import AwaitlessCore
 ///     // Automatically generates:
 ///     // @available(*, deprecated: "Use async version")
 ///     // func blocking_fetchData() throws -> Data {
-///     //     return try Noasync.run {
+///     //     return try Awaitless.run {
 ///     //         try await self.fetchData()
 ///     //     }
 ///     // }
@@ -207,13 +207,13 @@ public macro awaitless<T>(_ expression: T) -> T = #externalMacro(
 /// // }
 /// //
 /// // extension DataService {
-/// //     // Default implementations using Noasync.run
+/// //     // Default implementations using Awaitless.run
 /// //     public func fetchUser(id: String) throws -> User {
-/// //         return try Noasync.run { try await self.fetchUser(id: id) }
+/// //         return try Awaitless.run { try await self.fetchUser(id: id) }
 /// //     }
 /// //
 /// //     public func fetchData() -> Data {
-/// //         return Noasync.run { await self.fetchData() }
+/// //         return Awaitless.run { await self.fetchData() }
 /// //     }
 /// // }
 ///

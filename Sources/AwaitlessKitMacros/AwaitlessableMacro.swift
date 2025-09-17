@@ -83,7 +83,7 @@ public struct AwaitlessableMacro: MemberMacro, ExtensionMacro {
                 let isAsync = functionDecl.signature.effectSpecifiers?.asyncSpecifier != nil
 
                 if isAsync {
-                    // Create a sync version with default implementation using Noasync.run
+                    // Create a sync version with default implementation using Awaitless.run
                     let syncFunction = createSyncFunctionWithDefaultImplementation(from: functionDecl)
                     extensionMembers.append(MemberBlockItemSyntax(decl: DeclSyntax(syncFunction)))
                 }
@@ -142,7 +142,7 @@ public struct AwaitlessableMacro: MemberMacro, ExtensionMacro {
             body: nil)
     }
 
-    /// Creates a sync function with default implementation using Noasync.run
+    /// Creates a sync function with default implementation using Awaitless.run
     private static func createSyncFunctionWithDefaultImplementation(
         from funcDecl: FunctionDeclSyntax)
         -> FunctionDeclSyntax

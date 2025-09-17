@@ -14,13 +14,13 @@ struct User {
 // MARK: - DataService
 
 @Awaitlessable
-protocol DataService {
+protocol DataService: Sendable {
     func fetchUser(id: String) async throws -> User
 }
 
 // MARK: - MockDataService
 
-class MockDataService: DataService {
+final class MockDataService: DataService {
     /// The async version required by the protocol
     func fetchUser(id: String) async throws -> User {
         try await Task.sleep(nanoseconds: 1_000_000)

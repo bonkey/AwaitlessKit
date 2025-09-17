@@ -6,10 +6,13 @@ import AwaitlessKit
 import Combine
 import Foundation
 
-class CombineService {
-    @AwaitlessPublisher
+final class CombineService: Sendable {
+    @AwaitlessPublisher(deliverOn: .main)
     func fetchItems() async -> [String] {
         try? await Task.sleep(nanoseconds: 1_000_000)
         return ["Item 1 from Combine", "Item 2 from Combine", "Item 3 from Combine"]
     }
+    // Generates: func fetchItems() -> AnyPublisher<[String], Never> (delivers on main queue)
 }
+
+
