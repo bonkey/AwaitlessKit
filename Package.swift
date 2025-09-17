@@ -14,6 +14,7 @@ let package = Package(
     products: [
         .library(name: "AwaitlessKit", targets: ["AwaitlessKit"]),
         .library(name: "AwaitlessKit-PromiseKit", targets: ["AwaitlessKitPromiseKit"]),
+        .executable(name: "SampleApp", targets: ["SampleApp"]),
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", exact: "600.0.1"),
@@ -71,6 +72,15 @@ let package = Package(
                 .product(name: "MacroTesting", package: "swift-macro-testing"),
                 .product(name: "PromiseKit", package: "PromiseKit")
             ],
+            swiftSettings: swiftSettings),
+        .executableTarget(
+            name: "SampleApp",
+            dependencies: [
+                "AwaitlessKit",
+                "AwaitlessKitPromiseKit",
+                .product(name: "PromiseKit", package: "PromiseKit")
+            ],
+            path: "SampleApp/SampleApp",
             swiftSettings: swiftSettings),
     ],
     swiftLanguageModes: [.v5, .v6])

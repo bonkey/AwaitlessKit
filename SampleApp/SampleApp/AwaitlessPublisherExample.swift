@@ -3,9 +3,13 @@
 //
 
 import AwaitlessKit
-import Combine
 import Foundation
 
+#if canImport(Combine)
+import Combine
+#endif
+
+#if canImport(Combine)
 final class AwaitlessPublisherExample: Sendable {
     @AwaitlessPublisher(deliverOn: .main)
     func fetchItems() async -> [String] {
@@ -40,3 +44,4 @@ final class AwaitlessPublisherExample: Sendable {
         return ["version": "1.0.0", "env": "production"]
     }
 }
+#endif

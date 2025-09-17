@@ -8,8 +8,15 @@ import Foundation
 final class AwaitlessBasicExample: Sendable {
     @Awaitless
     func downloadFile(url: URL) async throws -> Data {
+        #if canImport(FoundationNetworking)
+        // On Linux, URLSession is limited
+        await simulateProcessing()
+        let content = "Mock file content from \(url.absoluteString)"
+        return content.data(using: .utf8) ?? Data()
+        #else
         let (data, _) = try await URLSession.shared.data(from: url)
         return data
+        #endif
     }
 
     @Awaitless(prefix: "deprecated_", .deprecated("Use async version instead"))

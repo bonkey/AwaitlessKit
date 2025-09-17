@@ -3,25 +3,37 @@
 //
 
 import AwaitlessKit
-import Combine
 import Foundation
+
+#if canImport(Combine)
+import Combine
+#endif
+
+// Import PromiseKit integration for demonstration
+#if canImport(AwaitlessKitPromiseKit)
+@preconcurrency import AwaitlessKitPromiseKit
+@preconcurrency import PromiseKit
+#endif
 
 @main
 final class SampleApp {
-    static func main() throws {
+    static func main() async throws {
         let app = SampleApp()
-        try app.run()
+        try await app.run()
     }
 
-    func run() throws {
+    func run() async throws {
         print("=== AwaitlessKit Feature Demonstrations ===\n")
 
         try demonstrateAwaitlessBasic()
         try demonstrateAwaitlessableProtocol()
+        #if canImport(Combine)
         demonstrateAwaitlessPublisher()
+        #endif
         try demonstrateAwaitlessFreestanding()
         demonstrateIsolatedSafeState()
         try demonstrateAwaitlessCompletion()
+        try await demonstrateAwaitlessPromise()
         try demonstrateAwaitlessConfig()
 
         print("\n=== All demonstrations completed ===")
@@ -68,6 +80,7 @@ final class SampleApp {
         print()
     }
 
+    #if canImport(Combine)
     private func demonstrateAwaitlessPublisher() {
         print("3. @AwaitlessPublisher Generation")
 
@@ -111,6 +124,7 @@ final class SampleApp {
         Thread.sleep(forTimeInterval: 0.2)
         print()
     }
+    #endif
 
     private func demonstrateAwaitlessFreestanding() throws {
         print("4. #awaitless Freestanding Macro")
@@ -198,8 +212,54 @@ final class SampleApp {
         print()
     }
 
+    private func demonstrateAwaitlessPromise() async throws {
+        #if canImport(AwaitlessKitPromiseKit)
+        print("7. @AwaitlessPromise & @Awaitable PromiseKit Integration")
+        
+        let service = AwaitlessPromiseExample()
+        
+        print("   a) @AwaitlessPromise demonstrates async->Promise generation")
+        print("      - @AwaitlessPromise on fetchUserData() generates Promise<UserProfile> version")
+        print("      - @AwaitlessPromise on downloadFile() with prefix generates promise_downloadFile()")
+        print("      - @AwaitlessPromise on saveConfiguration() handles void async functions")
+        
+        print("   b) @Awaitable demonstrates Promise->async generation")
+        print("      - @Awaitable on legacyFetchUser() generates async throws version")
+        print("      - @Awaitable with prefix on legacyDownloadData() generates async_legacyDownloadData()")
+        print("      - @Awaitable with deprecation messages provides migration guidance")
+        
+        // Demonstrate actual usage of the @Awaitable generated functions
+        do {
+            let user = try await service.legacyFetchUser(id: "demo")
+            print("   c) Live @Awaitable demo - fetched user: \(user)")
+        } catch {
+            print("   c) Live @Awaitable demo - error: \(error.localizedDescription)")
+        }
+        
+        let data = try await service.async_legacyDownloadData(endpoint: "/test")
+        print("   d) Live @Awaitable with prefix demo - downloaded: \(data.count) bytes")
+        
+        try await service.legacyVoidOperation()
+        print("   e) Live @Awaitable void demo - operation completed")
+        
+        let result = try await service.migrated_legacyComplexOperation(parameters: ["demo": "value"])
+        print("   f) Live @Awaitable complex demo - result: \(result)")
+        
+        print("   g) Both macros provide bidirectional conversion:")
+        print("      - Teams can gradually migrate from PromiseKit to async/await")
+        print("      - Or integrate async/await code with existing PromiseKit infrastructure")
+        print("      - Availability attributes guide developers during migration")
+        
+        print()
+        #else
+        print("7. @AwaitlessPromise & @Awaitable PromiseKit Integration")
+        print("   PromiseKit integration not available (requires AwaitlessKit-PromiseKit import)")
+        print()
+        #endif
+    }
+
     private func demonstrateAwaitlessConfig() throws {
-        print("7. AwaitlessConfig Global Configuration")
+        print("8. AwaitlessConfig Global Configuration")
 
         // Show current defaults
         let initialDefaults = AwaitlessConfig.currentDefaults
