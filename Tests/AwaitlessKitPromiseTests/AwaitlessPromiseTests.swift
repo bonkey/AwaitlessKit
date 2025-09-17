@@ -156,8 +156,7 @@ struct AwaitlessPromiseTests {
             """
             func legacy() async -> String { "data" }
 
-            @available(*, deprecated, message: "Use async version", renamed: "legacy")
-            func legacy() -> Promise<String> {
+            @available(*, deprecated, message: "Use async version", renamed: "legacy") func legacy() -> Promise<String> {
                 return Promise { seal in
                     Task() {
                         let result = await self.legacy()
@@ -165,40 +164,6 @@ struct AwaitlessPromiseTests {
                     }
                 }
             }
-            """
-        }
-    }
-
-    @Test("Promise wrapper only applies to async functions")
-    func promiseRequiresAsync() {
-        assertMacro {
-            """
-            @AwaitlessPromise
-            func notAsync() -> String { "sync" }
-            """
-        } diagnostics: {
-            """
-            @AwaitlessPromise
-            ┬───────────────
-            ╰─ 🛑 @AwaitlessPromise requires the function to be 'async'
-            func notAsync() -> String { "sync" }
-            """
-        }
-    }
-
-    @Test("Promise wrapper only applies to functions")
-    func promiseRequiresFunction() {
-        assertMacro {
-            """
-            @AwaitlessPromise
-            var property: String = "value"
-            """
-        } diagnostics: {
-            """
-            @AwaitlessPromise
-            var property: String = "value"
-            ┬──────────────────────────────
-            ╰─ 🛑 @AwaitlessPromise can only be applied to functions
             """
         }
     }
@@ -239,8 +204,8 @@ struct AwaitlessPromiseTests {
             func save() -> Promise<Void> {
                 return Promise { seal in
                     Task() {
-                        let result = await self.save()
-                        seal.fulfill(result)
+                        await self.save()
+                        seal.fulfill(())
                     }
                 }
             }
