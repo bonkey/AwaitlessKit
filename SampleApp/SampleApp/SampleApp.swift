@@ -172,44 +172,33 @@ final class SampleApp {
         print("6. @AwaitlessCompletion Handler Generation")
         
         let service = AwaitlessCompletion()
-        var completionResult: String = ""
-        var completionError: Error?
-        
         let semaphore = DispatchSemaphore(value: 0)
         
         service.fetchData { result in
             switch result {
             case .success(let data):
-                completionResult = data
+                print("   Completion result: \(data)")
             case .failure(let error):
-                completionError = error
+                print("   Completion error: \(error.localizedDescription)")
             }
             semaphore.signal()
         }
         
         semaphore.wait()
         
-        if let error = completionError {
-            print("   Completion error: \(error.localizedDescription)")
-        } else {
-            print("   Completion result: \(completionResult)")
-        }
-        
         let semaphore2 = DispatchSemaphore(value: 0)
-        var requestResult: Bool = false
         
         service.callback_processRequest("test request") { result in
             switch result {
             case .success(let success):
-                requestResult = success
+                print("   Request processed: \(success)")
             case .failure(_):
-                requestResult = false
+                print("   Request processed: false")
             }
             semaphore2.signal()
         }
         
         semaphore2.wait()
-        print("   Request processed: \(requestResult)")
         print()
     }
 
@@ -238,19 +227,4 @@ final class SampleApp {
 
 
 
-final class AwaitlessCompletion: Sendable {
-    @AwaitlessCompletion
-    func fetchData() async throws -> String {
-        await simulateProcessing()
-        if Bool.random() {
-            throw NSError(domain: "Demo", code: 2, userInfo: [NSLocalizedDescriptionKey: "Random failure"])
-        }
-        return "Completion handler data"
-    }
-    
-    @AwaitlessCompletion(prefix: "callback_")
-    func processRequest(_ request: String) async throws -> Bool {
-        await simulateProcessing()
-        return request.count > 5
-    }
-}
+

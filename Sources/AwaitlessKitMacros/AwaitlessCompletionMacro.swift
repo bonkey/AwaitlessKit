@@ -115,7 +115,7 @@ public struct AwaitlessCompletionMacro: PeerMacro {
         let isThrowing = funcDecl.signature.effectSpecifiers?.description.contains("throws") ?? false
         let resultInnerType: TypeSyntax = returnTypeSyntax ??
             TypeSyntax(IdentifierTypeSyntax(name: .identifier("Void")))
-        let completionType = TypeSyntax("@escaping (Result<\(raw: resultInnerType.description), Error>) -> Void")
+        let completionType = TypeSyntax("@escaping @Sendable (Result<\(raw: resultInnerType.description), Error>) -> Void")
 
         // Build parameter list: original parameters + trailing completion
         var newParams = funcDecl.signature.parameterClause.parameters
@@ -319,9 +319,12 @@ public struct AwaitlessCompletionMacro: PeerMacro {
                 }
             }
 
-        // Task() { ... }
+        // Task.detached { ... }
         let taskCall = FunctionCallExprSyntax(
-            calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Task")),
+            calledExpression: MemberAccessExprSyntax(
+                base: DeclReferenceExprSyntax(baseName: .identifier("Task")),
+                period: .periodToken(),
+                name: .identifier("detached")),
             leftParen: .leftParenToken(),
             arguments: LabeledExprListSyntax(),
             rightParen: .rightParenToken(),
