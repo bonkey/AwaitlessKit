@@ -9,7 +9,7 @@ import PromiseKit
 import Testing
 
 @Suite(.macros(
-    ["AwaitlessPromise": AwaitlessPromiseMacro.self],
+    ["AwaitlessPromise": AwaitlessPromiseMacro.self, "Awaitable": AwaitableMacro.self],
     record: .missing))
 struct AwaitlessPromiseTests {
     @Test("Expand Promise wrapper for throwing function with return")
@@ -239,6 +239,136 @@ struct AwaitlessPromiseTests {
                         }
                     }
                 }
+            }
+            """
+        }
+    }
+
+    // MARK: - @Awaitable Macro Tests
+
+    @Test("Expand async wrapper for Promise function")
+    func awaitableBasic() {
+        assertMacro {
+            """
+            @Awaitable
+            func fetchData() -> Promise<String> {
+                return Promise.value("OK")
+            }
+            """
+        } expansion: {
+            """
+            func fetchData() -> Promise<String> {
+                return Promise.value("OK")
+            }
+
+            @available(*, deprecated, message: "PromiseKit support is deprecated; use async function instead", renamed: "fetchData") func fetchData() async throws -> String {
+                return try await self.fetchData().async()
+            }
+            """
+        }
+    }
+
+    @Test("Expand async wrapper with prefix")
+    func awaitableWithPrefix() {
+        assertMacro {
+            """
+            @Awaitable(prefix: "async_")
+            func fetchUser() -> Promise<User> {
+                return Promise.value(User())
+            }
+            """
+        } expansion: {
+            """
+            func fetchUser() -> Promise<User> {
+                return Promise.value(User())
+            }
+
+            @available(*, deprecated, message: "PromiseKit support is deprecated; use async function instead", renamed: "fetchUser") func async_fetchUser() async throws -> User {
+                return try await self.fetchUser().async()
+            }
+            """
+        }
+    }
+
+    @Test("Expand async wrapper with parameters")
+    func awaitableWithParameters() {
+        assertMacro {
+            """
+            @Awaitable
+            func fetchUser(id: String, timeout: Double = 5.0) -> Promise<User> {
+                return Promise.value(User())
+            }
+            """
+        } expansion: {
+            """
+            func fetchUser(id: String, timeout: Double = 5.0) -> Promise<User> {
+                return Promise.value(User())
+            }
+
+            @available(*, deprecated, message: "PromiseKit support is deprecated; use async function instead", renamed: "fetchUser") func fetchUser(id: String, timeout: Double = 5.0) async throws -> User {
+                return try await self.fetchUser(id: id, timeout: timeout).async()
+            }
+            """
+        }
+    }
+
+    @Test("Expand async wrapper with custom availability")
+    func awaitableWithCustomAvailability() {
+        assertMacro {
+            """
+            @Awaitable(.deprecated("Use the new async API"))
+            func legacy() -> Promise<String> {
+                return Promise.value("data")
+            }
+            """
+        } expansion: {
+            """
+            func legacy() -> Promise<String> {
+                return Promise.value("data")
+            }
+
+            @available(*, deprecated, message: "Use the new async API", renamed: "legacy") func legacy() async throws -> String {
+                return try await self.legacy().async()
+            }
+            """
+        }
+    }
+
+    @Test("Expand async wrapper for Void Promise")
+    func awaitableVoidPromise() {
+        assertMacro {
+            """
+            @Awaitable
+            func save() -> Promise<Void> {
+                return Promise.value(())
+            }
+            """
+        } expansion: {
+            """
+            func save() -> Promise<Void> {
+                return Promise.value(())
+            }
+
+            @available(*, deprecated, message: "PromiseKit support is deprecated; use async function instead", renamed: "save") func save() async throws -> Void {
+                return try await self.save().async()
+            }
+            """
+        }
+    }
+
+    @Test("Awaitable skips protocols")
+    func awaitableSkipsProtocols() {
+        assertMacro {
+            """
+            @Awaitable
+            protocol DataService {
+                func fetchData() -> Promise<String>
+            }
+            """
+        } expansion: {
+            """
+            protocol DataService {
+                func fetchData() -> Promise<String>
             }
             """
         }

@@ -68,3 +68,53 @@ public macro AwaitlessPromise(
     _ availability: AwaitlessAvailability? = nil) = #externalMacro(
     module: "AwaitlessKitPromiseMacros",
     type: "AwaitlessPromiseMacro")
+
+/// Generates an async/await wrapper for a PromiseKit Promise function.
+///
+/// The `@Awaitable` macro creates an async counterpart to your Promise-based function,
+/// enabling migration from PromiseKit to async/await by providing both APIs during transition.
+///
+/// ## Configuration Hierarchy
+///
+/// Parameters can be inherited from higher-level configurations:
+/// 1. Process-level defaults via `AwaitlessConfig.setDefaults()`
+/// 2. Type-scoped configuration via `@AwaitlessConfig`
+/// 3. Method-level parameters (these parameters)
+/// 4. Built-in defaults
+///
+/// - Parameters:
+///   - prefix: Prefix for the generated async function name.
+///     Example: `"async_"` generates `async_originalName()`.
+///   - availability: Availability attribute for the generated function.
+///     Defaults to `.deprecated()` with a configurable message.
+///
+/// ## Example
+///
+/// ```swift
+/// import PromiseKit
+///
+/// class LegacyService {
+///     @Awaitable(prefix: "async_")
+///     func fetchData() -> Promise<Data> {
+///         return URLSession.shared.dataTask(.promise, with: url)
+///             .map(\.data)
+///     }
+///
+///     // Automatically generates:
+///     // @available(*, deprecated: "PromiseKit support is deprecated; use async function instead")
+///     // func async_fetchData() async throws -> Data {
+///     //     return try await self.fetchData().async()
+///     // }
+/// }
+///
+/// // Usage during migration
+/// let service = LegacyService()
+/// let promise = service.fetchData()           // Original Promise version
+/// let data = try await service.async_fetchData()  // Generated async version
+/// ```
+@attached(peer, names: arbitrary)
+public macro Awaitable(
+    prefix: String = "",
+    _ availability: AwaitlessAvailability? = .deprecated()) = #externalMacro(
+    module: "AwaitlessKitPromiseMacros",
+    type: "AwaitableMacro")

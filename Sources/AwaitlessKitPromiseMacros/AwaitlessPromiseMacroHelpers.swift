@@ -44,12 +44,12 @@ func createArgumentList(from parameters: FunctionParameterListSyntax) -> Labeled
     return LabeledExprListSyntax(callArguments)
 }
 
-/// Filters out the AwaitlessPromise attribute from the attributes list
+/// Filters out the AwaitlessPromise and Awaitable attributes from the attributes list
 func filterAttributes(_ attributes: AttributeListSyntax) -> AttributeListSyntax {
     attributes.filter { attr in
         if case let .attribute(actualAttr) = attr,
            let attrName = actualAttr.attributeName.as(IdentifierTypeSyntax.self),
-           attrName.name.text == "AwaitlessPromise"
+           attrName.name.text == "AwaitlessPromise" || attrName.name.text == "Awaitable"
         {
             return false
         }
@@ -86,9 +86,22 @@ func createAvailabilityAttribute(
     availability: AwaitlessAvailability)
     -> AttributeSyntax
 {
+    return createAvailabilityAttributeWithMessage(
+        originalFuncName: originalFuncName,
+        availability: availability,
+        defaultMessage: nil)
+}
+
+/// Creates an availability attribute for the function with custom default message
+func createAvailabilityAttributeWithMessage(
+    originalFuncName: String,
+    availability: AwaitlessAvailability,
+    defaultMessage: String?)
+    -> AttributeSyntax
+{
     switch availability {
     case let .deprecated(messageOpt):
-        let message = messageOpt ?? "Use async \(originalFuncName) function instead"
+        let message = messageOpt ?? defaultMessage ?? "Use async \(originalFuncName) function instead"
         return AttributeSyntax(
             attributeName: IdentifierTypeSyntax(name: .identifier("available")),
             leftParen: .leftParenToken(),
@@ -110,7 +123,7 @@ func createAvailabilityAttribute(
             rightParen: .rightParenToken())
 
     case let .unavailable(messageOpt):
-        let message = messageOpt ?? "This synchronous version of \(originalFuncName) is unavailable"
+        let message = messageOpt ?? defaultMessage ?? "This synchronous version of \(originalFuncName) is unavailable"
         return AttributeSyntax(
             attributeName: IdentifierTypeSyntax(name: .identifier("available")),
             leftParen: .leftParenToken(),
