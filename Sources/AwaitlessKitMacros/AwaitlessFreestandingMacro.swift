@@ -44,17 +44,44 @@ public struct AwaitlessFreestandingMacro: ExpressionMacro {
             ExprSyntax(TryExprSyntax(expression: awaitExpr)) :
             awaitExpr
 
-        let closure = ClosureExprSyntax(
-            leftBrace: .leftBraceToken(leadingTrivia: .space),
-            statements: CodeBlockItemListSyntax {
-                CodeBlockItemSyntax(item: .stmt(
-                    StmtSyntax(
-                        ReturnStmtSyntax(
-                            returnKeyword: .keyword(.return, trailingTrivia: .space),
-                            expression: finalExpr))))
-            },
-            rightBrace: .rightBraceToken(leadingTrivia: .newline)
-        )
+        // For simple expressions, use a single statement without return
+        // For complex expressions, use a return statement
+        let isSimpleExpression: Bool = {
+            if let funcCall = actualExpression.as(FunctionCallExprSyntax.self) {
+                // Function calls with trailing closures or complex arguments are not simple
+                return funcCall.trailingClosure == nil && 
+                       !funcCall.arguments.contains { arg in
+                           arg.expression.is(ClosureExprSyntax.self)
+                       }
+            }
+            return actualExpression.is(DeclReferenceExprSyntax.self) ||
+                   actualExpression.is(MemberAccessExprSyntax.self)
+        }()
+        
+        let closure: ClosureExprSyntax
+        if isSimpleExpression {
+            // Simple single-line closure for basic function calls - no newlines
+            closure = ClosureExprSyntax(
+                leftBrace: .leftBraceToken(leadingTrivia: .space),
+                statements: CodeBlockItemListSyntax {
+                    CodeBlockItemSyntax(item: .expr(finalExpr), trailingTrivia: .space)
+                },
+                rightBrace: .rightBraceToken()
+            )
+        } else {
+            // Multi-line closure with return statement for complex expressions
+            closure = ClosureExprSyntax(
+                leftBrace: .leftBraceToken(leadingTrivia: .space),
+                statements: CodeBlockItemListSyntax {
+                    CodeBlockItemSyntax(item: .stmt(
+                        StmtSyntax(
+                            ReturnStmtSyntax(
+                                returnKeyword: .keyword(.return, trailingTrivia: .space),
+                                expression: finalExpr))))
+                },
+                rightBrace: .rightBraceToken(leadingTrivia: .newline)
+            )
+        }
 
         return ExprSyntax(
             FunctionCallExprSyntax(
