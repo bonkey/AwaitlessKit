@@ -54,7 +54,7 @@ jobs:
           cache-suffix: ios-${{ matrix.xcode-version }}
 
       - name: Build for iOS 15
-        run: just build-ios
+        run: just package-build-ios
 
   build-macos:
     name: Build for macOS (${{ matrix.name }})
@@ -92,4 +92,4 @@ jobs:
           cache-suffix: macos-${{ matrix.xcode-version }}
 
       - name: Build for macOS
-        run: just build-macos
+        run: just package-build-macos

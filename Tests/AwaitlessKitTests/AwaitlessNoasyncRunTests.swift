@@ -8,12 +8,13 @@ import Dispatch
 import Foundation
 import Testing
 
+@Suite(.tags(.functional))
 struct AwaitlessNoasyncRunTests {
     enum TestError: Error, Equatable {
         case simpleError
     }
 
-    @Test("Execute basic async operation synchronously")
+    @Test("Execute basic async operation synchronously", .tags(.functional))
     func basicExecution() throws {
         let result = try Awaitless.run {
             try await Task.sleep(nanoseconds: 100_000_000)
@@ -61,7 +62,7 @@ struct AwaitlessNoasyncRunTests {
         }
     }
 
-    @Test("Catch errors from nested async calls")
+    @Test("Catch errors from nested async calls", .tags(.functional))
     func nestedErrors() throws {
         do {
             try Awaitless.run {
@@ -73,7 +74,7 @@ struct AwaitlessNoasyncRunTests {
         }
     }
 
-    @Test("Execute 1000 tasks and verify sequential output")
+    @Test("Execute 1000 tasks and verify sequential output", .tags(.performance, .longRunning))
     func multipleTasksSequentialOutput() throws {
         let count = 1000
         var results: [Int] = []

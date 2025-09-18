@@ -7,9 +7,9 @@ import AwaitlessKitMacros
 import MacroTesting
 import Testing
 
-@Suite(.macros(["Awaitless": AwaitlessSyncMacro.self], record: .missing))
+@Suite(.macros(["Awaitless": AwaitlessSyncMacro.self], record: .missing), .tags(.macros))
 struct AwaitlessArgumentVariantsTests {
-    @Test("Function with unlabeled first parameter")
+    @Test("Function with unlabeled first parameter", .tags(.macros))
     func unlabeledFirstParameter() {
         assertMacro {
             """
@@ -33,7 +33,7 @@ struct AwaitlessArgumentVariantsTests {
         }
     }
 
-    @Test("Function with mixed labeled and unlabeled parameters")
+    @Test("Function with mixed labeled and unlabeled parameters", .tags(.macros))
     func mixedLabeledUnlabeled() {
         assertMacro {
             """
@@ -57,7 +57,7 @@ struct AwaitlessArgumentVariantsTests {
         }
     }
 
-    @Test("Function with internal parameter names")
+    @Test("Function with internal parameter names", .tags(.macros))
     func internalParameterNames() {
         assertMacro {
             """
@@ -81,7 +81,7 @@ struct AwaitlessArgumentVariantsTests {
         }
     }
 
-    @Test("Function with default parameters")
+    @Test("Function with default parameters", .tags(.macros))
     func defaultParameters() {
         assertMacro {
             """
@@ -105,7 +105,7 @@ struct AwaitlessArgumentVariantsTests {
         }
     }
 
-    @Test("Complex function with all argument variants")
+    @Test("Complex function with all argument variants", .tags(.macros))
     func complexArgumentVariants() {
         assertMacro {
             """
@@ -141,7 +141,7 @@ struct AwaitlessArgumentVariantsTests {
         }
     }
 
-    @Test("Function with inout parameters")
+    @Test("Function with inout parameters", .tags(.macros))
     func inoutParameters() {
         assertMacro {
             """
@@ -165,7 +165,7 @@ struct AwaitlessArgumentVariantsTests {
         }
     }
 
-    @Test("Function with closure parameters")
+    @Test("Function with closure parameters", .tags(.macros))
     func closureParameters() {
         assertMacro {
             """
@@ -189,7 +189,7 @@ struct AwaitlessArgumentVariantsTests {
         }
     }
 
-    @Test("Function with escaping closure parameters")
+    @Test("Function with escaping closure parameters", .tags(.macros))
     func escapingClosureParameters() {
         assertMacro {
             """
@@ -213,7 +213,7 @@ struct AwaitlessArgumentVariantsTests {
         }
     }
 
-    @Test("Function with generic parameters")
+    @Test("Function with generic parameters", .tags(.macros))
     func genericParameters() {
         assertMacro {
             """
@@ -237,7 +237,7 @@ struct AwaitlessArgumentVariantsTests {
         }
     }
 
-    @Test("Function with complex generic constraints")
+    @Test("Function with complex generic constraints", .tags(.macros))
     func complexGenericConstraints() {
         assertMacro {
             """
@@ -261,7 +261,7 @@ struct AwaitlessArgumentVariantsTests {
         }
     }
 
-    @Test("Function with optional parameters")
+    @Test("Function with optional parameters", .tags(.macros))
     func optionalParameters() {
         assertMacro {
             """
@@ -285,7 +285,7 @@ struct AwaitlessArgumentVariantsTests {
         }
     }
 
-    @Test("Function with autoclosure parameters")
+    @Test("Function with autoclosure parameters", .tags(.macros))
     func autoclosureParameters() {
         assertMacro {
             """
@@ -309,7 +309,7 @@ struct AwaitlessArgumentVariantsTests {
         }
     }
 
-    @Test("Function with multiple unlabeled parameters")
+    @Test("Function with multiple unlabeled parameters", .tags(.macros))
     func multipleUnlabeledParameters() {
         assertMacro {
             """
@@ -333,7 +333,7 @@ struct AwaitlessArgumentVariantsTests {
         }
     }
 
-    @Test("Function with mixed parameter attributes")
+    @Test("Function with mixed parameter attributes", .tags(.macros))
     func mixedParameterAttributes() {
         assertMacro {
             """

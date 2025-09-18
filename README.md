@@ -88,6 +88,7 @@ Output variants:
 - **`@Awaitless`** - Generates synchronous throwing functions that can be called directly from non-async contexts
 - **`@AwaitlessPublisher`** - Generates Combine `AnyPublisher` wrappers for reactive programming patterns
 - **`@AwaitlessCompletion`** - Generates completion-handler based functions using `Result` callbacks
+- **`@AwaitlessPromise`** & **`@Awaitable`** - Bidirectional PromiseKit integration (separate `AwaitlessKit-PromiseKit` product)
 
 > Concurrency note: Mark service classes and protocols as `Sendable` (and classes as `final` where possible) when using AwaitlessKit macros. `@AwaitlessPublisher` now uses a task-backed publisher (not `Future`), so cancelling a subscription cancels the underlying `Task`.
 
@@ -179,6 +180,55 @@ class ProfileService {
 
 Under the hood the macro calls an internal factory that uses `TaskThrowingPublisher` / `TaskPublisher` (adapted from a Swift Forums discussion on correctly bridging async functions to Combine) to produce the `AnyPublisher`.
 
+### PromiseKit Integration
+
+**Bidirectional conversion** between async/await and PromiseKit with `@AwaitlessPromise` and `@Awaitable`:
+
+```swift
+// Add PromiseKit integration to Package.swift
+.product(name: "AwaitlessKit-PromiseKit", package: "AwaitlessKit")
+```
+
+**Async to Promise conversion:**
+
+```swift
+import AwaitlessKit
+import PromiseKit
+
+class NetworkService {
+    @AwaitlessPromise(prefix: "promise_")
+    func fetchData() async throws -> Data {
+        let (data, _) = try await URLSession.shared.data(from: url)
+        return data
+    }
+    // Generates: func promise_fetchData() -> Promise<Data>
+}
+
+// Use with PromiseKit
+service.promise_fetchData()
+    .done { data in print("Success: \(data)") }
+    .catch { error in print("Error: \(error)") }
+```
+
+**Promise to async conversion:**
+
+```swift
+class LegacyService {
+    @Awaitable(prefix: "async_")
+    func legacyFetchData() -> Promise<Data> {
+        return URLSession.shared.dataTask(.promise, with: url).map(\.data)
+    }
+    // Generates: 
+    // @available(*, deprecated: "PromiseKit support is deprecated; use async function instead")
+    // func async_legacyFetchData() async throws -> Data
+}
+
+// Use with async/await
+let data = try await service.async_legacyFetchData()
+```
+
+Perfect for **gradual migration** between PromiseKit and async/await architectures.
+
 ### Completion Handler
 
 ```swift
@@ -202,6 +252,7 @@ AwaitlessKit includes comprehensive DocC documentation with detailed guides, exa
 
 - **[Usage Guide](https://swiftpackageindex.com/bonkey/AwaitlessKit/main/documentation/awaitlesskit/usageguide)** - Quick reference with practical examples and common patterns
 - **[Examples Guide](https://swiftpackageindex.com/bonkey/AwaitlessKit/main/documentation/awaitlesskit/examples)** - Comprehensive examples from basic usage to advanced patterns
+- **[PromiseKit Integration](https://swiftpackageindex.com/bonkey/AwaitlessKit/main/documentation/awaitlesskit/promisekitintegration)** - Bidirectional conversion between async/await and PromiseKit
 - **[Configuration System](https://swiftpackageindex.com/bonkey/AwaitlessKit/main/documentation/awaitlesskit/configuration)** - Four-level configuration hierarchy and customization options
 - **[Migration Guide](https://swiftpackageindex.com/bonkey/AwaitlessKit/main/documentation/awaitlesskit/migrationguide)** - Step-by-step migration strategies and best practices
 - **[Macro Implementation](https://swiftpackageindex.com/bonkey/AwaitlessKit/main/documentation/awaitlesskit/macroImplementation)** - Technical details for extending and contributing to AwaitlessKit
@@ -210,6 +261,7 @@ AwaitlessKit includes comprehensive DocC documentation with detailed guides, exa
 
 - **Quick Reference** - Fast lookup for common macro usage patterns and configurations
 - **Real-world Examples** - From simple async functions to complex migration scenarios
+- **PromiseKit Integration** - Complete bidirectional conversion guide with migration strategies
 - **Configuration Patterns** - Process-level, type-scoped, and method-level configuration examples
 - **Migration Strategies** - Progressive deprecation, brownfield conversion, and testing approaches
 - **Best Practices** - Naming conventions, error handling, and testing approaches

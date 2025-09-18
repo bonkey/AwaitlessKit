@@ -9,9 +9,9 @@ import Testing
 
 // MARK: - AwaitlessConfigTests
 
-@Suite(.macros(["AwaitlessConfig": AwaitlessConfigMacro.self], record: .missing))
+@Suite(.macros(["AwaitlessConfig": AwaitlessConfigMacro.self], record: .missing), .tags(.macros))
 struct AwaitlessConfigTests {
-    @Test("Basic @AwaitlessConfig macro expansion")
+    @Test("Basic @AwaitlessConfig macro expansion", .tags(.macros))
     func basicConfigMacro() {
         assertMacro {
             """
@@ -31,7 +31,7 @@ struct AwaitlessConfigTests {
         }
     }
 
-    @Test("@AwaitlessConfig with multiple parameters")
+    @Test("@AwaitlessConfig with multiple parameters", .tags(.macros))
     func multipleParametersConfigMacro() {
         assertMacro {
             """
@@ -51,7 +51,7 @@ struct AwaitlessConfigTests {
         }
     }
 
-    @Test("@AwaitlessConfig with delivery parameter")
+    @Test("@AwaitlessConfig with delivery parameter", .tags(.macros))
     func deliveryParameterConfigMacro() {
         assertMacro {
             """
@@ -71,7 +71,7 @@ struct AwaitlessConfigTests {
         }
     }
 
-    @Test("@AwaitlessConfig with all parameters")
+    @Test("@AwaitlessConfig with all parameters", .tags(.macros))
     func allParametersConfigMacro() {
         assertMacro {
             """
@@ -96,7 +96,7 @@ struct AwaitlessConfigTests {
         }
     }
 
-    @Test("@AwaitlessConfig with empty parameters")
+    @Test("@AwaitlessConfig with empty parameters", .tags(.macros))
     func emptyParametersConfigMacro() {
         assertMacro {
             """
@@ -119,9 +119,9 @@ struct AwaitlessConfigTests {
 
 // MARK: - AwaitlessConfigAPITests
 
-@Suite("AwaitlessConfig API Tests")
+@Suite("AwaitlessConfig API Tests", .tags(.functional))
 struct AwaitlessConfigAPITests {
-    @Test("AwaitlessConfig.setDefaults and currentDefaults")
+    @Test("AwaitlessConfig.setDefaults and currentDefaults", .tags(.functional))
     @MainActor
     func configDefaults() async {
         // Test initial state
@@ -150,7 +150,7 @@ struct AwaitlessConfigAPITests {
         AwaitlessConfig.setDefaults()
     }
 
-    @Test("AwaitlessConfig.setDefaults with partial parameters")
+    @Test("AwaitlessConfig.setDefaults with partial parameters", .tags(.functional))
     @MainActor
     func partialConfigDefaults() async {
         // Set only prefix
@@ -172,9 +172,9 @@ struct AwaitlessConfigAPITests {
 @Suite("Configuration Hierarchy Integration Tests", .macros([
     "AwaitlessConfig": AwaitlessConfigMacro.self,
     "Awaitless": AwaitlessSyncMacro.self,
-], record: .missing))
+], record: .missing), .tags(.macros, .functional))
 struct AwaitlessConfigurationHierarchyTests {
-    @Test("Method-level prefix works correctly")
+    @Test("Method-level prefix works correctly", .tags(.macros))
     func methodLevelPrefixWorks() {
         assertMacro {
             """
@@ -201,7 +201,7 @@ struct AwaitlessConfigurationHierarchyTests {
         }
     }
 
-    @Test("Type-level configuration generates properly")
+    @Test("Type-level configuration generates properly", .tags(.macros))
     func typeLevelConfigurationGenerates() {
         assertMacro {
             """

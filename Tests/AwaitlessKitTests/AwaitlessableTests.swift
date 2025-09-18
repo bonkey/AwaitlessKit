@@ -7,9 +7,9 @@ import AwaitlessKitMacros
 import MacroTesting
 import Testing
 
-@Suite(.macros(["Awaitlessable": AwaitlessableMacro.self], record: .missing))
+@Suite(.macros(["Awaitlessable": AwaitlessableMacro.self], record: .missing), .tags(.macros))
 struct AwaitlessableTests {
-    @Test("Expand Awaitlessable on protocol with async methods")
+    @Test("Expand Awaitlessable on protocol with async methods", .tags(.macros))
     func protocolWithAsyncMethods() {
         assertMacro {
             """
@@ -46,7 +46,7 @@ struct AwaitlessableTests {
         }
     }
 
-    @Test("Expand Awaitlessable on protocol with mixed methods")
+    @Test("Expand Awaitlessable on protocol with mixed methods", .tags(.macros))
     func protocolWithMixedMethods() {
         assertMacro {
             """
@@ -80,7 +80,7 @@ struct AwaitlessableTests {
         }
     }
 
-    @Test("Expand Awaitlessable with extensionGeneration disabled")
+    @Test("Expand Awaitlessable with extensionGeneration disabled", .tags(.macros))
     func protocolWithExtensionGenerationDisabled() {
         assertMacro {
             """
@@ -104,7 +104,7 @@ struct AwaitlessableTests {
         }
     }
 
-    @Test("Expand Awaitlessable with extensionGeneration enabled explicitly")
+    @Test("Expand Awaitlessable with extensionGeneration enabled explicitly", .tags(.macros))
     func protocolWithExtensionGenerationEnabled() {
         assertMacro {
             """

@@ -11,16 +11,19 @@ public struct AwaitlessConfigData: Sendable {
         prefix: String? = nil,
         availability: AwaitlessAvailability? = nil,
         delivery: AwaitlessDelivery? = nil,
-        strategy: AwaitlessSynchronizationStrategy? = nil)
+        strategy: AwaitlessSynchronizationStrategy? = nil,
+        messages: [String: String]? = nil)
     {
         self.prefix = prefix
         self.availability = availability
         self.delivery = delivery
         self.strategy = strategy
+        self.messages = messages
     }
 
     public let prefix: String?
     public let availability: AwaitlessAvailability?
     public let delivery: AwaitlessDelivery?
     public let strategy: AwaitlessSynchronizationStrategy?
+    public let messages: [String: String]?
 }
