@@ -7,9 +7,9 @@ import AwaitlessKitMacros
 import MacroTesting
 import Testing
 
-@Suite(.macros(["IsolatedSafe": IsolatedSafeMacro.self], record: .missing))
+@Suite(.macros(["IsolatedSafe": IsolatedSafeMacro.self], record: .missing), .tags(.macros))
 struct IsolatedSafeEnhancedTests {
-    @Test("Expand IsolatedSafe with serial strategy")
+    @Test("Expand IsolatedSafe with serial strategy", .tags(.macros))
     func serialStrategy() {
         assertMacro {
             """
@@ -38,7 +38,7 @@ struct IsolatedSafeEnhancedTests {
         }
     }
 
-    @Test("Expand IsolatedSafe with custom queue name and strategy")
+    @Test("Expand IsolatedSafe with custom queue name and strategy", .tags(.macros))
     func customQueueNameWithStrategy() {
         assertMacro {
             """

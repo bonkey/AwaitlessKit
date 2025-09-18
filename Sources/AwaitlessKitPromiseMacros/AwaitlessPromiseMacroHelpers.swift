@@ -44,12 +44,12 @@ func createArgumentList(from parameters: FunctionParameterListSyntax) -> Labeled
     return LabeledExprListSyntax(callArguments)
 }
 
-/// Filters out the AwaitlessPromise and Awaitable attributes from the attributes list
+/// Filters out the AwaitlessPromise and Awaitful attributes from the attributes list
 func filterAttributes(_ attributes: AttributeListSyntax) -> AttributeListSyntax {
     attributes.filter { attr in
         if case let .attribute(actualAttr) = attr,
            let attrName = actualAttr.attributeName.as(IdentifierTypeSyntax.self),
-           attrName.name.text == "AwaitlessPromise" || attrName.name.text == "Awaitable"
+           attrName.name.text == "AwaitlessPromise" || attrName.name.text == "Awaitful"
         {
             return false
         }

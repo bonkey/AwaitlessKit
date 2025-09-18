@@ -9,9 +9,9 @@ import Testing
 
 @Suite(.macros(
     ["Awaitless": AwaitlessSyncMacro.self, "AwaitlessCompletion": AwaitlessCompletionMacro.self],
-    record: .missing))
+    record: .missing), .tags(.macros))
 struct AwaitlessCompletionTests {
-    @Test("Expand completion wrapper for throwing function with return")
+    @Test("Expand completion wrapper for throwing function with return", .tags(.macros))
     func completionThrowing() {
         assertMacro {
             """
@@ -42,7 +42,7 @@ struct AwaitlessCompletionTests {
         }
     }
 
-    @Test("Expand completion wrapper for non-throwing function with return")
+    @Test("Expand completion wrapper for non-throwing function with return", .tags(.macros))
     func completionNonThrowing() {
         assertMacro {
             """
@@ -63,7 +63,7 @@ struct AwaitlessCompletionTests {
         }
     }
 
-    @Test("Expand completion wrapper for void-returning function")
+    @Test("Expand completion wrapper for void-returning function", .tags(.macros))
     func completionVoid() {
         assertMacro {
             """
@@ -84,7 +84,7 @@ struct AwaitlessCompletionTests {
         }
     }
 
-    @Test("Expand completion wrapper with prefix")
+    @Test("Expand completion wrapper with prefix", .tags(.macros))
     func completionWithPrefix() {
         assertMacro {
             """

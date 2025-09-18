@@ -9,9 +9,10 @@ import Foundation
 import Testing
 
 /// Test suite specifically designed to reproduce and prevent race conditions in timeout version
+@Suite(.tags(.performance, .longRunning))
 struct TimeoutRaceConditionTests {
     #if !os(Linux)
-        @Test("Stress test - rapid timeout operations to trigger race condition")
+        @Test("Stress test - rapid timeout operations to trigger race condition", .tags(.performance, .longRunning))
         func stressTestTimeoutRaceCondition() throws {
             // This test tries to trigger the race condition by rapidly executing
             // many timeout operations with very short timeouts
@@ -48,7 +49,7 @@ struct TimeoutRaceConditionTests {
             }
         }
 
-        @Test("Sequential timeout operations from multiple threads")
+        @Test("Sequential timeout operations from multiple threads", .tags(.performance, .longRunning))
         func multiThreadedTimeoutOperations() throws {
             let queue = DispatchQueue(label: "test.queue", attributes: .concurrent)
             let group = DispatchGroup()
@@ -71,7 +72,7 @@ struct TimeoutRaceConditionTests {
             group.wait()
         }
 
-        @Test("Rapid sequential timeouts with varying durations")
+        @Test("Rapid sequential timeouts with varying durations", .tags(.performance, .longRunning))
         func rapidSequentialTimeouts() throws {
             // Rapidly switch between different timeout scenarios
             for _ in 0 ..< 50 {
@@ -102,7 +103,7 @@ struct TimeoutRaceConditionTests {
             }
         }
 
-        @Test("Task cancellation at exact timeout boundary")
+        @Test("Task cancellation at exact timeout boundary", .tags(.performance, .longRunning))
         func timeoutBoundaryRaceCondition() throws {
             // Try to hit the exact moment where timeout and completion race
             for i in 1 ... 100 {
@@ -121,7 +122,7 @@ struct TimeoutRaceConditionTests {
             }
         }
 
-        @Test("Heavy task with immediate cancellation")
+        @Test("Heavy task with immediate cancellation", .tags(.performance, .longRunning))
         func heavyTaskImmediateCancellation() throws {
             // Create a task that does significant work to increase retain count pressure
             for _ in 0 ..< 20 {
@@ -142,7 +143,7 @@ struct TimeoutRaceConditionTests {
             }
         }
 
-        @Test("Multiple nested closures with timeout")
+        @Test("Multiple nested closures with timeout", .tags(.performance))
         func nestedClosuresTimeout() throws {
             // Complex closure structure to stress reference counting
             for _ in 0 ..< 10 {
@@ -168,7 +169,7 @@ struct TimeoutRaceConditionTests {
             }
         }
 
-        @Test("Timeout with throwing operations at different stages")
+        @Test("Timeout with throwing operations at different stages", .tags(.functional))
         func throwingOperationsAtDifferentStages() throws {
             enum TestError: Error {
                 case beforeSleep
@@ -214,7 +215,7 @@ struct TimeoutRaceConditionTests {
             }
         }
 
-        @Test("Timeout API availability check")
+        @Test("Timeout API availability check", .tags(.functional))
         func timeoutAPIAvailability() throws {
             // Verify that timeout API works as expected
             let result = try Awaitless<String, any Error>.run(timeout: 0.1) {
@@ -237,7 +238,7 @@ struct TimeoutRaceConditionTests {
         }
     #endif
 
-    @Test("Non-timeout version always works on all platforms")
+    @Test("Non-timeout version always works on all platforms", .tags(.functional))
     func nonTimeoutAlwaysWorks() throws {
         // This test should work on all platforms including Linux
         let result = try Awaitless.run {
@@ -264,7 +265,7 @@ struct TimeoutRaceConditionTests {
     }
 
     #if os(Linux)
-        @Test("Linux platform timeout API is unavailable")
+        @Test("Linux platform timeout API is unavailable", .tags(.functional))
         func linuxTimeoutUnavailable() {
             // On Linux, the timeout API should not be available
             // This is a compile-time check - if this compiles, the API is properly hidden

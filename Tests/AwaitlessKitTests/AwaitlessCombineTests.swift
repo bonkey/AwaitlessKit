@@ -10,9 +10,9 @@
 
     @Suite(.macros(
         ["Awaitless": AwaitlessSyncMacro.self, "AwaitlessPublisher": AwaitlessPublisherMacro.self],
-        record: .missing))
+        record: .missing), .tags(.macros))
     struct AwaitlessCombineTests {
-        @Test("Expand macro with publisher output")
+        @Test("Expand macro with publisher output", .tags(.macros))
         func publisherOutput() {
             assertMacro {
                 """
@@ -40,7 +40,7 @@
             }
         }
 
-        @Test("Expand macro with publisher output for non-throwing function")
+        @Test("Expand macro with publisher output for non-throwing function", .tags(.macros))
         func publisherOutputNonThrowing() {
             assertMacro {
                 """
@@ -66,7 +66,7 @@
             }
         }
 
-        @Test("Expand macro with publisher output delivered on main")
+        @Test("Expand macro with publisher output delivered on main", .tags(.macros))
         func publisherDeliveryOnMain() {
             assertMacro {
                 """
@@ -94,7 +94,7 @@
             }
         }
 
-        @Test("Expand macro with publisher output and prefix")
+        @Test("Expand macro with publisher output and prefix", .tags(.macros))
         func publisherWithPrefix() {
             assertMacro {
                 """

@@ -7,9 +7,9 @@ import AwaitlessKitMacros
 import MacroTesting
 import Testing
 
-@Suite(.macros(["Awaitless": AwaitlessSyncMacro.self], record: .missing))
+@Suite(.macros(["Awaitless": AwaitlessSyncMacro.self], record: .missing), .tags(.macros))
 struct AwaitlessAttachedTests {
-    @Test("Expand basic attached macro")
+    @Test("Expand basic attached macro", .tags(.macros))
     func basic() {
         assertMacro {
             """
@@ -37,7 +37,7 @@ struct AwaitlessAttachedTests {
         }
     }
 
-    @Test("Expand macro with simple function parameters")
+    @Test("Expand macro with simple function parameters", .tags(.macros))
     func withParams() {
         assertMacro {
             """
@@ -63,7 +63,7 @@ struct AwaitlessAttachedTests {
         }
     }
 
-    @Test("Handle deprecated flag")
+    @Test("Handle deprecated flag", .tags(.macros))
     func deprecated() {
         assertMacro {
             """
@@ -89,7 +89,7 @@ struct AwaitlessAttachedTests {
         }
     }
 
-    @Test("Add custom deprecation message")
+    @Test("Add custom deprecation message", .tags(.macros))
     func customMessage() {
         assertMacro {
             """
@@ -115,7 +115,7 @@ struct AwaitlessAttachedTests {
         }
     }
 
-    @Test("Handle deprecated without message")
+    @Test("Handle deprecated without message", .tags(.macros))
     func deprecatedNoMessage() {
         assertMacro {
             """
@@ -141,7 +141,7 @@ struct AwaitlessAttachedTests {
         }
     }
 
-    @Test("Handle unavailable with custom message")
+    @Test("Handle unavailable with custom message", .tags(.macros))
     func unavailableCustomMessage() {
         assertMacro {
             """
@@ -167,7 +167,7 @@ struct AwaitlessAttachedTests {
         }
     }
 
-    @Test("Handle empty prefix")
+    @Test("Handle empty prefix", .tags(.macros))
     func emptyPrefix() {
         assertMacro {
             """
@@ -191,7 +191,7 @@ struct AwaitlessAttachedTests {
         }
     }
 
-    @Test("Expand macro on instance method")
+    @Test("Expand macro on static method", .tags(.macros))
     func instanceMethod() {
         assertMacro {
             """
@@ -221,7 +221,7 @@ struct AwaitlessAttachedTests {
         }
     }
 
-    @Test("Expand macro on instance method with prefix")
+    @Test("Expand macro on instance method with prefix", .tags(.macros))
     func instanceMethodWithPrefix() {
         assertMacro {
             """
@@ -251,7 +251,7 @@ struct AwaitlessAttachedTests {
         }
     }
 
-    @Test("Expand macro on instance method with deprecation")
+    @Test("Expand macro on instance method with deprecation", .tags(.macros))
     func instanceMethodWithDeprecation() {
         assertMacro {
             """
@@ -281,7 +281,7 @@ struct AwaitlessAttachedTests {
         }
     }
 
-    @Test("Handle custom prefix")
+    @Test("Handle custom prefix", .tags(.macros))
     func customPrefix() {
         assertMacro {
             """

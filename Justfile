@@ -118,8 +118,8 @@ coverage-lcov OUTPUT_FILE="coverage.lcov":
         -ignore-filename-regex=".build|Tests" \
         -format=lcov > "{{OUTPUT_FILE}}"
 
-build-ios:
+package-build-ios:
     @just _xcodebuild-package "generic/platform=iOS" build
 
-build-macos:
+package-build-macos:
     @just _xcodebuild-package "platform=macOS,arch=arm64" build

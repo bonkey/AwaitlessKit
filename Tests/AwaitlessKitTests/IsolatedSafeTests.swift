@@ -7,9 +7,9 @@ import AwaitlessKitMacros
 import MacroTesting
 import Testing
 
-@Suite(.macros(["IsolatedSafe": IsolatedSafeMacro.self], record: .missing))
+@Suite(.macros(["IsolatedSafe": IsolatedSafeMacro.self], record: .missing), .tags(.macros))
 struct IsolatedSafeTests {
-    @Test("Expand basic isolated safe macro")
+    @Test("Expand basic isolated safe macro", .tags(.macros))
     func basic() {
         assertMacro {
             """
@@ -33,7 +33,7 @@ struct IsolatedSafeTests {
         }
     }
 
-    @Test("Specify custom queue name")
+    @Test("Specify custom queue name", .tags(.macros))
     func withQueue() {
         assertMacro {
             """
@@ -57,7 +57,7 @@ struct IsolatedSafeTests {
         }
     }
 
-    @Test("Make property writable")
+    @Test("Make property writable", .tags(.macros))
     func writable() {
         assertMacro {
             """
@@ -86,7 +86,7 @@ struct IsolatedSafeTests {
         }
     }
 
-    @Test("Specify custom access level")
+    @Test("Specify custom access level", .tags(.macros))
     func accessLevel() {
         assertMacro {
             """

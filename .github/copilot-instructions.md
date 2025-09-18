@@ -15,13 +15,13 @@ Always reference these instructions first and fallback to search or bash command
 ### Bootstrap and Build
 
 - `cd /path/to/AwaitlessKit` - always work from repository root
-- `just build` - builds all targets including macros. Takes 3+ minutes initially. NEVER CANCEL. Set timeout to 10+ minutes.
-- `swift package resolve` - resolves dependencies if needed (normally automatic)
+- `just package-build` - builds all targets including macros. Takes 3+ minutes initially. NEVER CANCEL. Set timeout to 10+ minutes.
+- `just package-resolve` - resolves dependencies if needed (normally automatic)
 
 ### Testing
 
-- `just test` - runs full test suite. Takes 35-60 seconds. NEVER CANCEL. Set timeout to 5+ minutes.
-- `just test TestSuiteName` - runs specific test suite
+- `just package-test` - runs full test suite. Takes 35-60 seconds. NEVER CANCEL. Set timeout to 5+ minutes.
+- `just package-test TestSuiteName` - runs specific test suite
 - All tests should pass on Linux and macOS
 
 ### Documentation

@@ -16,20 +16,20 @@ import PromiseKit
 /// A macro that generates an async/await version of a PromiseKit Promise function.
 /// This macro creates a twin function with specified prefix that wraps the original
 /// Promise function and converts it to async/await using Promise.value.
-public struct AwaitableMacro: PeerMacro {
+public struct AwaitfulMacro: PeerMacro {
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext) throws
         -> [DeclSyntax]
     {
-        if declaration.is(ProtocolDeclSyntax.self) {
-            return []
+        if declaration.is(ProtocolDeclSyntax.self) || declaration.is(ClassDeclSyntax.self) {
+            return [] // Protocols and classes are handled by MemberMacro and ExtensionMacro
         }
         guard let funcDecl = declaration.as(FunctionDeclSyntax.self) else {
             let diagnostic = Diagnostic(
                 node: Syntax(declaration),
-                message: AwaitableMacroDiagnostic.requiresFunction)
+                message: AwaitfulMacroDiagnostic.requiresFunction)
             context.diagnose(diagnostic)
             return []
         }
@@ -39,7 +39,7 @@ public struct AwaitableMacro: PeerMacro {
               isPromiseReturnType(returnClause.type) else {
             let diagnostic = Diagnostic(
                 node: Syntax(funcDecl.name),
-                message: AwaitableMacroDiagnostic.requiresPromiseReturn)
+                message: AwaitfulMacroDiagnostic.requiresPromiseReturn)
             context.diagnose(diagnostic)
             return []
         }
@@ -225,12 +225,12 @@ public struct AwaitableMacro: PeerMacro {
     }
 }
 
-// MARK: - AwaitableMacroDiagnostic
+// MARK: - AwaitfulMacroDiagnostic
 
-/// Diagnostics for errors related to the Awaitable macro
-enum AwaitableMacroDiagnostic: String, DiagnosticMessage {
-    case requiresFunction = "@Awaitable can only be applied to functions"
-    case requiresPromiseReturn = "@Awaitable requires the function to return a Promise<T>"
+/// Diagnostics for errors related to the Awaitful macro
+enum AwaitfulMacroDiagnostic: String, DiagnosticMessage {
+    case requiresFunction = "@Awaitful can only be applied to functions"
+    case requiresPromiseReturn = "@Awaitful requires the function to return a Promise<T>"
 
     var severity: DiagnosticSeverity {
         .error
@@ -241,3 +241,4 @@ enum AwaitableMacroDiagnostic: String, DiagnosticMessage {
         MessageID(domain: "AwaitlessPromiseMacros", id: rawValue)
     }
 }
+

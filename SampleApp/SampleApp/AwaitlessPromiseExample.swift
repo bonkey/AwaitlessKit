@@ -56,9 +56,9 @@ final class AwaitlessPromiseExample: Sendable {
         }
     }
     
-    // MARK: - @Awaitable Examples (Promise -> async)
-    
-    @Awaitable
+    // MARK: - @Awaitful Examples (Promise -> async)
+
+    @Awaitful
     func legacyFetchUser(id: String) -> Promise<UserProfile> {
         return Promise { seal in
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
@@ -71,12 +71,12 @@ final class AwaitlessPromiseExample: Sendable {
         }
     }
     
-    @Awaitable(prefix: "async_")
+    @Awaitful(prefix: "async_")
     func legacyDownloadData(endpoint: String) -> Promise<Data> {
         return Promise.value("Legacy data from \(endpoint)".data(using: .utf8) ?? Data())
     }
     
-    @Awaitable(.deprecated("Migrate to async version"))
+    @Awaitful(.deprecated("Migrate to async version"))
     func legacyProcessFile(path: String) -> Promise<String> {
         return Promise { seal in
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) {
@@ -85,12 +85,12 @@ final class AwaitlessPromiseExample: Sendable {
         }
     }
     
-    @Awaitable(prefix: "modern_", .unavailable("Use the new async API"))
+    @Awaitful(prefix: "modern_", .unavailable("Use the new async API"))
     func legacyComputeHash(_ data: Data) -> Promise<String> {
         return Promise.value(String(data.hashValue))
     }
     
-    @Awaitable
+    @Awaitful
     func legacyVoidOperation() -> Promise<Void> {
         return Promise { seal in
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.02) {
@@ -116,7 +116,7 @@ final class AwaitlessPromiseExample: Sendable {
         )
     }
     
-    @Awaitable(prefix: "migrated_")
+    @Awaitful(prefix: "migrated_")
     func legacyComplexOperation(parameters: [String: String]) -> Promise<ComplexResult> {
         return Promise { seal in
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
@@ -131,6 +131,90 @@ final class AwaitlessPromiseExample: Sendable {
     }
 }
 
+// MARK: - @Awaitfulable Protocol Examples
+
+@Awaitfulable(prefix: "async_")
+protocol LegacyDataService {
+    func fetchUser(id: String) -> Promise<UserProfile>
+    func downloadFile(path: String) -> Promise<Data>
+    func saveData(_ data: Data) -> Promise<Void>
+}
+
+// MARK: - Protocol Implementation
+
+class ConcreteDataService: LegacyDataService {
+    func fetchUser(id: String) -> Promise<UserProfile> {
+        return Promise { seal in
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
+                let user = UserProfile(
+                    id: id,
+                    name: "User \(id)",
+                    email: "\(id)@example.com"
+                )
+                seal.fulfill(user)
+            }
+        }
+    }
+    
+    func downloadFile(path: String) -> Promise<Data> {
+        return Promise.value("File content from \(path)".data(using: .utf8) ?? Data())
+    }
+    
+    func saveData(_ data: Data) -> Promise<Void> {
+        return Promise { seal in
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) {
+                seal.fulfill(())
+            }
+        }
+    }
+}
+
+// MARK: - Individual @Awaitful Class Example (Working Approach)
+// Demonstrates using @Awaitful on individual class methods (works perfectly)
+class LegacyNetworkService {
+    @Awaitful(prefix: "async_")
+    func fetchUserProfile(userId: String) -> Promise<UserProfile> {
+        return Promise { seal in
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
+                let profile = UserProfile(
+                    id: userId,
+                    name: "Network User \(userId)",
+                    email: "network.\(userId)@example.com"
+                )
+                seal.fulfill(profile)
+            }
+        }
+    }
+    
+    @Awaitful(prefix: "async_")
+    func uploadData(_ data: Data, to endpoint: String) -> Promise<String> {
+        return Promise { seal in
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
+                seal.fulfill("Uploaded \(data.count) bytes to \(endpoint)")
+            }
+        }
+    }
+    
+    @Awaitful(prefix: "async_")
+    func deleteResource(id: String) -> Promise<Void> {
+        return Promise { seal in
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) {
+                if id == "forbidden" {
+                    seal.reject(ValidationError.userNotFound)
+                } else {
+                    seal.fulfill(())
+                }
+            }
+        }
+    }
+}
+
+// MARK: - @Awaitfulable Class Limitation Note
+// 
+// NOTE: @Awaitfulable macro currently has a known issue with classes where it generates
+// both member declarations and extension implementations, causing redeclaration errors.
+// The above approach using individual @Awaitful macros is the recommended workaround.
+
 // MARK: - Supporting Types
 
 struct UserProfile: Codable, CustomStringConvertible {
@@ -139,7 +223,7 @@ struct UserProfile: Codable, CustomStringConvertible {
     let email: String
     
     var description: String {
-        return "\(name) (\(email))"
+        return "UserProfile(id: \(id), name: \(name), email: \(email))"
     }
 }
 
