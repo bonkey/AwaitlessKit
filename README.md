@@ -1,5 +1,5 @@
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bonkey/AwaitlessKit)
-[![Tests](https://github.com/bonkey/AwaitlessKit/actions/workflows/test.yml/badge.svg)](https://github.com/bonkey/AwaitlessKit/actions/workflows/test.yml)
+[![Tests](https://github.com/bonkey/AwaitlessKit/actions/workflows/package-tests.yml/badge.svg)](https://github.com/bonkey/AwaitlessKit/actions/workflows/package-tests.yml)
 [![codecov](https://codecov.io/github/bonkey/awaitlesskit/graph/badge.svg?token=TV5h6MeO1D)](https://codecov.io/github/bonkey/awaitlesskit)
 
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fbonkey%2FAwaitlessKit%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/bonkey/AwaitlessKit)
@@ -65,7 +65,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/bonkey/AwaitlessKit.git", from: "7.1.0")
+    .package(url: "https://github.com/bonkey/AwaitlessKit.git", from: "9.0.0")
 ],
 targets: [
     .target(
