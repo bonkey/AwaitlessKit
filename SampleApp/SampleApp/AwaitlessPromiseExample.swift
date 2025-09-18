@@ -19,7 +19,7 @@ final class AwaitlessPromiseExample: Sendable {
     func fetchUserData(id: String) async throws -> UserProfile {
         await simulateProcessing()
         if id == "error" {
-            throw NSError(domain: "Demo", code: 1, userInfo: [NSLocalizedDescriptionKey: "User not found"])
+            throw ValidationError.userNotFound
         }
         return UserProfile(id: id, name: "User \(id)", email: "\(id)@example.com")
     }
@@ -63,7 +63,7 @@ final class AwaitlessPromiseExample: Sendable {
         return Promise { seal in
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
                 if id == "error" {
-                    seal.reject(NSError(domain: "LegacyDemo", code: 1, userInfo: [NSLocalizedDescriptionKey: "Legacy user not found"]))
+                    seal.reject(ValidationError.userNotFound)
                 } else {
                     seal.fulfill(UserProfile(id: id, name: "Legacy User \(id)", email: "legacy.\(id)@example.com"))
                 }
@@ -156,6 +156,7 @@ struct ComplexResult: CustomStringConvertible {
 enum ValidationError: Error, LocalizedError {
     case emptyInput
     case invalidConfig
+    case userNotFound
     
     var errorDescription: String? {
         switch self {
@@ -163,6 +164,8 @@ enum ValidationError: Error, LocalizedError {
             return "Input cannot be empty"
         case .invalidConfig:
             return "Configuration is invalid"
+        case .userNotFound:
+            return "User not found"
         }
     }
 }

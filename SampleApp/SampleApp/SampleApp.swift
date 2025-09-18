@@ -23,27 +23,25 @@ final class SampleApp {
     }
 
     func run() async throws {
-        print("=== AwaitlessKit Feature Demonstrations ===\n")
+        print("AwaitlessKit Demo\n")
 
         try demonstrateAwaitlessBasic()
         try demonstrateAwaitlessableProtocol()
-        #if canImport(Combine)
         demonstrateAwaitlessPublisher()
-        #endif
         try demonstrateAwaitlessFreestanding()
         demonstrateIsolatedSafeState()
         try demonstrateAwaitlessCompletion()
         try await demonstrateAwaitlessPromise()
         try demonstrateAwaitlessConfig()
 
-        print("\n=== All demonstrations completed ===")
+        print("Demo completed")
     }
 
     private func demonstrateAwaitlessBasic() throws {
-        print("1. @Awaitless Basic Usage")
+        print("1. @Awaitless")
 
         let service = AwaitlessBasicExample()
-        let url = URL(string: "https://httpbin.org/json")!
+        let url = URL(string: "https://example.com/test")!
 
         let data = try service.downloadFile(url: url)
         print("   Downloaded: \(data.count) bytes")
@@ -52,134 +50,108 @@ final class SampleApp {
         print("   Processed: \(result)")
 
         let isValid = try service.blocking_validateInput("test input")
-        print("   Input valid: \(isValid)")
-
-        // unavailable
-        // let hash = service.unavailable_computeHash(data)
-        // print("   Hash: \(hash)")
-        // print()
+        print("   Valid: \(isValid)")
+        print()
     }
 
     private func demonstrateAwaitlessableProtocol() throws {
-        print("2. @Awaitlessable Protocol Generation")
+        print("2. @Awaitlessable Protocol")
 
         let sample1: AwaitlessableProtocolExample = FirstAwaitlessableProtocolExample()
         let sample2: AwaitlessableProtocolExample = SecondAwaitlessableProtocolExample()
 
         let user1 = try sample1.fetchUserProfile(id: "123")
-        print("   Mock user: \(user1.name) (\(user1.email))")
+        print("   User: \(user1.name)")
 
         let response = try sample2.fetchRawData(endpoint: "/api/data")
-        print("   Remote response: \(response.statusCode), \(response.data.count) bytes")
+        print("   Status: \(response.statusCode)")
 
         let updateSuccess = try sample1.updateUserProfile(user1)
-        print("   Update success: \(updateSuccess)")
+        print("   Updated: \(updateSuccess)")
 
         let deleteSuccess = sample2.deleteUser(id: "user456")
-        print("   Delete success: \(deleteSuccess)")
+        print("   Deleted: \(deleteSuccess)")
         print()
     }
 
-    #if canImport(Combine)
     private func demonstrateAwaitlessPublisher() {
-        print("3. @AwaitlessPublisher Generation")
+        #if canImport(Combine)
+        print("3. @AwaitlessPublisher")
 
         let service = AwaitlessPublisherExample()
         var cancellables = Set<AnyCancellable>()
 
         service.fetchItems()
             .sink { items in
-                print("   Fetched items: \(items)")
+                print("   Items: \(items.count)")
             }
             .store(in: &cancellables)
 
         service.loadUserData(id: "user456")
             .sink(
                 receiveCompletion: { completion in
-                    switch completion {
-                    case .finished:
-                        break
-                    case let .failure(error):
-                        print("   User data error: \(error.localizedDescription)")
+                    if case let .failure(error) = completion {
+                        print("   Error: \(error.localizedDescription)")
                     }
                 },
                 receiveValue: { data in
-                    print("   User data loaded: \(data)")
+                    print("   Loaded: \(data)")
                 })
-            .store(in: &cancellables)
-
-        let timestamp = service.stream_getCurrentTimestamp()
-        timestamp
-            .sink { time in
-                print("   Current timestamp: \(time)")
-            }
             .store(in: &cancellables)
 
         service.fetchConfig()
             .sink { config in
-                print("   Config: \(config)")
+                print("   Config: \(config.keys.count) keys")
             }
             .store(in: &cancellables)
 
-        Thread.sleep(forTimeInterval: 0.2)
+        Thread.sleep(forTimeInterval: 0.1)
         print()
+        #else
+        print("3. @AwaitlessPublisher")
+        print("   Combine not available")
+        print()
+        #endif
     }
-    #endif
 
     private func demonstrateAwaitlessFreestanding() throws {
-        print("4. #awaitless Freestanding Macro")
+        print("4. #awaitless Macro")
 
         let service = AwaitlessBasicExample()
-        let url = URL(string: "https://httpbin.org/json")!
+        let url = URL(string: "https://example.com/test")!
 
-        // Use existing async functions with #awaitless
         let data = try #awaitless(try service.downloadFile(url: url))
-        print("   Downloaded via #awaitless: \(data.count) bytes")
+        print("   Downloaded: \(data.count) bytes")
 
-        // Chain operations
         let result = #awaitless(service.processData(data))
-        print("   Chained processing: \(result)")
+        print("   Processed: \(result)")
 
-        // Use in conditional
-        if try #awaitless(try service.validateInput("test")) {
-            print("   Conditional validation: passed")
-        }
-
+        let isValid = try #awaitless(try service.validateInput("test"))
+        print("   Valid: \(isValid)")
         print()
     }
 
     private func demonstrateIsolatedSafeState() {
-        print("5. @IsolatedSafe Thread-Safe State")
+        print("5. @IsolatedSafe")
 
         let state = IsolatedSafeExample()
 
         state.incrementCounter()
-        state.incrementCounter()
-        state.addItem("First item")
-        state.addItem("Second item")
+        state.addItem("Test item")
+        state.cacheUser(id: "u1", name: "Alice")
 
         let stats = state.getStats()
-        print("   Stats: counter=\(stats.counter), items=\(stats.itemsCount), hasData=\(stats.hasData)")
+        print("   Counter: \(stats.counter)")
+        print("   Items: \(stats.itemsCount)")
 
-        state.cacheUser(id: "u1", name: "Alice")
-        state.cacheUser(id: "u2", name: "Bob")
-
-        if let cachedUser = state.getCachedUser(id: "u1") {
-            print("   Cached user: \(cachedUser)")
+        if let user = state.getCachedUser(id: "u1") {
+            print("   Cached: \(user)")
         }
-
-        state.updateCriticalData("critical info".data(using: .utf8)!)
-        let updatedStats = state.getStats()
-        print("   Updated stats: hasData=\(updatedStats.hasData)")
-
-        state.bulkUpdateItems(["bulk1", "bulk2", "bulk3"])
-        let finalStats = state.getStats()
-        print("   Final items count: \(finalStats.itemsCount)")
         print()
     }
 
     private func demonstrateAwaitlessCompletion() throws {
-        print("6. @AwaitlessCompletion Handler Generation")
+        print("6. @AwaitlessCompletion")
 
         let service = AwaitlessCompletionExample()
         let semaphore = DispatchSemaphore(value: 0)
@@ -187,101 +159,70 @@ final class SampleApp {
         service.fetchData { result in
             switch result {
             case let .success(data):
-                print("   Completion result: \(data)")
+                print("   Success: \(data)")
             case let .failure(error):
-                print("   Completion error: \(error.localizedDescription)")
+                print("   Error: \(error.localizedDescription)")
             }
             semaphore.signal()
         }
 
         semaphore.wait()
 
-        let semaphore2 = DispatchSemaphore(value: 0)
-
         service.callback_processRequest("test request") { result in
             switch result {
             case let .success(success):
-                print("   Request processed: \(success)")
+                print("   Processed: \(success)")
             case .failure:
-                print("   Request processed: false")
+                print("   Failed")
             }
-            semaphore2.signal()
         }
-
-        semaphore2.wait()
         print()
     }
 
     private func demonstrateAwaitlessPromise() async throws {
         #if canImport(AwaitlessKitPromiseKit)
-        print("7. @AwaitlessPromise & @Awaitable PromiseKit Integration")
+        print("7. @AwaitlessPromise & @Awaitable")
         
         let service = AwaitlessPromiseExample()
         
-        print("   a) @AwaitlessPromise demonstrates async->Promise generation")
-        print("      - @AwaitlessPromise on fetchUserData() generates Promise<UserProfile> version")
-        print("      - @AwaitlessPromise on downloadFile() with prefix generates promise_downloadFile()")
-        print("      - @AwaitlessPromise on saveConfiguration() handles void async functions")
-        
-        print("   b) @Awaitable demonstrates Promise->async generation")
-        print("      - @Awaitable on legacyFetchUser() generates async throws version")
-        print("      - @Awaitable with prefix on legacyDownloadData() generates async_legacyDownloadData()")
-        print("      - @Awaitable with deprecation messages provides migration guidance")
-        
-        // Demonstrate actual usage of the @Awaitable generated functions
         do {
             let user = try await service.legacyFetchUser(id: "demo")
-            print("   c) Live @Awaitable demo - fetched user: \(user)")
+            print("   User: \(user)")
         } catch {
-            print("   c) Live @Awaitable demo - error: \(error.localizedDescription)")
+            print("   Error: \(error.localizedDescription)")
         }
         
         let data = try await service.async_legacyDownloadData(endpoint: "/test")
-        print("   d) Live @Awaitable with prefix demo - downloaded: \(data.count) bytes")
+        print("   Downloaded: \(data.count) bytes")
         
         try await service.legacyVoidOperation()
-        print("   e) Live @Awaitable void demo - operation completed")
-        
-        let result = try await service.migrated_legacyComplexOperation(parameters: ["demo": "value"])
-        print("   f) Live @Awaitable complex demo - result: \(result)")
-        
-        print("   g) Both macros provide bidirectional conversion:")
-        print("      - Teams can gradually migrate from PromiseKit to async/await")
-        print("      - Or integrate async/await code with existing PromiseKit infrastructure")
-        print("      - Availability attributes guide developers during migration")
+        print("   Operation completed")
         
         print()
         #else
-        print("7. @AwaitlessPromise & @Awaitable PromiseKit Integration")
-        print("   PromiseKit integration not available (requires AwaitlessKit-PromiseKit import)")
+        print("7. @AwaitlessPromise & @Awaitable")
+        print("   PromiseKit not available")
         print()
         #endif
     }
 
     private func demonstrateAwaitlessConfig() throws {
-        print("8. AwaitlessConfig Global Configuration")
+        print("8. AwaitlessConfig")
 
-        // Show current defaults
         let initialDefaults = AwaitlessConfig.currentDefaults
-        print(
-            "   Initial defaults: prefix=\(initialDefaults.prefix ?? "nil"), strategy=\(String(describing: initialDefaults.strategy))")
+        print("   Initial: \(initialDefaults.prefix ?? "none")")
 
-        // Set custom global defaults
         AwaitlessConfig.setDefaults(
             prefix: "blocking_",
-            availability: .deprecated("Use async version instead"),
+            availability: .deprecated("Use async version"),
             delivery: .main,
             strategy: .concurrent)
 
         let updatedDefaults = AwaitlessConfig.currentDefaults
-        print(
-            "   Updated defaults: prefix=\(updatedDefaults.prefix ?? "nil"), strategy=\(String(describing: updatedDefaults.strategy))")
+        print("   Updated: \(updatedDefaults.prefix ?? "none")")
 
-        // Reset to default configuration
         AwaitlessConfig.setDefaults()
-        let resetDefaults = AwaitlessConfig.currentDefaults
-        print(
-            "   Reset defaults: prefix=\(resetDefaults.prefix ?? "nil"), strategy=\(String(describing: resetDefaults.strategy))")
+        print("   Reset to defaults")
         print()
     }
 }

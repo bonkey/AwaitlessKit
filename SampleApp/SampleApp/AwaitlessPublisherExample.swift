@@ -7,9 +7,7 @@ import Foundation
 
 #if canImport(Combine)
 import Combine
-#endif
 
-#if canImport(Combine)
 final class AwaitlessPublisherExample: Sendable {
     @AwaitlessPublisher(deliverOn: .main)
     func fetchItems() async -> [String] {
@@ -21,7 +19,7 @@ final class AwaitlessPublisherExample: Sendable {
     func loadUserData(id: String) async throws -> String {
         await simulateProcessing()
         if id == "error" {
-            throw NSError(domain: "Demo", code: 1, userInfo: [NSLocalizedDescriptionKey: "User not found"])
+            throw PublisherError.userNotFound
         }
         return "User data for \(id)"
     }
@@ -42,6 +40,23 @@ final class AwaitlessPublisherExample: Sendable {
     func fetchConfig() async -> [String: String] {
         await simulateProcessing()
         return ["version": "1.0.0", "env": "production"]
+    }
+}
+
+enum PublisherError: Error, LocalizedError {
+    case userNotFound
+    
+    var errorDescription: String? {
+        switch self {
+        case .userNotFound:
+            return "User not found"
+        }
+    }
+}
+#else
+final class AwaitlessPublisherExample {
+    func demonstrateUnavailable() {
+        print("Combine is not available on this platform")
     }
 }
 #endif
