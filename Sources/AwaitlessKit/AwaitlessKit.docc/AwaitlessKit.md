@@ -25,6 +25,8 @@ AwaitlessKit provides Swift macros to automatically generate synchronous wrapper
 - **@Awaitless** - Generate synchronous wrappers for async functions
 - **@AwaitlessPublisher** - Generate Combine publishers from async functions
 - **@AwaitlessCompletion** - Generate completion-handler wrappers
+- **@AwaitlessPromise** - Generate PromiseKit Promise wrappers from async functions
+- **@Awaitable** - Generate async/await wrappers from Promise functions
 - **@Awaitlessable** - Protocol extension generation for async protocols
 - **Configuration System** - Four-level configuration hierarchy for flexible customization
 - **#awaitless()** - Inline async code execution in sync contexts
@@ -71,6 +73,8 @@ For comprehensive examples and real-world usage patterns, see <doc:Examples>.
 - `Awaitless`
 - `AwaitlessPublisher`
 - `AwaitlessCompletion`
+- `AwaitlessPromise`
+- `Awaitable`
 - `Awaitlessable`
 
 ### Configuration System
@@ -93,6 +97,7 @@ For comprehensive examples and real-world usage patterns, see <doc:Examples>.
 
 - <doc:UsageGuide>
 - <doc:Examples>
+- <doc:PromiseKitIntegration>
 - <doc:Configuration>
 - <doc:MigrationGuide>
 - <doc:MacroImplementation>
