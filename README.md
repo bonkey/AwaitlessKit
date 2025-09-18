@@ -90,8 +90,6 @@ Output variants:
 - **`@AwaitlessCompletion`** - Generates completion-handler based functions using `Result` callbacks
 - **`@AwaitlessPromise`** & **`@Awaitable`** - Bidirectional PromiseKit integration (separate `AwaitlessKit-PromiseKit` product)
 
-> Concurrency note: Mark service classes and protocols as `Sendable` (and classes as `final` where possible) when using AwaitlessKit macros. `@AwaitlessPublisher` now uses a task-backed publisher (not `Future`), so cancelling a subscription cancels the underlying `Task`.
-
 ### `@Awaitlessable` - protocol extension generation
 
 Automatically generates sync method signatures and optional default implementations for protocols with async methods.
