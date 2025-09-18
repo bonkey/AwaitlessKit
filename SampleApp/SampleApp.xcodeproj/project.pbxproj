@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		81334CB62E7BC9CA00BD5F9C /* PromiseKit in Frameworks */ = {isa = PBXBuildFile; productRef = 81334CB52E7BC9CA00BD5F9C /* PromiseKit */; };
 		81334CB92E7BC9D800BD5F9C /* AwaitlessKit-PromiseKit in Frameworks */ = {isa = PBXBuildFile; productRef = 81334CB82E7BC9D800BD5F9C /* AwaitlessKit-PromiseKit */; };
+		81334CCC2E7BCF5600BD5F9C /* PromiseKit in Frameworks */ = {isa = PBXBuildFile; productRef = 81334CCB2E7BCF5600BD5F9C /* PromiseKit */; };
 		81B2F7922DBB491F00581875 /* AwaitlessKit in Frameworks */ = {isa = PBXBuildFile; productRef = 81B2F7912DBB491F00581875 /* AwaitlessKit */; };
 /* End PBXBuildFile section */
 
@@ -38,7 +38,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				81B2F7922DBB491F00581875 /* AwaitlessKit in Frameworks */,
-				81334CB62E7BC9CA00BD5F9C /* PromiseKit in Frameworks */,
+				81334CCC2E7BCF5600BD5F9C /* PromiseKit in Frameworks */,
 				81334CB92E7BC9D800BD5F9C /* AwaitlessKit-PromiseKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -91,8 +91,8 @@
 			name = SampleApp;
 			packageProductDependencies = (
 				81B2F7912DBB491F00581875 /* AwaitlessKit */,
-				81334CB52E7BC9CA00BD5F9C /* PromiseKit */,
 				81334CB82E7BC9D800BD5F9C /* AwaitlessKit-PromiseKit */,
+				81334CCB2E7BCF5600BD5F9C /* PromiseKit */,
 			);
 			productName = SampleApp;
 			productReference = 81B2F7842DBB48D000581875 /* SampleApp */;
@@ -124,7 +124,7 @@
 			mainGroup = 81B2F77B2DBB48D000581875;
 			packageReferences = (
 				81B2F7902DBB491F00581875 /* XCLocalSwiftPackageReference "../../AwaitlessKit" */,
-				81334CB42E7BC9CA00BD5F9C /* XCRemoteSwiftPackageReference "PromiseKit" */,
+				81334CCA2E7BCF5600BD5F9C /* XCRemoteSwiftPackageReference "PromiseKit" */,
 			);
 			productRefGroup = 81B2F7852DBB48D000581875 /* Products */;
 			projectDirPath = "";
@@ -314,9 +314,9 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		81334CB42E7BC9CA00BD5F9C /* XCRemoteSwiftPackageReference "PromiseKit" */ = {
+		81334CCA2E7BCF5600BD5F9C /* XCRemoteSwiftPackageReference "PromiseKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:mxcl/PromiseKit.git";
+			repositoryURL = "https://github.com/mxcl/PromiseKit.git";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 8.0.0;
@@ -325,15 +325,15 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		81334CB52E7BC9CA00BD5F9C /* PromiseKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 81334CB42E7BC9CA00BD5F9C /* XCRemoteSwiftPackageReference "PromiseKit" */;
-			productName = PromiseKit;
-		};
 		81334CB82E7BC9D800BD5F9C /* AwaitlessKit-PromiseKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 81B2F7902DBB491F00581875 /* XCLocalSwiftPackageReference "../../AwaitlessKit" */;
 			productName = "AwaitlessKit-PromiseKit";
+		};
+		81334CCB2E7BCF5600BD5F9C /* PromiseKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 81334CCA2E7BCF5600BD5F9C /* XCRemoteSwiftPackageReference "PromiseKit" */;
+			productName = PromiseKit;
 		};
 		81B2F7912DBB491F00581875 /* AwaitlessKit */ = {
 			isa = XCSwiftPackageProductDependency;
