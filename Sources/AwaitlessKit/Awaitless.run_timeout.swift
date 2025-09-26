@@ -13,6 +13,12 @@ extension Awaitless {
     // indefinite blocking in synchronous contexts. The timeout is ignored on Linux due to
     // platform stability considerations.
     //
+    // ⚠️ **Thread Blocking Warning**: Like the non-timeout version, this function blocks
+    // the calling thread using DispatchSemaphore.wait() until completion or timeout.
+    //
+    // ⚠️ **Platform Limitation**: This function is not available on Linux due to complexity
+    // and reliability concerns with timeout implementation on that platform.
+    //
     // ## Basic Usage with Timeout
     //
     // ```swift
@@ -72,7 +78,7 @@ extension Awaitless {
     // - Returns: The result of the async closure.
     // - Throws: The error from the closure, or `AwaitlessError.timeout` if timeout exceeded.
     #if !os(Linux)
-        @available(*, noasync)
+        @available(*, noasync, message: "This function blocks threads. Consider using async/await with TaskGroup.withTimeout when possible.")
         public static func run(
             timeout: TimeInterval? = nil,
             _ code: sending () async throws -> Success) throws
@@ -81,6 +87,13 @@ extension Awaitless {
             guard let timeout else {
                 return try Awaitless<Success, any Error>.run(code)
             }
+
+            // Optional debugging assistance for potentially problematic usage
+            #if DEBUG
+            if Thread.isMainThread && ProcessInfo.processInfo.environment["AWAITLESS_SUPPRESS_WARNINGS"] == nil {
+                print("⚠️ AwaitlessKit: Awaitless.run(timeout:) called from main thread. Ensure async operation won't deadlock.")
+            }
+            #endif
 
             let semaphore = DispatchSemaphore(value: 0)
             nonisolated(unsafe) var result: Result<Success, any Error>? = nil
