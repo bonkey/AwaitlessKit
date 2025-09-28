@@ -328,3 +328,192 @@ public macro AwaitlessConfig(
     strategy: AwaitlessSynchronizationStrategy? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "AwaitlessConfigMacro")
+
+/// Generates an async/await wrapper for a Combine Publisher function.
+///
+/// The `@AwaitablePublisher` macro creates an async counterpart to your Publisher-based function,
+/// enabling migration from Combine to async/await by providing both APIs during transition.
+///
+/// ## Configuration Hierarchy
+///
+/// Parameters can be inherited from higher-level configurations:
+/// 1. Process-level defaults via `AwaitlessConfig.setDefaults()`
+/// 2. Type-scoped configuration via `@AwaitlessConfig`
+/// 3. Method-level parameters (these parameters)
+/// 4. Built-in defaults
+///
+/// - Parameters:
+///   - prefix: Prefix for the generated async function name.
+///     Example: `"async_"` generates `async_originalName()`.
+///   - availability: Availability attribute for the generated function.
+///     Defaults to `.deprecated()` with a configurable message.
+///
+/// ## Example
+///
+/// ```swift
+/// import Combine
+///
+/// class LegacyService {
+///     @AwaitablePublisher(prefix: "async_")
+///     func fetchData() -> AnyPublisher<Data, Error> {
+///         URLSession.shared.dataTaskPublisher(for: url)
+///             .map(\.data)
+///             .eraseToAnyPublisher()
+///     }
+///
+///     // Automatically generates:
+///     // @available(*, deprecated: "Combine support is deprecated; use async function instead")
+///     // func async_fetchData() async throws -> Data {
+///     //     return try await self.fetchData().async()
+///     // }
+/// }
+///
+/// // Usage during migration
+/// let service = LegacyService()
+/// let publisher = service.fetchData()           // Original Publisher version
+/// let data = try await service.async_fetchData()  // Generated async version
+/// ```
+@attached(peer, names: arbitrary)
+public macro AwaitablePublisher(
+    prefix: String = "",
+    _ availability: AwaitlessAvailability? = .deprecated()) = #externalMacro(
+    module: "AwaitlessKitMacros",
+    type: "AwaitablePublisherMacro")
+
+/// Generates an async/await wrapper for a completion handler function.
+///
+/// The `@AwaitableCompletion` macro creates an async counterpart to your completion handler-based function,
+/// enabling migration from callbacks to async/await by providing both APIs during transition.
+///
+/// ## Configuration Hierarchy
+///
+/// Parameters can be inherited from higher-level configurations:
+/// 1. Process-level defaults via `AwaitlessConfig.setDefaults()`
+/// 2. Type-scoped configuration via `@AwaitlessConfig`
+/// 3. Method-level parameters (these parameters)
+/// 4. Built-in defaults
+///
+/// - Parameters:
+///   - prefix: Prefix for the generated async function name.
+///     Example: `"async_"` generates `async_originalName()`.
+///   - availability: Availability attribute for the generated function.
+///     Defaults to `.deprecated()` with a configurable message.
+///
+/// ## Example
+///
+/// ```swift
+/// class LegacyService {
+///     @AwaitableCompletion(prefix: "async_")
+///     func fetchData(completion: @escaping (Result<Data, Error>) -> Void) {
+///         URLSession.shared.dataTask(with: url) { data, response, error in
+///             if let error = error {
+///                 completion(.failure(error))
+///             } else if let data = data {
+///                 completion(.success(data))
+///             }
+///         }.resume()
+///     }
+///
+///     // Automatically generates:
+///     // @available(*, deprecated: "Completion handler support is deprecated; use async function instead")
+///     // func async_fetchData() async throws -> Data {
+///     //     return try await withCheckedThrowingContinuation { continuation in
+///     //         self.fetchData { result in
+///     //             continuation.resume(with: result)
+///     //         }
+///     //     }
+///     // }
+/// }
+///
+/// // Usage during migration
+/// let service = LegacyService()
+/// service.fetchData { result in ... }         // Original completion handler version
+/// let data = try await service.async_fetchData()  // Generated async version
+/// ```
+@attached(peer, names: arbitrary)
+public macro AwaitableCompletion(
+    prefix: String = "",
+    _ availability: AwaitlessAvailability? = .deprecated()) = #externalMacro(
+    module: "AwaitlessKitMacros",
+    type: "AwaitableCompletionMacro")
+
+/// Generates async method signatures and optional default implementations for protocols with Publisher and completion handler methods.
+///
+/// Applied to protocols containing Publisher-returning methods or completion handler methods, this macro generates corresponding
+/// async method signatures and optionally provides default implementations.
+///
+/// ## Configuration Hierarchy
+///
+/// Parameters can be inherited from higher-level configurations:
+/// 1. Process-level defaults via `AwaitlessConfig.setDefaults()`
+/// 2. Type-scoped configuration via `@AwaitlessConfig`
+/// 3. Method-level parameters (these parameters)
+/// 4. Built-in defaults
+///
+/// - Parameters:
+///   - prefix: Prefix for the generated async function names.
+///     Example: `"async_"` generates `async_originalName()`.
+///   - availability: Availability attribute for the generated functions.
+///     Defaults to `.deprecated()` with a configurable message.
+///   - extensionGeneration: Whether to generate default async implementations
+///
+/// ## Example
+///
+/// ```swift
+/// import Combine
+///
+/// @Awaitable
+/// protocol DataService {
+///     func fetchUser(id: String) -> AnyPublisher<User, Error>
+///     func saveData(_ data: Data, completion: @escaping (Result<Void, Error>) -> Void)
+/// }
+///
+/// // Automatically generates:
+/// // protocol DataService {
+/// //     func fetchUser(id: String) -> AnyPublisher<User, Error>
+/// //     func saveData(_ data: Data, completion: @escaping (Result<Void, Error>) -> Void)
+/// //
+/// //     // Async method signatures
+/// //     func fetchUser(id: String) async throws -> User
+/// //     func saveData(_ data: Data) async throws -> Void
+/// // }
+/// //
+/// // extension DataService {
+/// //     // Default implementations
+/// //     public func fetchUser(id: String) async throws -> User {
+/// //         return try await self.fetchUser(id: id).async()
+/// //     }
+/// //
+/// //     public func saveData(_ data: Data) async throws -> Void {
+/// //         return try await withCheckedThrowingContinuation { continuation in
+/// //             self.saveData(data) { result in
+/// //                 continuation.resume(with: result)
+/// //             }
+/// //         }
+/// //     }
+/// // }
+///
+/// // Implementation - just implement Publisher/completion methods
+/// struct APIService: DataService {
+///     func fetchUser(id: String) -> AnyPublisher<User, Error> {
+///         // Your Publisher implementation
+///     }
+///
+///     func saveData(_ data: Data, completion: @escaping (Result<Void, Error>) -> Void) {
+///         // Your completion handler implementation
+///     }
+///
+///     // Async versions are automatically available!
+/// }
+///
+/// let service = APIService()
+/// let user = try await service.fetchUser(id: "123")  // Uses generated async version
+/// ```
+@attached(member, names: arbitrary)
+@attached(extension, names: arbitrary)
+public macro Awaitable(
+    prefix: String = "",
+    _ availability: AwaitlessAvailability? = .deprecated(),
+    extensionGeneration: AwaitlessableExtensionGeneration = .enabled) = #externalMacro(
+    module: "AwaitlessKitMacros",
+    type: "AwaitableMacro")
