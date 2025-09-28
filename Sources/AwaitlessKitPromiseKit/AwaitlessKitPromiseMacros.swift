@@ -71,7 +71,7 @@ public macro AwaitlessPromise(
 
 /// Generates an async/await wrapper for a PromiseKit Promise function.
 ///
-/// The `@Awaitful` macro creates an async counterpart to your Promise-based function,
+/// The `@AwaitablePromise` macro creates an async counterpart to your Promise-based function,
 /// enabling migration from PromiseKit to async/await by providing both APIs during transition.
 ///
 /// ## Configuration Hierarchy
@@ -94,7 +94,7 @@ public macro AwaitlessPromise(
 /// import PromiseKit
 ///
 /// class LegacyService {
-///     @Awaitable(prefix: "async_")
+///     @AwaitablePromise(prefix: "async_")
 ///     func fetchData() -> Promise<Data> {
 ///         return URLSession.shared.dataTask(.promise, with: url)
 ///             .map(\.data)
@@ -113,11 +113,11 @@ public macro AwaitlessPromise(
 /// let data = try await service.async_fetchData()  // Generated async version
 /// ```
 @attached(peer, names: arbitrary)
-public macro Awaitful(
+public macro AwaitablePromise(
     prefix: String = "",
     _ availability: AwaitlessAvailability? = .deprecated()) = #externalMacro(
     module: "AwaitlessKitPromiseMacros",
-    type: "AwaitfulMacro")
+    type: "AwaitablePromiseMacro")
 
 /// Generates async method signatures and optional default implementations for Promise-returning protocols and classes.
 ///
@@ -144,7 +144,7 @@ public macro Awaitful(
 /// ```swift
 /// import PromiseKit
 ///
-/// @Awaitfulable
+/// @AwaitablePromiseProtocol
 /// protocol DataService {
 ///     func fetchUser(id: String) -> Promise<User>
 ///     func fetchData() -> Promise<Data>
@@ -189,9 +189,9 @@ public macro Awaitful(
 /// ```
 @attached(member, names: arbitrary)
 @attached(extension, names: arbitrary)
-public macro Awaitfulable(
+public macro AwaitablePromiseProtocol(
     prefix: String = "",
     _ availability: AwaitlessAvailability? = .deprecated(),
     extensionGeneration: AwaitlessableExtensionGeneration = .enabled) = #externalMacro(
     module: "AwaitlessKitPromiseMacros",
-    type: "AwaitfulableMacro")
+    type: "AwaitablePromiseProtocolMacro")

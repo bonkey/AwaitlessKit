@@ -8,10 +8,10 @@ import AwaitlessCore
 import SwiftDiagnostics
 import Foundation
 
-// MARK: - AwaitfulableMacro
+// MARK: - AwaitablePromiseProtocolMacro
 
 /// Macro that generates async method signatures for protocols and classes with Promise-returning methods
-public struct AwaitfulableMacro: MemberMacro, ExtensionMacro {
+public struct AwaitablePromiseProtocolMacro: MemberMacro, ExtensionMacro {
     public static func expansion(
         of node: AttributeSyntax,
         providingMembersOf declaration: some DeclGroupSyntax,

@@ -56,9 +56,9 @@ final class AwaitlessPromiseExample: Sendable {
         }
     }
     
-    // MARK: - @Awaitful Examples (Promise -> async)
+    // MARK: - @AwaitablePromise Examples (Promise -> async)
 
-    @Awaitful
+    @AwaitablePromise
     func legacyFetchUser(id: String) -> Promise<UserProfile> {
         return Promise { seal in
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
@@ -71,12 +71,12 @@ final class AwaitlessPromiseExample: Sendable {
         }
     }
     
-    @Awaitful(prefix: "async_")
+    @AwaitablePromise(prefix: "async_")
     func legacyDownloadData(endpoint: String) -> Promise<Data> {
         return Promise.value("Legacy data from \(endpoint)".data(using: .utf8) ?? Data())
     }
     
-    @Awaitful(.deprecated("Migrate to async version"))
+    @AwaitablePromise(.deprecated("Migrate to async version"))
     func legacyProcessFile(path: String) -> Promise<String> {
         return Promise { seal in
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) {
@@ -85,12 +85,12 @@ final class AwaitlessPromiseExample: Sendable {
         }
     }
     
-    @Awaitful(prefix: "modern_", .unavailable("Use the new async API"))
+    @AwaitablePromise(prefix: "modern_", .unavailable("Use the new async API"))
     func legacyComputeHash(_ data: Data) -> Promise<String> {
         return Promise.value(String(data.hashValue))
     }
     
-    @Awaitful
+    @AwaitablePromise
     func legacyVoidOperation() -> Promise<Void> {
         return Promise { seal in
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.02) {
@@ -116,7 +116,7 @@ final class AwaitlessPromiseExample: Sendable {
         )
     }
     
-    @Awaitful(prefix: "migrated_")
+    @AwaitablePromise(prefix: "migrated_")
     func legacyComplexOperation(parameters: [String: String]) -> Promise<ComplexResult> {
         return Promise { seal in
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
@@ -131,9 +131,9 @@ final class AwaitlessPromiseExample: Sendable {
     }
 }
 
-// MARK: - @Awaitfulable Protocol Examples
+// MARK: - @AwaitablePromiseProtocol Protocol Examples
 
-@Awaitfulable(prefix: "async_")
+@AwaitablePromiseProtocol(prefix: "async_")
 protocol LegacyDataService {
     func fetchUser(id: String) -> Promise<UserProfile>
     func downloadFile(path: String) -> Promise<Data>
@@ -169,10 +169,10 @@ class ConcreteDataService: LegacyDataService {
     }
 }
 
-// MARK: - Individual @Awaitful Class Example (Working Approach)
-// Demonstrates using @Awaitful on individual class methods (works perfectly)
+// MARK: - Individual @AwaitablePromise Class Example (Working Approach)
+// Demonstrates using @AwaitablePromise on individual class methods (works perfectly)
 class LegacyNetworkService {
-    @Awaitful(prefix: "async_")
+    @AwaitablePromise(prefix: "async_")
     func fetchUserProfile(userId: String) -> Promise<UserProfile> {
         return Promise { seal in
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
@@ -186,7 +186,7 @@ class LegacyNetworkService {
         }
     }
     
-    @Awaitful(prefix: "async_")
+    @AwaitablePromise(prefix: "async_")
     func uploadData(_ data: Data, to endpoint: String) -> Promise<String> {
         return Promise { seal in
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
@@ -195,7 +195,7 @@ class LegacyNetworkService {
         }
     }
     
-    @Awaitful(prefix: "async_")
+    @AwaitablePromise(prefix: "async_")
     func deleteResource(id: String) -> Promise<Void> {
         return Promise { seal in
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) {
@@ -209,11 +209,11 @@ class LegacyNetworkService {
     }
 }
 
-// MARK: - @Awaitfulable Class Limitation Note
+// MARK: - @AwaitablePromiseProtocol Class Limitation Note
 // 
-// NOTE: @Awaitfulable macro currently has a known issue with classes where it generates
+// NOTE: @AwaitablePromiseProtocol macro currently has a known issue with classes where it generates
 // both member declarations and extension implementations, causing redeclaration errors.
-// The above approach using individual @Awaitful macros is the recommended workaround.
+// The above approach using individual @AwaitablePromise macros is the recommended workaround.
 
 // MARK: - Supporting Types
 
