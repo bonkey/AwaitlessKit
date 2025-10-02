@@ -71,6 +71,9 @@ public struct IsolatedSafeMacro: PeerMacro {
             return []
         }
 
+        // Check if the property is static
+        let isStatic = hasStaticModifier(varDecl.modifiers)
+
         // Check binding and validate naming
         guard let binding = varDecl.bindings.first?.pattern.as(IdentifierPatternSyntax.self) else {
             return []
@@ -115,10 +118,11 @@ public struct IsolatedSafeMacro: PeerMacro {
             accessLevel: accessLevel,
             queueName: queueName,
             writable: isWritable,
-            strategy: strategy)
+            strategy: strategy,
+            isStatic: isStatic)
 
         // Generate the queue(s) based on strategy
-        let queues = generateQueues(name: queueName, accessLevel: accessLevel, strategy: strategy)
+        let queues = generateQueues(name: queueName, accessLevel: accessLevel, strategy: strategy, isStatic: isStatic)
 
         var results: [DeclSyntax] = [DeclSyntax(safeProperty)]
         results.append(contentsOf: queues.map { DeclSyntax($0) })
@@ -145,6 +149,16 @@ public struct IsolatedSafeMacro: PeerMacro {
     private static func hasPrivateModifier(_ modifiers: DeclModifierListSyntax) -> Bool {
         for modifier in modifiers {
             if modifier.name.text == "private" {
+                return true
+            }
+        }
+        return false
+    }
+
+    /// Check if the variable has static modifier
+    private static func hasStaticModifier(_ modifiers: DeclModifierListSyntax) -> Bool {
+        for modifier in modifiers {
+            if modifier.name.text == "static" {
                 return true
             }
         }
@@ -248,12 +262,16 @@ public struct IsolatedSafeMacro: PeerMacro {
         accessLevel: AccessLevel,
         queueName: String,
         writable: Bool = false,
-        strategy: AwaitlessSynchronizationStrategy)
+        strategy: AwaitlessSynchronizationStrategy,
+        isStatic: Bool = false)
         -> VariableDeclSyntax
     {
         // Compute the new property name by removing "_unsafe" prefix and lowercasing first letter
         let baseName = String(unsafePropertyName.dropFirst(7))
         let safePropertyName = baseName.prefix(1).lowercased() + baseName.dropFirst()
+
+        // For static properties, reference the property directly without 'self.'
+        let propertyReference = isStatic ? unsafePropertyName : "self.\(unsafePropertyName)"
 
         // Create accessors
         var accessors = AccessorDeclListSyntax {
@@ -265,7 +283,7 @@ public struct IsolatedSafeMacro: PeerMacro {
                     case .concurrent,
                          .serial:
                         ExprSyntax("""
-                        \(raw: queueName).sync { self.\(raw: unsafePropertyName) }
+                        \(raw: queueName).sync { \(raw: propertyReference) }
                         """)
                     }
                 })
@@ -280,22 +298,29 @@ public struct IsolatedSafeMacro: PeerMacro {
                         switch strategy {
                         case .concurrent:
                             ExprSyntax("""
-                            \(raw: queueName).async(flags: .barrier) { self.\(raw: unsafePropertyName) = newValue }
+                            \(raw: queueName).async(flags: .barrier) { \(raw: propertyReference) = newValue }
                             """)
 
                         case .serial:
                             ExprSyntax("""
-                            \(raw: queueName).sync { self.\(raw: unsafePropertyName) = newValue }
+                            \(raw: queueName).sync { \(raw: propertyReference) = newValue }
                             """)
                         }
                     }))
         }
 
         // Create the computed property with get and set accessors
+        var modifiers = DeclModifierListSyntax {
+            DeclModifierSyntax(name: .identifier(accessLevel.rawValue))
+        }
+        
+        // Add static modifier if needed
+        if isStatic {
+            modifiers.append(DeclModifierSyntax(name: .keyword(.static)))
+        }
+
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax {
-                DeclModifierSyntax(name: .identifier(accessLevel.rawValue))
-            },
+            modifiers: modifiers,
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax {
                 PatternBindingSyntax(
@@ -310,23 +335,31 @@ public struct IsolatedSafeMacro: PeerMacro {
     private static func generateQueues(
         name: String,
         accessLevel: AccessLevel,
-        strategy: AwaitlessSynchronizationStrategy)
+        strategy: AwaitlessSynchronizationStrategy,
+        isStatic: Bool = false)
         -> [VariableDeclSyntax]
     {
         switch strategy {
         case .concurrent:
-            [generateConcurrentQueue(name: name, accessLevel: accessLevel)]
+            [generateConcurrentQueue(name: name, accessLevel: accessLevel, isStatic: isStatic)]
         case .serial:
-            [generateSerialQueue(name: name, accessLevel: accessLevel)]
+            [generateSerialQueue(name: name, accessLevel: accessLevel, isStatic: isStatic)]
         }
     }
 
     /// Generate a concurrent queue
-    private static func generateConcurrentQueue(name: String, accessLevel: AccessLevel) -> VariableDeclSyntax {
-        VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax {
-                DeclModifierSyntax(name: .identifier("private"))
-            },
+    private static func generateConcurrentQueue(name: String, accessLevel: AccessLevel, isStatic: Bool = false) -> VariableDeclSyntax {
+        var modifiers = DeclModifierListSyntax {
+            DeclModifierSyntax(name: .identifier("private"))
+        }
+        
+        // Add static modifier if needed
+        if isStatic {
+            modifiers.append(DeclModifierSyntax(name: .keyword(.static)))
+        }
+
+        return VariableDeclSyntax(
+            modifiers: modifiers,
             bindingSpecifier: .keyword(.let),
             bindings: PatternBindingListSyntax {
                 PatternBindingSyntax(
@@ -339,11 +372,18 @@ public struct IsolatedSafeMacro: PeerMacro {
     }
 
     /// Generate a serial queue
-    private static func generateSerialQueue(name: String, accessLevel: AccessLevel) -> VariableDeclSyntax {
-        VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax {
-                DeclModifierSyntax(name: .identifier("private"))
-            },
+    private static func generateSerialQueue(name: String, accessLevel: AccessLevel, isStatic: Bool = false) -> VariableDeclSyntax {
+        var modifiers = DeclModifierListSyntax {
+            DeclModifierSyntax(name: .identifier("private"))
+        }
+        
+        // Add static modifier if needed
+        if isStatic {
+            modifiers.append(DeclModifierSyntax(name: .keyword(.static)))
+        }
+
+        return VariableDeclSyntax(
+            modifiers: modifiers,
             bindingSpecifier: .keyword(.let),
             bindings: PatternBindingListSyntax {
                 PatternBindingSyntax(

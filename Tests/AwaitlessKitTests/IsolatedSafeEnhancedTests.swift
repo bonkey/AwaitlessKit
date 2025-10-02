@@ -66,4 +66,33 @@ struct IsolatedSafeEnhancedTests {
             """
         }
     }
+
+    @Test("Expand IsolatedSafe static with serial strategy", .tags(.macros))
+    func staticSerialStrategy() {
+        assertMacro {
+            """
+            @IsolatedSafe(writable: true, strategy: .serial)
+            private static nonisolated(unsafe) var _unsafeItems: [String] = []
+            """
+        } expansion: {
+            """
+            private static nonisolated(unsafe) var _unsafeItems: [String] = []
+
+            internal static var items: [String] {
+                get {
+                    accessQueueItems.sync {
+                        _unsafeItems
+                    }
+                }
+                set {
+                    accessQueueItems.sync {
+                        _unsafeItems = newValue
+                    }
+                }
+            }
+
+            private static let accessQueueItems = DispatchQueue(label: "accessQueueItems")
+            """
+        }
+    }
 }

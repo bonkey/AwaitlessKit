@@ -114,4 +114,86 @@ struct IsolatedSafeTests {
             """
         }
     }
+
+    @Test("Expand basic isolated safe macro with static property", .tags(.macros))
+    func staticBasic() {
+        assertMacro {
+            """
+            @IsolatedSafe
+            private static nonisolated(unsafe) var _unsafeStrings: [String] = ["Hello", "World"]
+            """
+        } expansion: {
+            """
+            private static nonisolated(unsafe) var _unsafeStrings: [String] = ["Hello", "World"]
+
+            internal static var strings: [String] {
+                get {
+                    accessQueueStrings.sync {
+                        _unsafeStrings
+                    }
+                }
+            }
+
+            private static let accessQueueStrings = DispatchQueue(label: "accessQueueStrings", attributes: .concurrent)
+            """
+        }
+    }
+
+    @Test("Make static property writable", .tags(.macros))
+    func staticWritable() {
+        assertMacro {
+            """
+            @IsolatedSafe(writable: true)
+            private static nonisolated(unsafe) var _unsafeCache: [String: Any] = [:]
+            """
+        } expansion: {
+            """
+            private static nonisolated(unsafe) var _unsafeCache: [String: Any] = [:]
+
+            internal static var cache: [String: Any] {
+                get {
+                    accessQueueCache.sync {
+                        _unsafeCache
+                    }
+                }
+                set {
+                    accessQueueCache.async(flags: .barrier) {
+                        _unsafeCache = newValue
+                    }
+                }
+            }
+
+            private static let accessQueueCache = DispatchQueue(label: "accessQueueCache", attributes: .concurrent)
+            """
+        }
+    }
+
+    @Test("Static property with custom queue name", .tags(.macros))
+    func staticWithQueue() {
+        assertMacro {
+            """
+            @IsolatedSafe(queueName: "staticQueue", writable: true)
+            private static nonisolated(unsafe) var _unsafeCounter: Int = 0
+            """
+        } expansion: {
+            """
+            private static nonisolated(unsafe) var _unsafeCounter: Int = 0
+
+            internal static var counter: Int {
+                get {
+                    staticQueue.sync {
+                        _unsafeCounter
+                    }
+                }
+                set {
+                    staticQueue.async(flags: .barrier) {
+                        _unsafeCounter = newValue
+                    }
+                }
+            }
+
+            private static let staticQueue = DispatchQueue(label: "staticQueue", attributes: .concurrent)
+            """
+        }
+    }
 }
