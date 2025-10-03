@@ -59,4 +59,38 @@ final class IsolatedSafeExample: Sendable {
 
     @IsolatedSafe(writable: true, queueName: "userCacheQueue", strategy: .serial)
     private nonisolated(unsafe) var _unsafeUserCache: [String: String] = [:]
+
+    // Static property examples
+    static func incrementGlobalCounter() {
+        globalCounter += 1
+    }
+
+    static func getGlobalCounter() -> Int {
+        globalCounter
+    }
+
+    static func updateSharedConfig(_ config: String) {
+        sharedConfig = config
+    }
+
+    static func getSharedConfig() -> String {
+        sharedConfig
+    }
+
+    static func addGlobalTag(_ tag: String) {
+        globalTags.append(tag)
+    }
+
+    static func getGlobalTags() -> [String] {
+        globalTags
+    }
+
+    @IsolatedSafe(writable: true)
+    private static nonisolated(unsafe) var _unsafeGlobalCounter: Int = 0
+
+    @IsolatedSafe(writable: true, strategy: .serial)
+    private static nonisolated(unsafe) var _unsafeSharedConfig: String = "default-config"
+
+    @IsolatedSafe(writable: true, queueName: "globalTagsQueue")
+    private static nonisolated(unsafe) var _unsafeGlobalTags: [String] = []
 }

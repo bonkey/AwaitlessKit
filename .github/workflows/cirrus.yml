@@ -15,7 +15,6 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}
-  cancel-in-progress: true
 
 jobs:
   test-cirrus-macos:
