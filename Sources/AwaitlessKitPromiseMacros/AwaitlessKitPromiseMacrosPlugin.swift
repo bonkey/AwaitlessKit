@@ -9,7 +9,7 @@ import SwiftSyntaxMacros
 struct AwaitlessKitPromiseMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         AwaitlessPromiseMacro.self,
-        AwaitfulMacro.self,
-        AwaitfulableMacro.self,
+        AwaitablePromiseMacro.self,
+        AwaitablePromiseProtocolMacro.self,
     ]
 }

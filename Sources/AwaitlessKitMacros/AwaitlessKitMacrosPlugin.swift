@@ -15,5 +15,8 @@ struct AwaitlessKitMacrosPlugin: CompilerPlugin {
         AwaitlessableMacro.self,
         IsolatedSafeMacro.self,
         AwaitlessConfigMacro.self,
+        AwaitablePublisherMacro.self,
+        AwaitableCompletionMacro.self,
+        AwaitableMacro.self,
     ]
 }

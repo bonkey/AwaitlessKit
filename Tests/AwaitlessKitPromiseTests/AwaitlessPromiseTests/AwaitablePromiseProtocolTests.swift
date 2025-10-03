@@ -8,14 +8,14 @@ import MacroTesting
 import PromiseKit
 import Testing
 
-@Suite(.macros(["Awaitfulable": AwaitfulableMacro.self], record: .missing), .tags(.macros))
-struct AwaitfulableProtocolTests {
+@Suite(.macros(["AwaitablePromiseProtocol": AwaitablePromiseProtocolMacro.self], record: .missing), .tags(.macros))
+struct AwaitablePromiseProtocolProtocolTests {
     
-    @Test("Expand Awaitfulable on protocol with Promise methods", .tags(.macros))
+    @Test("Expand AwaitablePromiseProtocol on protocol with Promise methods", .tags(.macros))
     func awaitfulableProtocolWithPromiseMethods() {
         assertMacro {
             """
-            @Awaitfulable
+            @AwaitablePromiseProtocol
             protocol DataService {
                 func fetchUser(id: String) -> Promise<User>
                 func fetchData() -> Promise<Data>
@@ -44,11 +44,11 @@ struct AwaitfulableProtocolTests {
         }
     }
 
-    @Test("Expand Awaitfulable on protocol with parameters", .tags(.macros))
+    @Test("Expand AwaitablePromiseProtocol on protocol with parameters", .tags(.macros))
     func awaitfulableProtocolWithMixedMethods() {
         assertMacro {
             """
-            @Awaitfulable
+            @AwaitablePromiseProtocol
             protocol Service {
                 func promiseMethod() -> Promise<String>
                 func syncMethod() -> Int
@@ -76,11 +76,11 @@ struct AwaitfulableProtocolTests {
         }
     }
 
-    @Test("Expand Awaitfulable with extensionGeneration disabled", .tags(.macros))
+    @Test("Expand AwaitablePromiseProtocol with extensionGeneration disabled", .tags(.macros))
     func awaitfulableProtocolWithExtensionGenerationDisabled() {
         assertMacro {
             """
-            @Awaitfulable(extensionGeneration: .disabled)
+            @AwaitablePromiseProtocol(extensionGeneration: .disabled)
             protocol DataService {
                 func fetchUser(id: String) -> Promise<User>
                 func fetchData() -> Promise<Data>
@@ -100,11 +100,11 @@ struct AwaitfulableProtocolTests {
         }
     }
 
-    @Test("Expand Awaitfulable with prefix on protocol", .tags(.macros))
+    @Test("Expand AwaitablePromiseProtocol with prefix on protocol", .tags(.macros))
     func awaitfulableProtocolWithPrefix() {
         assertMacro {
             """
-            @Awaitfulable(prefix: "async_")
+            @AwaitablePromiseProtocol(prefix: "async_")
             protocol DataService {
                 func fetchUser(id: String) -> Promise<User>
             }
@@ -126,11 +126,11 @@ struct AwaitfulableProtocolTests {
         }
     }
 
-    @Test("Expand Awaitfulable with custom availability on protocol", .tags(.macros))
+    @Test("Expand AwaitablePromiseProtocol with custom availability on protocol", .tags(.macros))
     func awaitfulableProtocolWithCustomAvailability() {
         assertMacro {
             """
-            @Awaitfulable(.unavailable("Use async methods"))
+            @AwaitablePromiseProtocol(.unavailable("Use async methods"))
             protocol LegacyService {
                 func fetchData() -> Promise<String>
             }
@@ -152,11 +152,11 @@ struct AwaitfulableProtocolTests {
         }
     }
 
-    @Test("Expand Awaitfulable for Void Promise methods", .tags(.macros))
+    @Test("Expand AwaitablePromiseProtocol for Void Promise methods", .tags(.macros))
     func awaitfulableVoidPromiseMethods() {
         assertMacro {
             """
-            @Awaitfulable
+            @AwaitablePromiseProtocol
             protocol ActionService {
                 func save() -> Promise<Void>
                 func delete(id: String) -> Promise<()>

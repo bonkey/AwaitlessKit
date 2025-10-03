@@ -8,14 +8,14 @@ import MacroTesting
 import PromiseKit
 import Testing
 
-@Suite(.macros(["Awaitful": AwaitfulMacro.self], record: .missing), .tags(.macros))
-struct AwaitfulMacroTests {
+@Suite(.macros(["AwaitablePromise": AwaitablePromiseMacro.self], record: .missing), .tags(.macros))
+struct AwaitablePromiseMacroTests {
     
     @Test("Expand async wrapper for Promise function", .tags(.macros))
     func awaitfulBasic() {
         assertMacro {
             """
-            @Awaitful
+            @AwaitablePromise
             func fetchData() -> Promise<String> {
                 return Promise.value("OK")
             }
@@ -37,7 +37,7 @@ struct AwaitfulMacroTests {
     func awaitfulWithPrefix() {
         assertMacro {
             """
-            @Awaitful(prefix: "async_")
+            @AwaitablePromise(prefix: "async_")
             func fetchUser() -> Promise<User> {
                 return Promise.value(User())
             }
@@ -59,7 +59,7 @@ struct AwaitfulMacroTests {
     func awaitfulWithParameters() {
         assertMacro {
             """
-            @Awaitful
+            @AwaitablePromise
             func fetchUser(id: String, timeout: Double = 5.0) -> Promise<User> {
                 return Promise.value(User())
             }
@@ -81,7 +81,7 @@ struct AwaitfulMacroTests {
     func awaitfulWithCustomAvailability() {
         assertMacro {
             """
-            @Awaitful(.deprecated("Use the new async API"))
+            @AwaitablePromise(.deprecated("Use the new async API"))
             func legacy() -> Promise<String> {
                 return Promise.value("data")
             }
@@ -103,7 +103,7 @@ struct AwaitfulMacroTests {
     func awaitfulVoidPromise() {
         assertMacro {
             """
-            @Awaitful
+            @AwaitablePromise
             func save() -> Promise<Void> {
                 return Promise.value(())
             }
@@ -125,7 +125,7 @@ struct AwaitfulMacroTests {
     func awaitfulSkipsProtocols() {
         assertMacro {
             """
-            @Awaitful
+            @AwaitablePromise
             protocol DataService {
                 func fetchData() -> Promise<String>
             }
