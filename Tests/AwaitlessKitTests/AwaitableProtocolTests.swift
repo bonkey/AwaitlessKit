@@ -31,11 +31,11 @@ struct AwaitableProtocolTests {
             }
 
             extension DataService {
-                public func fetchUser(id: String) async throws -> User {
+                @available(*, deprecated, message: "Combine support is deprecated; use async function instead", renamed: "fetchUser") public func fetchUser(id: String) async throws -> User {
                     return try await self.fetchUser(id: id).async()
                 }
-                public func fetchData() async -> Data {
-                    return await self.fetchData().value
+                @available(*, deprecated, message: "Combine support is deprecated; use async function instead", renamed: "fetchData") public func fetchData() async -> Data {
+                    return await self.fetchData().value()
                 }
             }
             """
@@ -57,27 +57,6 @@ struct AwaitableProtocolTests {
             protocol DataService {
                 func saveData(_ data: Data, completion: @escaping (Result<Void, Error>) -> Void)
                 func fetchUser(id: String, completion: @escaping (Result<User, Error>) -> Void)
-
-                func saveData(_ data: Data) async throws
-
-                func fetchUser(id: String) async throws -> User
-            }
-
-            extension DataService {
-                public func saveData(_ data: Data) async throws {
-                    try await withCheckedThrowingContinuation { continuation in
-                        self.saveData(data, completion: { result in
-                            continuation.resume(with: result)
-                        })
-                    }
-                }
-                public func fetchUser(id: String) async throws -> User {
-                    return try await withCheckedThrowingContinuation { continuation in
-                        self.fetchUser(id: id, completion: { result in
-                            continuation.resume(with: result)
-                        })
-                    }
-                }
             }
             """
         }
@@ -102,20 +81,11 @@ struct AwaitableProtocolTests {
                 func regularMethod() -> String
 
                 func fetchUser(id: String) async throws -> User
-
-                func saveData(_ data: Data) async throws
             }
 
             extension DataService {
-                public func fetchUser(id: String) async throws -> User {
+                @available(*, deprecated, message: "Combine support is deprecated; use async function instead", renamed: "fetchUser") public func fetchUser(id: String) async throws -> User {
                     return try await self.fetchUser(id: id).async()
-                }
-                public func saveData(_ data: Data) async throws {
-                    try await withCheckedThrowingContinuation { continuation in
-                        self.saveData(data, completion: { result in
-                            continuation.resume(with: result)
-                        })
-                    }
                 }
             }
             """
@@ -139,8 +109,6 @@ struct AwaitableProtocolTests {
                 func saveData(_ data: Data, completion: @escaping (Result<Void, Error>) -> Void)
 
                 func fetchUser(id: String) async throws -> User
-
-                func saveData(_ data: Data) async throws
             }
             """
         }
@@ -160,7 +128,6 @@ struct AwaitableProtocolTests {
         } diagnostics: {
             """
             @Awaitable
-            ┬─────────
             ╰─ 🛑 @Awaitable can only be applied to protocols
             class DataService {
                 func fetchData() -> String {

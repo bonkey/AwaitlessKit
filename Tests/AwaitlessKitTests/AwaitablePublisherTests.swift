@@ -85,7 +85,6 @@ struct AwaitablePublisherTests {
         } diagnostics: {
             """
             @AwaitablePublisher
-            ┬──────────────────
             ╰─ 🛑 @AwaitablePublisher can only be applied to functions
             var data: String = ""
             """
@@ -105,7 +104,7 @@ struct AwaitablePublisherTests {
             """
             @AwaitablePublisher
             func fetchData() -> String {
-                 ┬─────────
+                 ┬────────
                  ╰─ 🛑 @AwaitablePublisher requires the function to return a Publisher<T, E>
                 return "data"
             }

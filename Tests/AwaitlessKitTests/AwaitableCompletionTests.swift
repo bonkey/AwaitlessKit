@@ -27,8 +27,8 @@ struct AwaitableCompletionTests {
             @available(*, deprecated, message: "Completion handler support is deprecated; use async function instead", renamed: "fetchData") func fetchData() async throws -> Data {
                 return try await withCheckedThrowingContinuation { continuation in
                     self.fetchData(completion: { result in
-                        continuation.resume(with: result)
-                    })
+                            continuation.resume(with: result)
+                        })
                 }
             }
             """
@@ -53,8 +53,8 @@ struct AwaitableCompletionTests {
             @available(*, deprecated, message: "Completion handler support is deprecated; use async function instead", renamed: "fetchUser") func async_fetchUser(id: String) async throws -> User {
                 return try await withCheckedThrowingContinuation { continuation in
                     self.fetchUser(id: id, completion: { result in
-                        continuation.resume(with: result)
-                    })
+                            continuation.resume(with: result)
+                        })
                 }
             }
             """
@@ -79,8 +79,8 @@ struct AwaitableCompletionTests {
             @available(*, deprecated, message: "Completion handler support is deprecated; use async function instead", renamed: "saveData") func saveData(_ data: Data) async throws {
                 try await withCheckedThrowingContinuation { continuation in
                     self.saveData(data, completion: { result in
-                        continuation.resume(with: result)
-                    })
+                            continuation.resume(with: result)
+                        })
                 }
             }
             """
@@ -97,7 +97,6 @@ struct AwaitableCompletionTests {
         } diagnostics: {
             """
             @AwaitableCompletion
-            ┬────────────────────
             ╰─ 🛑 @AwaitableCompletion can only be applied to functions
             var data: String = ""
             """
@@ -117,7 +116,7 @@ struct AwaitableCompletionTests {
             """
             @AwaitableCompletion
             func fetchData() -> String {
-                 ┬─────────
+                 ┬────────
                  ╰─ 🛑 @AwaitableCompletion requires the function to have a completion handler parameter
                 return "data"
             }

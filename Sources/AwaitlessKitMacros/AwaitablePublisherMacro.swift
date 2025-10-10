@@ -150,21 +150,29 @@ public struct AwaitablePublisherMacro: PeerMacro {
             period: .periodToken(),
             name: .identifier(errorType == "Never" ? "value" : "async"))
 
-        // Call .async() or .value method
-        let asyncCallExpr = FunctionCallExprSyntax(
-            calledExpression: ExprSyntax(awaitableExpr),
-            leftParen: .leftParenToken(),
-            arguments: LabeledExprListSyntax(),
-            rightParen: .rightParenToken())
+        // Call .async() method (or just access .value property for Never error types)
+        let finalExpr: ExprSyntax
+        if errorType == "Never" {
+            // For Never error types, .value is a property, not a method
+            finalExpr = ExprSyntax(awaitableExpr)
+        } else {
+            // For other error types, .async() is a method
+            let asyncCallExpr = FunctionCallExprSyntax(
+                calledExpression: ExprSyntax(awaitableExpr),
+                leftParen: .leftParenToken(),
+                arguments: LabeledExprListSyntax(),
+                rightParen: .rightParenToken())
+            finalExpr = ExprSyntax(asyncCallExpr)
+        }
 
         // Add try await or just await depending on error type
-        let awaitExpr = AwaitExprSyntax(expression: ExprSyntax(asyncCallExpr))
-        let finalExpr = errorType == "Never" ? 
+        let awaitExpr = AwaitExprSyntax(expression: finalExpr)
+        let tryAwaitExpr = errorType == "Never" ? 
             ExprSyntax(awaitExpr) :
             ExprSyntax(TryExprSyntax(expression: awaitExpr))
 
         // Create return statement
-        let returnStmt = ReturnStmtSyntax(expression: finalExpr)
+        let returnStmt = ReturnStmtSyntax(expression: tryAwaitExpr)
 
         return CodeBlockSyntax(
             statements: CodeBlockItemListSyntax {
@@ -245,7 +253,8 @@ func createAvailabilityAttributeWithMessage(
     let messageArg = LabeledExprSyntax(
         label: .identifier("message"),
         colon: .colonToken(),
-        expression: StringLiteralExprSyntax(content: message))
+        expression: StringLiteralExprSyntax(content: message),
+        trailingComma: .commaToken())
     
     let renamedArg = LabeledExprSyntax(
         label: .identifier("renamed"),
@@ -261,9 +270,9 @@ func createAvailabilityAttributeWithMessage(
     }
     
     let arguments = LabeledExprListSyntax([
-        LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .binaryOperator("*"))),
-        LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .identifier(availabilityType))),
-        messageArg,
+        LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .binaryOperator("*")), trailingComma: .commaToken()),
+        LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .identifier(availabilityType)), trailingComma: .commaToken()),
+        messageArg.with(\.trailingComma, .commaToken()),
         renamedArg
     ])
     

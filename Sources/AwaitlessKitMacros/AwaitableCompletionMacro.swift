@@ -130,7 +130,7 @@ public struct AwaitableCompletionMacro: PeerMacro {
         // Map parameters from the original function to argument expressions
         let argumentList = createArgumentList(from: parameters)
 
-        // Create the withCheckedThrowingContinuation call
+        // Create the withCheckedThrowingContinuation call with trailing closure
         let continuationBody = createContinuationBody(
             originalFuncName: originalFuncName,
             argumentList: argumentList,
@@ -138,11 +138,9 @@ public struct AwaitableCompletionMacro: PeerMacro {
 
         let continuationCall = FunctionCallExprSyntax(
             calledExpression: DeclReferenceExprSyntax(baseName: .identifier("withCheckedThrowingContinuation")),
-            leftParen: .leftParenToken(),
-            arguments: LabeledExprListSyntax([
-                LabeledExprSyntax(expression: continuationBody)
-            ]),
-            rightParen: .rightParenToken())
+            trailingClosure: continuationBody.as(ClosureExprSyntax.self)) {
+            LabeledExprListSyntax([])
+        }
 
         // Add try await
         let tryAwaitExpr = TryExprSyntax(
@@ -167,16 +165,23 @@ public struct AwaitableCompletionMacro: PeerMacro {
         argumentList: LabeledExprListSyntax,
         isVoidResult: Bool) -> ExprSyntax {
         
-        // Create the parameter for the continuation closure
-        let continuationParam = ClosureParameterClauseSyntax(
-            parameters: ClosureParameterListSyntax([
-                ClosureParameterSyntax(firstName: .identifier("continuation"))
-            ]))
-
         // Create the function call to the original method with completion handler
         let completionClosure = createCompletionClosure(isVoidResult: isVoidResult)
         
         var callArguments = Array(argumentList)
+        
+        // If there are existing arguments, add a trailing comma to the last one
+        if !callArguments.isEmpty {
+            let lastIndex = callArguments.count - 1
+            let lastArg = callArguments[lastIndex]
+            callArguments[lastIndex] = LabeledExprSyntax(
+                label: lastArg.label,
+                colon: lastArg.colon,
+                expression: lastArg.expression,
+                trailingComma: .commaToken()
+            )
+        }
+        
         callArguments.append(LabeledExprSyntax(
             label: .identifier("completion"),
             colon: .colonToken(),
@@ -192,21 +197,22 @@ public struct AwaitableCompletionMacro: PeerMacro {
             rightParen: .rightParenToken())
 
         return ExprSyntax(ClosureExprSyntax(
-            leftBrace: .leftBraceToken(leadingTrivia: .space),
-            signature: ClosureSignatureSyntax(parameterClause: .parameterClause(continuationParam)),
+            leftBrace: .leftBraceToken(),
+            signature: ClosureSignatureSyntax(
+                parameterClause: .simpleInput(
+                    ClosureShorthandParameterListSyntax([
+                        ClosureShorthandParameterSyntax(name: .identifier("continuation"))
+                    ])
+                )
+            ),
             statements: CodeBlockItemListSyntax([
                 CodeBlockItemSyntax(item: .stmt(StmtSyntax(ExpressionStmtSyntax(expression: ExprSyntax(originalCall)))))
             ]),
-            rightBrace: .rightBraceToken(leadingTrivia: .newline)))
+            rightBrace: .rightBraceToken()))
     }
 
     /// Creates the completion closure that resumes the continuation
     private static func createCompletionClosure(isVoidResult: Bool) -> ExprSyntax {
-        let resultParam = ClosureParameterClauseSyntax(
-            parameters: ClosureParameterListSyntax([
-                ClosureParameterSyntax(firstName: .identifier("result"))
-            ]))
-
         let resumeCall = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
                 base: DeclReferenceExprSyntax(baseName: .identifier("continuation")),
@@ -222,21 +228,53 @@ public struct AwaitableCompletionMacro: PeerMacro {
             rightParen: .rightParenToken())
 
         return ExprSyntax(ClosureExprSyntax(
-            leftBrace: .leftBraceToken(leadingTrivia: .space),
-            signature: ClosureSignatureSyntax(parameterClause: .parameterClause(resultParam)),
+            leftBrace: .leftBraceToken(),
+            signature: ClosureSignatureSyntax(
+                parameterClause: .simpleInput(
+                    ClosureShorthandParameterListSyntax([
+                        ClosureShorthandParameterSyntax(name: .identifier("result"))
+                    ])
+                )
+            ),
             statements: CodeBlockItemListSyntax([
                 CodeBlockItemSyntax(item: .stmt(StmtSyntax(ExpressionStmtSyntax(expression: ExprSyntax(resumeCall)))))
             ]),
-            rightBrace: .rightBraceToken(leadingTrivia: .newline)))
+            rightBrace: .rightBraceToken()))
     }
 
     /// Checks if a function has a completion handler parameter
     private static func hasCompletionHandlerParameter(_ funcDecl: FunctionDeclSyntax) -> Bool {
         for param in funcDecl.signature.parameterClause.parameters {
-            if let functionType = param.type.as(FunctionTypeSyntax.self),
-               param.firstName.text.lowercased().contains("completion") ||
-               isResultType(functionType.parameters.first?.type) {
-                return true
+            // Check if parameter name suggests it's a completion handler
+            if param.firstName.text.lowercased().contains("completion") {
+                // Try to get the function type, handling @escaping attributes
+                var type = param.type
+                // If the type has @escaping, strip it to get the underlying function type
+                if let attributedType = type.as(AttributedTypeSyntax.self),
+                   let baseType = attributedType.baseType.as(FunctionTypeSyntax.self) {
+                    type = TypeSyntax(baseType)
+                }
+                
+                if let functionType = type.as(FunctionTypeSyntax.self) {
+                    // Check if it takes a Result<T, Error> parameter
+                    if isResultType(functionType.parameters.first?.type) {
+                        return true
+                    }
+                    // Also accept any function type if the parameter name suggests completion
+                    return true
+                }
+            } else {
+                // Also check if any parameter has a Result<T, Error> function type
+                var type = param.type
+                if let attributedType = type.as(AttributedTypeSyntax.self),
+                   let baseType = attributedType.baseType.as(FunctionTypeSyntax.self) {
+                    type = TypeSyntax(baseType)
+                }
+                
+                if let functionType = type.as(FunctionTypeSyntax.self),
+                   isResultType(functionType.parameters.first?.type) {
+                    return true
+                }
             }
         }
         return false
@@ -258,19 +296,41 @@ public struct AwaitableCompletionMacro: PeerMacro {
         var isVoidResult = true
 
         for param in funcDecl.signature.parameterClause.parameters {
-            if let functionType = param.type.as(FunctionTypeSyntax.self),
-               param.firstName.text.lowercased().contains("completion") {
-                // This is the completion parameter, extract the result type
-                if let firstParam = functionType.parameters.first?.type,
-                   let identifierType = firstParam.as(IdentifierTypeSyntax.self),
-                   identifierType.name.text == "Result",
-                   let genericArgs = identifierType.genericArgumentClause,
-                   let successType = genericArgs.arguments.first?.argument {
-                    resultType = successType
-                    isVoidResult = successType.description.trimmingCharacters(in: .whitespacesAndNewlines) == "Void"
+            let paramName = param.firstName.text.lowercased()
+            // Check if this is a completion parameter
+            if paramName.contains("completion") {
+                // Try to get the function type, handling @escaping attributes
+                var type = param.type
+                if let attributedType = type.as(AttributedTypeSyntax.self),
+                   let baseType = attributedType.baseType.as(FunctionTypeSyntax.self) {
+                    type = TypeSyntax(baseType)
                 }
+                
+                if let functionType = type.as(FunctionTypeSyntax.self) {
+                    // This is the completion parameter, extract the result type
+                    if let firstParam = functionType.parameters.first?.type,
+                       let identifierType = firstParam.as(IdentifierTypeSyntax.self),
+                       identifierType.name.text == "Result",
+                       let genericArgs = identifierType.genericArgumentClause,
+                       let successType = genericArgs.arguments.first?.argument {
+                        resultType = successType
+                        isVoidResult = successType.description.trimmingCharacters(in: .whitespacesAndNewlines) == "Void"
+                    }
+                }
+                // Skip adding completion parameter to parametersWithoutCompletion
             } else {
-                parametersWithoutCompletion.append(param)
+                // Create a new parameter without trailing comma
+                let newParam = FunctionParameterSyntax(
+                    attributes: param.attributes,
+                    modifiers: param.modifiers,
+                    firstName: param.firstName,
+                    secondName: param.secondName,
+                    colon: param.colon,
+                    type: param.type,
+                    defaultValue: param.defaultValue,
+                    trailingComma: nil  // Remove trailing comma
+                )
+                parametersWithoutCompletion.append(newParam)
             }
         }
 
@@ -289,6 +349,55 @@ public struct AwaitableCompletionMacro: PeerMacro {
         default:
             return nil
         }
+    }
+    
+    /// Creates availability attribute with message
+    private static func createAvailabilityAttributeWithMessage(
+        originalFuncName: String,
+        availability: AwaitlessAvailability,
+        defaultMessage: String) -> AttributeSyntax {
+        
+        let message: String
+        let renamed: String? = originalFuncName
+        
+        switch availability {
+        case .deprecated(let customMessage):
+            message = customMessage ?? defaultMessage
+        case .unavailable(let customMessage):
+            message = customMessage ?? defaultMessage
+        }
+        
+        let messageArg = LabeledExprSyntax(
+            label: .identifier("message"),
+            colon: .colonToken(),
+            expression: StringLiteralExprSyntax(content: message),
+            trailingComma: .commaToken())
+        
+        let renamedArg = LabeledExprSyntax(
+            label: .identifier("renamed"),
+            colon: .colonToken(),
+            expression: StringLiteralExprSyntax(content: renamed ?? originalFuncName))
+        
+        let availabilityType: String
+        switch availability {
+        case .deprecated:
+            availabilityType = "deprecated"
+        case .unavailable:
+            availabilityType = "unavailable"
+        }
+        
+        let arguments = LabeledExprListSyntax([
+            LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .binaryOperator("*")), trailingComma: .commaToken()),
+            LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .identifier(availabilityType)), trailingComma: .commaToken()),
+            messageArg,
+            renamedArg
+        ])
+        
+        return AttributeSyntax(
+            attributeName: IdentifierTypeSyntax(name: .identifier("available")),
+            leftParen: .leftParenToken(),
+            arguments: .argumentList(arguments),
+            rightParen: .rightParenToken())
     }
 }
 
