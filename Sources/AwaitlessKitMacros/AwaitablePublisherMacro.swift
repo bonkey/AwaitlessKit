@@ -9,43 +9,45 @@ import Foundation
 import SwiftCompilerPlugin
 import SwiftDiagnostics
 import SwiftSyntaxBuilder
-import PromiseKit
+#if canImport(Combine)
+    import Combine
+#endif
 
-// MARK: - AwaitablePromiseMacro
+// MARK: - AwaitablePublisherMacro
 
-/// A macro that generates an async/await version of a PromiseKit Promise function.
+/// A macro that generates an async/await version of a Combine Publisher function.
 /// This macro creates a twin function with specified prefix that wraps the original
-/// Promise function and converts it to async/await using Promise.value.
-public struct AwaitablePromiseMacro: PeerMacro {
+/// Publisher function and converts it to async/await using Publisher.async().
+public struct AwaitablePublisherMacro: PeerMacro {
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext) throws
         -> [DeclSyntax]
     {
-        if declaration.is(ProtocolDeclSyntax.self) || declaration.is(ClassDeclSyntax.self) {
-            return [] // Protocols and classes are handled by MemberMacro and ExtensionMacro
+        if declaration.is(ProtocolDeclSyntax.self) {
+            return []
         }
         guard let funcDecl = declaration.as(FunctionDeclSyntax.self) else {
             let diagnostic = Diagnostic(
                 node: Syntax(declaration),
-                message: AwaitablePromiseMacroDiagnostic.requiresFunction)
+                message: AwaitablePublisherMacroDiagnostic.requiresFunction)
             context.diagnose(diagnostic)
             return []
         }
 
-        // Check if the function returns Promise<T>
+        // Check if the function returns Publisher<T, E>
         guard let returnClause = funcDecl.signature.returnClause,
-              isPromiseReturnType(returnClause.type) else {
+              isPublisherReturnType(returnClause.type) else {
             let diagnostic = Diagnostic(
                 node: Syntax(funcDecl.name),
-                message: AwaitablePromiseMacroDiagnostic.requiresPromiseReturn)
+                message: AwaitablePublisherMacroDiagnostic.requiresPublisherReturn)
             context.diagnose(diagnostic)
             return []
         }
 
         var prefix = ""
-        var availability: AwaitlessAvailability? = .deprecated() // Default to deprecated
+        var availability: AwaitlessAvailability? = nil // No default availability
 
         if case let .argumentList(arguments) = node.arguments {
             for argument in arguments {
@@ -57,7 +59,7 @@ public struct AwaitablePromiseMacro: PeerMacro {
                         .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
                 }
             }
-
+            
             for argument in arguments {
                 if argument.label?.text != "prefix",
                    let memberAccess = argument.expression.as(MemberAccessExprSyntax.self)
@@ -96,14 +98,14 @@ public struct AwaitablePromiseMacro: PeerMacro {
             }
         }
 
-        let generatedDecl = DeclSyntax(Self.createAsyncFunction(
+        let generatedDecl = DeclSyntax(createAsyncFunction(
             from: funcDecl,
             prefix: prefix,
             availability: availability))
         return [generatedDecl]
     }
 
-    /// Creates an async version of the provided Promise function
+    /// Creates an async version of the provided Publisher function
     private static func createAsyncFunction(
         from funcDecl: FunctionDeclSyntax,
         prefix: String,
@@ -113,28 +115,29 @@ public struct AwaitablePromiseMacro: PeerMacro {
         let originalFuncName = funcDecl.name.text
         let newFuncName = prefix + originalFuncName
 
-        // Extract Promise inner type from return clause
-        let promiseInnerType = extractPromiseInnerType(from: funcDecl.signature.returnClause!)
+        // Extract Publisher inner types from return clause
+        let (outputType, errorType) = extractPublisherInnerTypes(from: funcDecl.signature.returnClause!)
 
         // Create async function signature
         let asyncSignature = FunctionSignatureSyntax(
             parameterClause: funcDecl.signature.parameterClause,
             effectSpecifiers: FunctionEffectSpecifiersSyntax(
                 asyncSpecifier: .keyword(.async),
-                throwsClause: ThrowsClauseSyntax(throwsSpecifier: .keyword(.throws))),
-            returnClause: ReturnClauseSyntax(type: promiseInnerType))
+                throwsClause: errorType == "Never" ? nil : ThrowsClauseSyntax(throwsSpecifier: .keyword(.throws))),
+            returnClause: ReturnClauseSyntax(type: outputType))
 
-        // Create function body that awaits the Promise
+        // Create function body that awaits the Publisher
         let newBody = createAsyncFunctionBody(
             originalFuncName: originalFuncName,
-            parameters: funcDecl.signature.parameterClause.parameters)
+            parameters: funcDecl.signature.parameterClause.parameters,
+            errorType: errorType)
 
         // Create attributes for the new function
-        var attributes = filterAttributes(funcDecl.attributes)
+        var attributes = filterPublisherAttributes(funcDecl.attributes)
 
         // Add availability attribute with configurable default message
         if let availability {
-            let defaultMessage = "PromiseKit support is deprecated; use async function instead"
+            let defaultMessage = "Combine support is deprecated; use async function instead"
             let availabilityAttr = createAvailabilityAttributeWithMessage(
                 originalFuncName: originalFuncName,
                 availability: availability,
@@ -154,17 +157,18 @@ public struct AwaitablePromiseMacro: PeerMacro {
             body: newBody)
     }
 
-    /// Creates the function body that awaits the Promise
+    /// Creates the function body that awaits the Publisher
     private static func createAsyncFunctionBody(
         originalFuncName: String,
-        parameters: FunctionParameterListSyntax)
+        parameters: FunctionParameterListSyntax,
+        errorType: String)
         -> CodeBlockSyntax
     {
         // Map parameters from the original function to argument expressions
         let argumentList = createArgumentList(from: parameters)
 
-        // Create the function call to the original Promise function
-        let promiseCallExpr = FunctionCallExprSyntax(
+        // Create the function call to the original Publisher function
+        let publisherCallExpr = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
                 base: DeclReferenceExprSyntax(baseName: .identifier("self")),
                 period: .periodToken(),
@@ -173,25 +177,35 @@ public struct AwaitablePromiseMacro: PeerMacro {
             arguments: argumentList,
             rightParen: .rightParenToken())
 
-        // Add .async() to await the Promise result
+        // Add .async() to await the Publisher result (or .value for Never error types)
         let awaitableExpr = MemberAccessExprSyntax(
-            base: ExprSyntax(promiseCallExpr),
+            base: ExprSyntax(publisherCallExpr),
             period: .periodToken(),
-            name: .identifier("async"))
+            name: .identifier(errorType == "Never" ? "value" : "async"))
 
-        // Call .async() method
-        let asyncCallExpr = FunctionCallExprSyntax(
-            calledExpression: ExprSyntax(awaitableExpr),
-            leftParen: .leftParenToken(),
-            arguments: LabeledExprListSyntax(),
-            rightParen: .rightParenToken())
+        // Call .async() method (or just access .value property for Never error types)
+        let finalExpr: ExprSyntax
+        if errorType == "Never" {
+            // For Never error types, .value is a property, not a method
+            finalExpr = ExprSyntax(awaitableExpr)
+        } else {
+            // For other error types, .async() is a method
+            let asyncCallExpr = FunctionCallExprSyntax(
+                calledExpression: ExprSyntax(awaitableExpr),
+                leftParen: .leftParenToken(),
+                arguments: LabeledExprListSyntax(),
+                rightParen: .rightParenToken())
+            finalExpr = ExprSyntax(asyncCallExpr)
+        }
 
-        // Add try await
-        let tryAwaitExpr = TryExprSyntax(
-            expression: AwaitExprSyntax(expression: ExprSyntax(asyncCallExpr)))
+        // Add try await or just await depending on error type
+        let awaitExpr = AwaitExprSyntax(expression: finalExpr)
+        let tryAwaitExpr = errorType == "Never" ? 
+            ExprSyntax(awaitExpr) :
+            ExprSyntax(TryExprSyntax(expression: awaitExpr))
 
         // Create return statement
-        let returnStmt = ReturnStmtSyntax(expression: ExprSyntax(tryAwaitExpr))
+        let returnStmt = ReturnStmtSyntax(expression: tryAwaitExpr)
 
         return CodeBlockSyntax(
             statements: CodeBlockItemListSyntax {
@@ -199,38 +213,104 @@ public struct AwaitablePromiseMacro: PeerMacro {
             })
     }
 
-    /// Checks if a type is Promise<T>
-    private static func isPromiseReturnType(_ type: TypeSyntax) -> Bool {
+    /// Checks if a type is Publisher<T, E>
+    private static func isPublisherReturnType(_ type: TypeSyntax) -> Bool {
         if let identifierType = type.as(IdentifierTypeSyntax.self),
-           identifierType.name.text == "Promise" {
+           identifierType.name.text == "AnyPublisher" || identifierType.name.text == "Publisher" {
             return true
         }
         return false
     }
 
-    /// Extracts the inner type T from Promise<T>
-    private static func extractPromiseInnerType(from returnClause: ReturnClauseSyntax) -> TypeSyntax {
+    /// Extracts the inner types T and E from Publisher<T, E>
+    private static func extractPublisherInnerTypes(from returnClause: ReturnClauseSyntax) -> (TypeSyntax, String) {
         let returnType = returnClause.type
         
         if let identifierType = returnType.as(IdentifierTypeSyntax.self),
-           identifierType.name.text == "Promise",
+           (identifierType.name.text == "AnyPublisher" || identifierType.name.text == "Publisher"),
            let genericArguments = identifierType.genericArgumentClause {
-            if let firstArg = genericArguments.arguments.first {
-                return firstArg.argument
-            }
+            let args = Array(genericArguments.arguments)
+            let outputType = args.first?.argument ?? TypeSyntax(IdentifierTypeSyntax(name: .identifier("Void")))
+            let errorType = args.count > 1 ? args[1].argument.description.trimmingCharacters(in: .whitespacesAndNewlines) : "Error"
+            return (outputType, errorType)
         }
         
-        // Fallback to Void if we can't extract the inner type
-        return TypeSyntax(IdentifierTypeSyntax(name: .identifier("Void")))
+        // Fallback
+        return (TypeSyntax(IdentifierTypeSyntax(name: .identifier("Void"))), "Error")
+    }
+
+}
+
+// MARK: - Helper Functions
+
+/// Filters out the AwaitablePublisher attributes from the attributes list
+func filterPublisherAttributes(_ attributes: AttributeListSyntax) -> AttributeListSyntax {
+    attributes.filter { attr in
+        if case let .attribute(actualAttr) = attr,
+           let attrName = actualAttr.attributeName.as(IdentifierTypeSyntax.self),
+           attrName.name.text == "AwaitablePublisher"
+        {
+            return false
+        }
+        return true
     }
 }
 
-// MARK: - AwaitablePromiseMacroDiagnostic
+/// Creates availability attribute with message
+func createAvailabilityAttributeWithMessage(
+    originalFuncName: String,
+    availability: AwaitlessAvailability,
+    defaultMessage: String) -> AttributeSyntax {
+    
+    let message: String
+    let renamed: String? = originalFuncName
+    
+    switch availability {
+    case .deprecated(let customMessage):
+        message = customMessage ?? defaultMessage
+    case .unavailable(let customMessage):
+        message = customMessage ?? defaultMessage
+    }
+    
+    let messageArg = LabeledExprSyntax(
+        label: .identifier("message"),
+        colon: .colonToken(),
+        expression: StringLiteralExprSyntax(content: message),
+        trailingComma: .commaToken())
+    
+    let renamedArg = LabeledExprSyntax(
+        label: .identifier("renamed"),
+        colon: .colonToken(),
+        expression: StringLiteralExprSyntax(content: renamed ?? originalFuncName))
+    
+    let availabilityType: String
+    switch availability {
+    case .deprecated:
+        availabilityType = "deprecated"
+    case .unavailable:
+        availabilityType = "unavailable"
+    }
+    
+    let arguments = LabeledExprListSyntax([
+        LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .binaryOperator("*")), trailingComma: .commaToken()),
+        LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .identifier(availabilityType)), trailingComma: .commaToken()),
+        messageArg.with(\.trailingComma, .commaToken()),
+        renamedArg
+    ])
+    
+    return AttributeSyntax(
+        attributeName: IdentifierTypeSyntax(name: .identifier("available")),
+        leftParen: .leftParenToken(),
+        arguments: .argumentList(arguments),
+        rightParen: .rightParenToken())
+}
 
-/// Diagnostics for errors related to the AwaitablePromise macro
-enum AwaitablePromiseMacroDiagnostic: String, DiagnosticMessage {
-    case requiresFunction = "@AwaitablePromise can only be applied to functions"
-    case requiresPromiseReturn = "@AwaitablePromise requires the function to return a Promise<T>"
+// MARK: - AwaitablePublisherMacroDiagnostic
+
+/// Diagnostics for errors related to the AwaitablePublisher macro
+enum AwaitablePublisherMacroDiagnostic: String, DiagnosticMessage {
+    case requiresFunction = "@AwaitablePublisher can only be applied to functions"
+    case requiresPublisherReturn = "@AwaitablePublisher requires the function to return a Publisher<T, E>"
 
     var severity: DiagnosticSeverity {
         .error
@@ -238,7 +318,6 @@ enum AwaitablePromiseMacroDiagnostic: String, DiagnosticMessage {
 
     var message: String { rawValue }
     var diagnosticID: MessageID {
-        MessageID(domain: "AwaitlessPromiseMacros", id: rawValue)
+        MessageID(domain: "AwaitlessKitMacros", id: rawValue)
     }
 }
-

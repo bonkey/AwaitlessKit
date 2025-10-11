@@ -79,20 +79,35 @@ targets: [
 
 ## Core Features
 
-### `@Awaitless` - automatic sync function generation
+AwaitlessKit provides **bidirectional conversion** between async/await and legacy callback-based APIs:
+
+### `@Awaitless*` Family - async → sync conversion
 
 Generates synchronous wrappers for `async` functions with built-in deprecation controls.
-
-Output variants:
 
 - **`@Awaitless`** - Generates synchronous throwing functions that can be called directly from non-async contexts
 - **`@AwaitlessPublisher`** - Generates Combine `AnyPublisher` wrappers for reactive programming patterns
 - **`@AwaitlessCompletion`** - Generates completion-handler based functions using `Result` callbacks
-- **`@AwaitlessPromise`** & **`@Awaitable`** - Bidirectional PromiseKit integration (separate `AwaitlessKit-PromiseKit` product)
 
-### `@Awaitlessable` - protocol extension generation
+### `@Awaitable*` Family - sync → async conversion  
 
-Automatically generates sync method signatures and optional default implementations for protocols with async methods.
+Generates async/await wrappers for legacy callback-based functions, enabling migration to modern Swift concurrency.
+
+- **`@AwaitablePublisher`** - Converts Combine `AnyPublisher` functions to async/await using `.async()`
+- **`@AwaitableCompletion`** - Converts completion-handler functions to async/await using `withCheckedThrowingContinuation`
+- **`@Awaitable`** - Protocol macro that generates async versions of both Publisher and completion-handler methods
+
+### PromiseKit Integration
+
+Bidirectional PromiseKit integration (separate `AwaitlessKit-PromiseKit` product):
+
+- **`@AwaitlessPromise`** - async → Promise conversion
+- **`@AwaitablePromise`** - Promise → async conversion
+
+### Protocol Support
+
+- **`@Awaitlessable`** - Generates sync method signatures for protocols with async methods
+- **`@Awaitable`** - Generates async method signatures for protocols with Publisher/completion methods
 
 ### `#awaitless()` - inline async code execution
 

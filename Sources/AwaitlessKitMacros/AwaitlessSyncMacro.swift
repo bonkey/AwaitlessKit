@@ -209,13 +209,16 @@ public struct AwaitlessSyncMacro: PeerMacro {
                 arguments: .argumentList(
                     LabeledExprListSyntax {
                         LabeledExprSyntax(
-                            expression: DeclReferenceExprSyntax(baseName: .stringSegment("*")))
+                            expression: DeclReferenceExprSyntax(baseName: .binaryOperator("*")),
+                            trailingComma: .commaToken())
                         LabeledExprSyntax(
-                            expression: DeclReferenceExprSyntax(baseName: .identifier("deprecated")))
+                            expression: DeclReferenceExprSyntax(baseName: .identifier("deprecated")),
+                            trailingComma: .commaToken())
                         LabeledExprSyntax(
                             label: .identifier("message"),
                             colon: .colonToken(),
-                            expression: StringLiteralExprSyntax(content: message))
+                            expression: StringLiteralExprSyntax(content: message),
+                            trailingComma: .commaToken())
                         LabeledExprSyntax(
                             label: .identifier("renamed"),
                             colon: .colonToken(),
@@ -234,14 +237,16 @@ public struct AwaitlessSyncMacro: PeerMacro {
                 arguments: .argumentList(
                     LabeledExprListSyntax {
                         LabeledExprSyntax(
-                            expression: DeclReferenceExprSyntax(baseName: .stringSegment("*")))
+                            expression: DeclReferenceExprSyntax(baseName: .binaryOperator("*")),
+                            trailingComma: .commaToken())
                         LabeledExprSyntax(
-                            expression: DeclReferenceExprSyntax(baseName: .identifier("unavailable")))
+                            expression: DeclReferenceExprSyntax(baseName: .identifier("unavailable")),
+                            trailingComma: .commaToken())
                         LabeledExprSyntax(
                             label: .identifier("message"),
                             colon: .colonToken(),
                             expression: StringLiteralExprSyntax(content: message))
-                    }),
+                        }),
                 rightParen: .rightParenToken())
         }
     }

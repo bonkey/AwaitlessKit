@@ -181,7 +181,7 @@ final class SampleApp {
 
     private func demonstrateAwaitlessPromise() async throws {
         #if canImport(AwaitlessKitPromiseKit)
-        print("7. @AwaitlessPromise, @Awaitful & @Awaitfulable")
+        print("7. @AwaitlessPromise & @AwaitablePromise")
         
         let service = AwaitlessPromiseExample()
         
@@ -198,18 +198,7 @@ final class SampleApp {
         try await service.legacyVoidOperation()
         print("   Operation completed")
         
-        // Demonstrate @Awaitfulable protocol
-        let dataService = ConcreteDataService()
-        let protocolUser = try await dataService.async_fetchUser(id: "protocol-user")
-        print("   Protocol User: \(protocolUser)")
-        
-        let fileData = try await dataService.async_downloadFile(path: "/example.txt")
-        print("   File Data: \(fileData.count) bytes")
-        
-        try await dataService.async_saveData(Data("test".utf8))
-        print("   Data saved successfully")
-        
-        // Demonstrate @Awaitful class methods (individual macro approach)
+        // Demonstrate @AwaitablePromise class methods (individual macro approach)
         let networkService = LegacyNetworkService()
         let classUser = try await networkService.async_fetchUserProfile(userId: "class-user")
         print("   Class User: \(classUser)")
@@ -222,7 +211,7 @@ final class SampleApp {
         
         print()
         #else
-        print("7. @AwaitlessPromise, @Awaitful & @Awaitfulable")
+        print("7. @AwaitlessPromise & @AwaitablePromise")
         print("   PromiseKit not available")
         print()
         #endif
