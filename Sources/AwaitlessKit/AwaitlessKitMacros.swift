@@ -376,7 +376,7 @@ public macro AwaitlessConfig(
 @attached(peer, names: arbitrary)
 public macro AwaitablePublisher(
     prefix: String = "",
-    _ availability: AwaitlessAvailability? = .deprecated()) = #externalMacro(
+    _ availability: AwaitlessAvailability? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "AwaitablePublisherMacro")
 
@@ -396,8 +396,8 @@ public macro AwaitablePublisher(
 /// - Parameters:
 ///   - prefix: Prefix for the generated async function name.
 ///     Example: `"async_"` generates `async_originalName()`.
-///   - availability: Availability attribute for the generated function.
-///     Defaults to `.deprecated()` with a configurable message.
+///   - availability: Optional availability attribute for the generated function.
+///     When not specified, no availability attribute is added.
 ///
 /// ## Example
 ///
@@ -433,7 +433,7 @@ public macro AwaitablePublisher(
 @attached(peer, names: arbitrary)
 public macro AwaitableCompletion(
     prefix: String = "",
-    _ availability: AwaitlessAvailability? = .deprecated()) = #externalMacro(
+    _ availability: AwaitlessAvailability? = nil) = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "AwaitableCompletionMacro")
 
@@ -453,8 +453,8 @@ public macro AwaitableCompletion(
 /// - Parameters:
 ///   - prefix: Prefix for the generated async function names.
 ///     Example: `"async_"` generates `async_originalName()`.
-///   - availability: Availability attribute for the generated functions.
-///     Defaults to `.deprecated()` with a configurable message.
+///   - availability: Optional availability attribute for the generated functions.
+///     When not specified, no availability attribute is added.
 ///   - extensionGeneration: Whether to generate default async implementations
 ///
 /// ## Example
@@ -513,7 +513,7 @@ public macro AwaitableCompletion(
 @attached(extension, names: arbitrary)
 public macro Awaitable(
     prefix: String = "",
-    _ availability: AwaitlessAvailability? = .deprecated(),
+    _ availability: AwaitlessAvailability? = nil,
     extensionGeneration: AwaitlessableExtensionGeneration = .enabled) = #externalMacro(
     module: "AwaitlessKitMacros",
     type: "AwaitableMacro")

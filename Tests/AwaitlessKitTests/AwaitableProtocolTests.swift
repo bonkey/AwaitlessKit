@@ -31,11 +31,11 @@ struct AwaitableProtocolTests {
             }
 
             extension DataService {
-                @available(*, deprecated, message: "Combine support is deprecated; use async function instead", renamed: "fetchUser") public func fetchUser(id: String) async throws -> User {
+                public func fetchUser(id: String) async throws -> User {
                     return try await self.fetchUser(id: id).async()
                 }
-                @available(*, deprecated, message: "Combine support is deprecated; use async function instead", renamed: "fetchData") public func fetchData() async -> Data {
-                    return await self.fetchData().value()
+                public func fetchData() async -> Data {
+                    return await self.fetchData().value
                 }
             }
             """
@@ -84,7 +84,7 @@ struct AwaitableProtocolTests {
             }
 
             extension DataService {
-                @available(*, deprecated, message: "Combine support is deprecated; use async function instead", renamed: "fetchUser") public func fetchUser(id: String) async throws -> User {
+                public func fetchUser(id: String) async throws -> User {
                     return try await self.fetchUser(id: id).async()
                 }
             }
@@ -132,6 +132,32 @@ struct AwaitableProtocolTests {
             class DataService {
                 func fetchData() -> String {
                     return "data"
+                }
+            }
+            """
+        }
+    }
+
+    @Test("Awaitable with explicit deprecated availability", .tags(.macros))
+    func protocolWithExplicitDeprecated() {
+        assertMacro {
+            """
+            @Awaitable(.deprecated())
+            protocol DataService {
+                func fetchUser(id: String) -> AnyPublisher<User, Error>
+            }
+            """
+        } expansion: {
+            """
+            protocol DataService {
+                func fetchUser(id: String) -> AnyPublisher<User, Error>
+
+                func fetchUser(id: String) async throws -> User
+            }
+
+            extension DataService {
+                @available(*, deprecated, message: "Combine support is deprecated; use async function instead", renamed: "fetchUser") public func fetchUser(id: String) async throws -> User {
+                    return try await self.fetchUser(id: id).async()
                 }
             }
             """

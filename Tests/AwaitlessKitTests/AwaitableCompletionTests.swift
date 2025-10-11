@@ -24,7 +24,7 @@ struct AwaitableCompletionTests {
                 // Implementation
             }
 
-            @available(*, deprecated, message: "Completion handler support is deprecated; use async function instead", renamed: "fetchData") func fetchData() async throws -> Data {
+            func fetchData() async throws -> Data {
                 return try await withCheckedThrowingContinuation { continuation in
                     self.fetchData(completion: { result in
                             continuation.resume(with: result)
@@ -50,7 +50,7 @@ struct AwaitableCompletionTests {
                 // Implementation
             }
 
-            @available(*, deprecated, message: "Completion handler support is deprecated; use async function instead", renamed: "fetchUser") func async_fetchUser(id: String) async throws -> User {
+            func async_fetchUser(id: String) async throws -> User {
                 return try await withCheckedThrowingContinuation { continuation in
                     self.fetchUser(id: id, completion: { result in
                             continuation.resume(with: result)
@@ -76,7 +76,7 @@ struct AwaitableCompletionTests {
                 // Implementation
             }
 
-            @available(*, deprecated, message: "Completion handler support is deprecated; use async function instead", renamed: "saveData") func saveData(_ data: Data) async throws {
+            func saveData(_ data: Data) async throws {
                 try await withCheckedThrowingContinuation { continuation in
                     self.saveData(data, completion: { result in
                             continuation.resume(with: result)
@@ -119,6 +119,32 @@ struct AwaitableCompletionTests {
                  ┬────────
                  ╰─ 🛑 @AwaitableCompletion requires the function to have a completion handler parameter
                 return "data"
+            }
+            """
+        }
+    }
+
+    @Test("AwaitableCompletion with explicit deprecated availability", .tags(.macros))
+    func completionFunctionWithDeprecated() {
+        assertMacro {
+            """
+            @AwaitableCompletion(.deprecated())
+            func fetchData(completion: @escaping (Result<Data, Error>) -> Void) {
+                // Implementation
+            }
+            """
+        } expansion: {
+            """
+            func fetchData(completion: @escaping (Result<Data, Error>) -> Void) {
+                // Implementation
+            }
+
+            @available(*, deprecated, message: "Completion handler support is deprecated; use async function instead", renamed: "fetchData") func fetchData() async throws -> Data {
+                return try await withCheckedThrowingContinuation { continuation in
+                    self.fetchData(completion: { result in
+                            continuation.resume(with: result)
+                        })
+                }
             }
             """
         }

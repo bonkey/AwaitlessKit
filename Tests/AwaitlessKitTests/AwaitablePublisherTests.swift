@@ -24,7 +24,7 @@ struct AwaitablePublisherTests {
                 return publisher
             }
 
-            @available(*, deprecated, message: "Combine support is deprecated; use async function instead", renamed: "fetchData") func fetchData() async throws -> Data {
+            func fetchData() async throws -> Data {
                 return try await self.fetchData().async()
             }
             """
@@ -46,7 +46,7 @@ struct AwaitablePublisherTests {
                 return publisher
             }
 
-            @available(*, deprecated, message: "Combine support is deprecated; use async function instead", renamed: "fetchUser") func async_fetchUser(id: String) async throws -> User {
+            func async_fetchUser(id: String) async throws -> User {
                 return try await self.fetchUser(id: id).async()
             }
             """
@@ -68,7 +68,7 @@ struct AwaitablePublisherTests {
                 return publisher
             }
 
-            @available(*, deprecated, message: "Combine support is deprecated; use async function instead", renamed: "fetchData") func fetchData() async -> Data {
+            func fetchData() async -> Data {
                 return await self.fetchData().value
             }
             """
@@ -107,6 +107,50 @@ struct AwaitablePublisherTests {
                  ┬────────
                  ╰─ 🛑 @AwaitablePublisher requires the function to return a Publisher<T, E>
                 return "data"
+            }
+            """
+        }
+    }
+
+    @Test("AwaitablePublisher with explicit deprecated availability", .tags(.macros))
+    func publisherFunctionWithDeprecated() {
+        assertMacro {
+            """
+            @AwaitablePublisher(.deprecated())
+            func fetchData() -> AnyPublisher<Data, Error> {
+                return publisher
+            }
+            """
+        } expansion: {
+            """
+            func fetchData() -> AnyPublisher<Data, Error> {
+                return publisher
+            }
+
+            @available(*, deprecated, message: "Combine support is deprecated; use async function instead", renamed: "fetchData") func fetchData() async throws -> Data {
+                return try await self.fetchData().async()
+            }
+            """
+        }
+    }
+
+    @Test("AwaitablePublisher with custom deprecated message", .tags(.macros))
+    func publisherFunctionWithCustomMessage() {
+        assertMacro {
+            """
+            @AwaitablePublisher(.deprecated("Use async version"))
+            func fetchData() -> AnyPublisher<Data, Error> {
+                return publisher
+            }
+            """
+        } expansion: {
+            """
+            func fetchData() -> AnyPublisher<Data, Error> {
+                return publisher
+            }
+
+            @available(*, deprecated, message: "Use async version", renamed: "fetchData") func fetchData() async throws -> Data {
+                return try await self.fetchData().async()
             }
             """
         }

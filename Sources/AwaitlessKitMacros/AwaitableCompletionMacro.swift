@@ -43,7 +43,7 @@ public struct AwaitableCompletionMacro: PeerMacro {
         }
 
         var prefix = ""
-        var availability: AwaitlessAvailability? = .deprecated() // Default to deprecated
+        var availability: AwaitlessAvailability? = nil // No default availability
 
         if case let .argumentList(arguments) = node.arguments {
             for argument in arguments {
@@ -53,10 +53,43 @@ public struct AwaitableCompletionMacro: PeerMacro {
                 {
                     prefix = stringLiteral.segments.description
                         .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
-                } else if labeledExpr.label == nil,
-                          let availabilityExpr = labeledExpr.expression.as(MemberAccessExprSyntax.self)
+                }
+            }
+            
+            for argument in arguments {
+                if argument.label?.text != "prefix",
+                   let memberAccess = argument.expression.as(MemberAccessExprSyntax.self)
                 {
-                    availability = parseAvailability(from: availabilityExpr)
+                    if memberAccess.declName.baseName.text == "deprecated" {
+                        availability = .deprecated()
+                    } else if memberAccess.declName.baseName.text == "unavailable" {
+                        availability = .unavailable()
+                    }
+                } else if argument.label?.text != "prefix",
+                          let functionCall = argument.expression.as(FunctionCallExprSyntax.self),
+                          let calledExpr = functionCall.calledExpression.as(MemberAccessExprSyntax.self)
+                {
+                    if calledExpr.declName.baseName.text == "deprecated" {
+                        if let firstArgument = functionCall.arguments.first?.expression
+                            .as(StringLiteralExprSyntax.self)
+                        {
+                            let message = firstArgument.segments.description
+                                .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+                            availability = .deprecated(message)
+                        } else {
+                            availability = .deprecated()
+                        }
+                    } else if calledExpr.declName.baseName.text == "unavailable" {
+                        if let firstArgument = functionCall.arguments.first?.expression
+                            .as(StringLiteralExprSyntax.self)
+                        {
+                            let message = firstArgument.segments.description
+                                .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+                            availability = .unavailable(message)
+                        } else {
+                            availability = .unavailable()
+                        }
+                    }
                 }
             }
         }
@@ -337,19 +370,6 @@ public struct AwaitableCompletionMacro: PeerMacro {
         return (FunctionParameterListSyntax(parametersWithoutCompletion), resultType, isVoidResult)
     }
 
-    /// Parse availability from expression
-    private static func parseAvailability(from expr: MemberAccessExprSyntax) -> AwaitlessAvailability? {
-        switch expr.declName.baseName.text {
-        case "deprecated":
-            return .deprecated()
-        case "unavailable":
-            return .unavailable()
-        // case "noasync":
-            // return .noasync
-        default:
-            return nil
-        }
-    }
     
     /// Creates availability attribute with message
     private static func createAvailabilityAttributeWithMessage(
