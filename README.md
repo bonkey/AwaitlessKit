@@ -103,7 +103,6 @@ Bidirectional PromiseKit integration (separate `AwaitlessKit-PromiseKit` product
 
 - **`@AwaitlessPromise`** - async → Promise conversion
 - **`@AwaitablePromise`** - Promise → async conversion
-- **`@AwaitablePromiseProtocol`** - Protocol-level Promise → async conversion
 
 ### Protocol Support
 

@@ -10,6 +10,5 @@ struct AwaitlessKitPromiseMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         AwaitlessPromiseMacro.self,
         AwaitablePromiseMacro.self,
-        AwaitablePromiseProtocolMacro.self,
     ]
 }

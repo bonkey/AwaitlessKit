@@ -131,44 +131,6 @@ final class AwaitlessPromiseExample: Sendable {
     }
 }
 
-// MARK: - @AwaitablePromiseProtocol Protocol Examples
-
-@AwaitablePromiseProtocol(prefix: "async_")
-protocol LegacyDataService {
-    func fetchUser(id: String) -> Promise<UserProfile>
-    func downloadFile(path: String) -> Promise<Data>
-    func saveData(_ data: Data) -> Promise<Void>
-}
-
-// MARK: - Protocol Implementation
-
-class ConcreteDataService: LegacyDataService {
-    func fetchUser(id: String) -> Promise<UserProfile> {
-        return Promise { seal in
-            DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
-                let user = UserProfile(
-                    id: id,
-                    name: "User \(id)",
-                    email: "\(id)@example.com"
-                )
-                seal.fulfill(user)
-            }
-        }
-    }
-    
-    func downloadFile(path: String) -> Promise<Data> {
-        return Promise.value("File content from \(path)".data(using: .utf8) ?? Data())
-    }
-    
-    func saveData(_ data: Data) -> Promise<Void> {
-        return Promise { seal in
-            DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) {
-                seal.fulfill(())
-            }
-        }
-    }
-}
-
 // MARK: - Individual @AwaitablePromise Class Example (Working Approach)
 // Demonstrates using @AwaitablePromise on individual class methods (works perfectly)
 class LegacyNetworkService {
@@ -208,12 +170,6 @@ class LegacyNetworkService {
         }
     }
 }
-
-// MARK: - @AwaitablePromiseProtocol Class Limitation Note
-// 
-// NOTE: @AwaitablePromiseProtocol macro currently has a known issue with classes where it generates
-// both member declarations and extension implementations, causing redeclaration errors.
-// The above approach using individual @AwaitablePromise macros is the recommended workaround.
 
 // MARK: - Supporting Types
 
