@@ -9,3 +9,4 @@ RFC/AwaitlessConfigMacro-prototype.swift
 
 *.lcov
 *.junit
+.chunkhound
