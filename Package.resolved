@@ -1,5 +1,5 @@
 {
-  "originHash" : "de627bc82e053ad240edc4ce0dfa255eb9bfc4ffa1fcfcc267d1eae30f6904e6",
+  "originHash" : "ce175acd3d82b3ab111cbc45b13b5abe6e23a2dddbea291eae308b41967f3ce6",
   "pins" : [
     {
       "identity" : "promisekit",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-macro-testing.git",
       "state" : {
-        "revision" : "9ab11325daa51c7c5c10fcf16c92bac906717c7e",
-        "version" : "0.6.4"
+        "revision" : "2e494c632d510715c96a694ff25e2a8d4ac3f64b",
+        "version" : "0.6.5"
       }
     },
     {
